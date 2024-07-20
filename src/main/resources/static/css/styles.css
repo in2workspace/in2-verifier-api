@@ -58,7 +58,7 @@ a {
 }
 
 .login-container {
-    max-width: 1200px;
+    max-width: 800px;
     margin: 50px auto;
     background-color: white;
     padding: 20px;
@@ -67,9 +67,34 @@ a {
     text-align: center;
 }
 
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+td {
+    border: none;
+    text-align: center;
+}
+
+.col1 {
+    width: 33.33%; /* Ocupa 1/3 de la tabla */
+}
+
+.col2 {
+    width: 66.67%; /* Ocupa 2/3 de la tabla */
+}
+
+.marketplace-logo img {
+    height: 300px;
+    width: 300px;
+    margin: 0 auto;
+}
+
 .qr-code img {
-    height: 150px;
-    width: 150px;
+    height: 300px;
+    width: 300px;
+    margin: 0 auto;
 }
 
 button {
@@ -78,7 +103,7 @@ button {
     padding: 10px 20px;
     font-size: 1em;
     color: white;
-    background-color: #007bff;
+    background-color: #2D58A7;
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -94,7 +119,7 @@ button:hover {
 }
 
 .help-text a {
-    color: #007bff;
+    color: #2D58A7;
     text-decoration: none;
 }
 
