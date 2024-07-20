@@ -1,7 +1,6 @@
 package es.in2.verifier.service;
 
-import es.in2.verifier.model.QrResponse;
-import es.in2.verifier.service.impl.QrCodeServiceImpl;
+import es.in2.verifier.model.AuthorizationRequestQrCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -23,7 +22,7 @@ class QrCodeServiceImplTest {
     @Test
     void generateQRCodeReturnsValidQrResponse() {
         String qrText = "Hello, World!";
-        Mono<QrResponse> result = qrCodeService.generateQRCode(qrText);
+        Mono<AuthorizationRequestQrCode> result = qrCodeService.generateQRCode(qrText);
 
         StepVerifier.create(result)
                 .expectNextMatches(qrResponse -> qrResponse.qrCode() != null && !qrResponse.qrCode().isEmpty())
@@ -33,7 +32,7 @@ class QrCodeServiceImplTest {
     @Test
     void generateQRCodeHandlesNullQrText() {
         String qrText = null;
-        Mono<QrResponse> result = qrCodeService.generateQRCode(qrText);
+        Mono<AuthorizationRequestQrCode> result = qrCodeService.generateQRCode(qrText);
 
         StepVerifier.create(result)
                 .expectError(NullPointerException.class)
@@ -43,7 +42,7 @@ class QrCodeServiceImplTest {
     @Test
     void generateQRCodeHandlesInvalidQrText() {
         String qrText = "Invalid QR Text with special characters: @#$%^&*()";
-        Mono<QrResponse> result = qrCodeService.generateQRCode(qrText);
+        Mono<AuthorizationRequestQrCode> result = qrCodeService.generateQRCode(qrText);
 
         StepVerifier.create(result)
                 .expectNextMatches(qrResponse -> qrResponse.qrCode() != null && !qrResponse.qrCode().isEmpty())

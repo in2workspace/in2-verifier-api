@@ -9,11 +9,13 @@ As the primary extension, the protocol OpenID for Verifiable Presentations intro
 # Premises
 - Credentials of multiple formats can be presented in the same transaction.
 - Implements same-device and cross-device scenarios.
-- 
+- Scope value MUST be an alias for a well-defined Presentation Definition that will be referred to in the presentation_submission response parameter. For now, we will use the `LearCredentialEmployee` and the `ServiceCredential`.
 
 # Technical Decisions
 
-Although we understand that the Verifier should implement several data models (W3C Verifiable Credentials Data Model, ISO mdoc, IETF SD-JWT VC, and AnonCreds), we decided to start with the W3C Verifiable Credentials Data Model [VC_DATA, v1.1](https://www.w3.org/TR/vc-data-model/) because it is the most widely used data model for Verifiable Credentials.
+> **DATA MODEL**: Although we understand that the Verifier should implement several data models (W3C Verifiable Credentials Data Model, ISO mdoc, IETF SD-JWT VC, and AnonCreds), we decided to start with the W3C Verifiable Credentials Data Model [VC_DATA, v1.1](https://www.w3.org/TR/vc-data-model/) because it is the most widely used data model for Verifiable Credentials.
+
+> **PRESENTATION DEFINITION**: Although we understand that the Verifier should implement several presentation definitions (Presentation Definition, Presentation Definition Uri, and Scope), we decided to start with the `scope` attribute, [5.3 Using scope Parameter to Request Verifiable Credential(s)](https://openid.github.io/OpenID4VP/openid-4-verifiable-presentations-wg-draft.html#section-5.3).
 
 # Prerequisites
 

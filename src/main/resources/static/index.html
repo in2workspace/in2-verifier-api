@@ -42,7 +42,7 @@
                             <img id="qrImage" alt="QR Code for EUDI Wallet" src="">
                             <script>
                                 window.addEventListener('load', function() {
-                                    fetch('/api/v1/qr')
+                                    fetch('/api/v1/authorization-request')
                                         .then(response => response.json())
                                         .then(data => {
                                             console.log('QR code data:', data);

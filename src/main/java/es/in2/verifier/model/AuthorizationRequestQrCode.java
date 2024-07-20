@@ -3,7 +3,7 @@ package es.in2.verifier.model;
 import lombok.Builder;
 
 @Builder
-public record QrResponse(
+public record AuthorizationRequestQrCode(
         String qrCode
 ) {
 }

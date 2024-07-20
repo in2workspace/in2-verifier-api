@@ -1,7 +1,6 @@
 package es.in2.verifier.controller;
 
-import es.in2.verifier.model.QrResponse;
-import es.in2.verifier.service.QrCodeService;
+import es.in2.verifier.model.AuthorizationRequestQrCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -13,13 +12,13 @@ import reactor.test.StepVerifier;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-class QrCodeControllerTest {
+class AuthorizationRequestControllerTest {
 
     @Mock
     private QrCodeService qrCodeService;
 
     @InjectMocks
-    private QrCodeController qrCodeController;
+    private AuthorizationRequestController authorizationRequestController;
 
     @BeforeEach
     void setUp() {
@@ -28,13 +27,13 @@ class QrCodeControllerTest {
 
     @Test
     void getQrCodeReturnsQrResponse() {
-        QrResponse qrResponse = new QrResponse("QR_CODE_DATA");
-        when(qrCodeService.generateQRCode(anyString())).thenReturn(Mono.just(qrResponse));
+        AuthorizationRequestQrCode authorizationRequestQrCode = new AuthorizationRequestQrCode("QR_CODE_DATA");
+        when(qrCodeService.generateQRCode(anyString())).thenReturn(Mono.just(authorizationRequestQrCode));
 
-        Mono<QrResponse> result = qrCodeController.getQrCode();
+        Mono<AuthorizationRequestQrCode> result = authorizationRequestController.getQrCode();
 
         StepVerifier.create(result)
-                .expectNext(qrResponse)
+                .expectNext(authorizationRequestQrCode)
                 .verifyComplete();
     }
 
@@ -42,7 +41,7 @@ class QrCodeControllerTest {
     void getQrCodeHandlesEmptyResponse() {
         when(qrCodeService.generateQRCode(anyString())).thenReturn(Mono.empty());
 
-        Mono<QrResponse> result = qrCodeController.getQrCode();
+        Mono<AuthorizationRequestQrCode> result = authorizationRequestController.getQrCode();
 
         StepVerifier.create(result)
                 .verifyComplete();
@@ -52,7 +51,7 @@ class QrCodeControllerTest {
     void getQrCodeHandlesError() {
         when(qrCodeService.generateQRCode(anyString())).thenReturn(Mono.error(new RuntimeException("Error generating QR code")));
 
-        Mono<QrResponse> result = qrCodeController.getQrCode();
+        Mono<AuthorizationRequestQrCode> result = authorizationRequestController.getQrCode();
 
         StepVerifier.create(result)
                 .expectError(RuntimeException.class)

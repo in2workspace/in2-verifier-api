@@ -6,4 +6,7 @@ api:
   externalDomain: http://localhost:8080
   clientId: "did:web:dome-marketplace-sbx.org"
   paths:
-    authenticationResponsePath: /api/v1/authentication_response
+    authenticationResponsePath: /api/v1/authorization-response
+  cacheStore:
+    lifetime: 10
+    timeUnit: MINUTES

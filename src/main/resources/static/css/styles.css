@@ -75,6 +75,7 @@ table {
 td {
     border: none;
     text-align: center;
+    justify-content: center;
 }
 
 .col1 {

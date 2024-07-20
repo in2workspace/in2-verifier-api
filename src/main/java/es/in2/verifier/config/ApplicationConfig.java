@@ -4,6 +4,8 @@ import es.in2.verifier.config.properties.ApplicationProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.concurrent.TimeUnit;
+
 @Configuration
 @RequiredArgsConstructor
 public class ApplicationConfig {
@@ -20,6 +22,14 @@ public class ApplicationConfig {
 
     public String getAuthorizationResponsePath() {
         return applicationProperties.paths().authenticationResponsePath();
+    }
+
+    public int getCacheLifetime() {
+        return applicationProperties.cacheStore().lifetime();
+    }
+
+    public TimeUnit getCacheTimeUnit() {
+        return applicationProperties.cacheStore().timeUnit();
     }
 
 }
