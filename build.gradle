@@ -68,10 +68,11 @@ dependencies {
 	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 
 	// QR Code
-	// https://mvnrepository.com/artifact/com.google.zxing/core
 	implementation 'com.google.zxing:core:3.5.3'
-
 	implementation 'com.google.zxing:javase:3.5.3'
+
+	// Documentation
+	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.6.0'
 
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'

@@ -2,6 +2,19 @@
 
 # Introduction
 
+This solution implements a mechanism on top of OAuth 2.0 to request and present Verifiable Credentials as Verifiable Presentations.
+
+As the primary extension, the protocol OpenID for Verifiable Presentations introduces the VP Token as a container to enable End-Users to present Verifiable Presentations to Verifiers using the Wallet. A VP Token contains one or more Verifiable Presentations in the same or different Credential formats.
+
+# Premises
+- Credentials of multiple formats can be presented in the same transaction.
+- Implements same-device and cross-device scenarios.
+- 
+
+# Technical Decisions
+
+Although we understand that the Verifier should implement several data models (W3C Verifiable Credentials Data Model, ISO mdoc, IETF SD-JWT VC, and AnonCreds), we decided to start with the W3C Verifiable Credentials Data Model [VC_DATA, v1.1](https://www.w3.org/TR/vc-data-model/) because it is the most widely used data model for Verifiable Credentials.
+
 # Prerequisites
 
 # Installation

@@ -1,5 +1,9 @@
 spring:
   application:
     name: verifier-api
-  webflux:
-    static-path-pattern: /assets/**
+
+api:
+  externalDomain: http://localhost:8080
+  clientId: "did:web:dome-marketplace-dev.org"
+  paths:
+    authenticationResponsePath: /api/v1/authentication_response

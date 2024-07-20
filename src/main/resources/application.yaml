@@ -1,3 +1,9 @@
 spring:
   application:
     name: verifier-api
+
+api:
+  externalDomain: http://localhost:8080
+  clientId: "did:web:dome-marketplace-lcl.org"
+  paths:
+    authenticationResponsePath: /api/v1/authentication_response

@@ -4,6 +4,7 @@ import es.in2.verifier.model.QrResponse;
 import es.in2.verifier.service.impl.QrCodeServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -11,9 +12,12 @@ class QrCodeServiceImplTest {
 
     private QrCodeService qrCodeService;
 
+    @Mock
+    private AuthorizationRequestService authorizationRequestService;
+
     @BeforeEach
     void setUp() {
-        qrCodeService = new QrCodeServiceImpl();
+        qrCodeService = new QrCodeServiceImpl(authorizationRequestService);
     }
 
     @Test
