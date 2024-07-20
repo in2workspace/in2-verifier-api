@@ -12,7 +12,7 @@
 
     <header class="site-header">
         <div class="site-identity">
-            <img src="/img/dome-icon-white.png" alt="Marketplace" />
+            <img src="/img/dome-icon-white.png" alt="Marketplace Logo White" />
             <h1>Marketplace</h1>
         </div>
         <nav class="site-navigation">
@@ -27,12 +27,39 @@
 
     <div class="login-container">
         <main class="main">
-            <h1>Welcome to the DOME Marketplace</h1>
-            <div class="qr-code">
-                <img src="../static/qr_code.png" alt="QR Code for EUDI Wallet">
-            </div>
-            <p>Your organisation must be registered in the marketplace before you can login.</p>
-            <button onclick="location.href='registration_page_url'">Register</button>
+            <h1>Welcome to the Marketplace</h1>
+            <table>
+                <tr>
+                    <td class="col1">
+                        <div class="marketplace-logo">
+                            <img src="/img/dome-icon.png" alt="Marketplace Logo">
+                        </div>
+                    </td>
+                    <td class="col2">
+                        <p>Scan the QR code above with your EUDI Wallet</p>
+                        <p>to log in the Marketplace.</p>
+                        <div class="qr-code">
+                            <img id="qrImage" alt="QR Code for EUDI Wallet" src="">
+                            <script>
+                                window.addEventListener('load', function() {
+                                    fetch('/api/v1/qr')
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            console.log('QR code data:', data);
+                                            const qrCodeBase64 = data.qrCode;
+                                            document.getElementById('qrImage').src = 'data:image/png;base64,' + qrCodeBase64;
+                                        })
+                                        .catch(error => console.error('Error fetching QR code:', error));
+                                });
+                            </script>
+                        </div>
+                        <p class="help-text">Problems to scan QR code? Click <a href="same_device_redirection_url">here</a>. </p>
+                    </td>
+                </tr>
+            </table>
+            <p>Your organization must be registered in the marketplace before you can log in.
+                <button onclick="location.href='registration_page_url'">Register</button>
+            </p>
             <p class="help-text">Problems logging in? Get help from <a href="customer_support_url">customer support</a>.</p>
         </main>
     </div>

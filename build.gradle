@@ -54,13 +54,30 @@ ext {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-actuator'
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	// WebFlux
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	// Security
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	// Circuit Breaker
 	implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j'
-	compileOnly 'org.projectlombok:lombok'
+
+	// Metrics
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+
+	// QR Code
+	// https://mvnrepository.com/artifact/com.google.zxing/core
+	implementation 'com.google.zxing:core:3.5.3'
+
+	implementation 'com.google.zxing:javase:3.5.3'
+
+	// Lombok
+	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+
+	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
 	testImplementation 'io.projectreactor:reactor-test'
