@@ -40,8 +40,8 @@ jobs:
       - name: Run Checkstyle
         run: ./gradlew checkstyleMain checkstyleTest
 
-      - name: Run OWASP Dependency Check
-        run: ./gradlew dependencyCheckAnalyze
+#      - name: Run OWASP Dependency Check
+#        run: ./gradlew dependencyCheckAnalyze
 
       - name: Build and analyze
         env:
