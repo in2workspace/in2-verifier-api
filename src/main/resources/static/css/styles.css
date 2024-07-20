@@ -1,0 +1,167 @@
+body {
+    font-family: Blinker, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+}
+
+a {
+    font-family: Blinker, sans-serif;
+    text-decoration: none;
+    color: white;
+}
+
+.site-header {
+    border-bottom: 1px solid #ccc;
+    padding: .5em 1em;
+    background-color: #2D58A7;
+}
+
+.site-header::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.site-identity {
+    float: left;
+    text-decoration: none;
+    align-content: center;
+}
+
+.site-identity h1 {
+    font-size: 1.5em;
+    margin: .7em 0 .3em 0;
+    display: inline-block;
+    font-family: Blinker, sans-serif;
+    color: white;
+}
+
+.site-identity img {
+    max-width: 80px;
+    float: left;
+    margin: 0 10px 0 0;
+}
+
+.site-navigation {
+    float: right;
+}
+
+.site-navigation ul, li {
+    margin: 0;
+    padding: 0;
+}
+
+.site-navigation li {
+    display: inline-block;
+    margin: 1.4em 1em 1em 1em;
+}
+
+.login-container {
+    max-width: 1200px;
+    margin: 50px auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.qr-code img {
+    height: 150px;
+    width: 150px;
+}
+
+button {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 1em;
+    color: white;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.help-text {
+    margin-top: 20px;
+}
+
+.help-text a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.help-text a:hover {
+    text-decoration: underline;
+}
+
+/* Media queries para pantallas más pequeñas */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .logo img {
+        margin: 0 auto;
+    }
+
+    .nav {
+        justify-content: center;
+        margin: 10px 0;
+    }
+
+    .nav a {
+        margin: 0 5px;
+    }
+
+    .main h1 {
+        font-size: 1.2em;
+    }
+
+    .qr-code img {
+        height: 120px;
+        width: 120px;
+    }
+
+    button {
+        padding: 8px 16px;
+        font-size: 0.9em;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        padding: 15px;
+        margin: 20px auto;
+    }
+
+    .header {
+        padding: 5px 0;
+    }
+
+    .nav a {
+        margin: 0 3px;
+    }
+
+    .main h1 {
+        font-size: 1em;
+    }
+
+    .qr-code img {
+        height: 100px;
+        width: 100px;
+    }
+
+    button {
+        padding: 6px 12px;
+        font-size: 0.8em;
+    }
+}

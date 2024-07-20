@@ -17,6 +17,19 @@ java {
 	}
 }
 
+checkstyle {
+	toolVersion = '10.17.0'
+	configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
+}
+
+checkstyleMain {
+	source = 'src/main/java'
+}
+
+checkstyleTest {
+	source = 'src/test/java'
+}
+
 sonar {
 	properties {
 		property "sonar.projectName", "Verifier API"
@@ -42,7 +55,6 @@ ext {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
-	implementation 'org.springframework.boot:spring-boot-starter-oauth2-authorization-server'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j'
@@ -60,6 +72,10 @@ dependencyManagement {
 	imports {
 		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
 	}
+}
+
+tasks.named('compileJava') {
+	inputs.files(tasks.named('processResources'))
 }
 
 tasks.register('printProjectName') {
@@ -93,19 +109,6 @@ tasks.jacocoTestReport {
 			])
 		}))
 	}
-}
-
-checkstyle {
-	toolVersion = '10.17.0'
-	configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
-}
-
-checkstyleMain {
-	source = 'src/main/java'
-}
-
-checkstyleTest {
-	source = 'src/test/java'
 }
 
 tasks.register('checkstyle') {

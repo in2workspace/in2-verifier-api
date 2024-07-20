@@ -1,3 +1,5 @@
 spring:
   application:
     name: verifier-api
+  webflux:
+    static-path-pattern: /assets/**

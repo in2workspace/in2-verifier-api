@@ -6,9 +6,33 @@
 
 # Installation
 
+To build the Docker image, run the following command:
+
+```bash
+docker build -t in2-verifier-api .
+```
+
+You could skip tests by running the following command:
+
+```bash
+docker build -t in2-verifier-api --build-arg SKIP_TESTS=true .
+```
+
 # Configuration
 
 # Usage
+
+You could run the Docker image by running the following command:
+
+```bash
+docker run -p 8080:8080 in2-verifier-api
+```
+
+Add '-d' to run the Docker image in detached mode:
+
+```bash
+docker run -d -p 8080:8080 in2-verifier-api
+```
 
 # API
 
