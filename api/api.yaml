@@ -1,0 +1,54 @@
+openapi: 3.0.3
+
+info:
+  title: Verifier API
+  description: This is the API for the Verifier service.
+  version: 1.0.0
+
+tags:
+  - name: frontend
+    description: Operations related to the frontend
+  - name: api
+    description: Operations related to the API
+
+paths:
+  /login/cross-device:
+    get:
+      tags:
+        - frontend
+#      parameters:
+      operationId: GenerateLoginQrCode
+      summary: Display a QR code for the user to scan
+      description: This endpoint generates a QR code that the user can scan to log in with VC/VP.
+      responses:
+        '200':
+          description: OK
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+  /login/same-device:
+    get:
+      tags:
+        - api
+
+  /api/v1/authorization-response:
+    post:
+      tags:
+        - api
+      parameters:
+        - $ref: '#/components/parameters/QueryState'
+        - $ref: '#/components/parameters/ClientId'
+      operationId: VerifierAPIAuthenticationResponse
+      summary: Stores the credential for the given session
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AuthenticationResponse'
+      responses:
+        '204':
+          description: Ok when it worked

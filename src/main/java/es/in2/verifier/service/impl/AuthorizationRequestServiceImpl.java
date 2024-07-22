@@ -72,15 +72,15 @@ public class AuthorizationRequestServiceImpl implements AuthorizationRequestServ
         }
     }
 
-    private Mono<String> generateNonce() {
-        return generateCustomNonce()
-                .flatMap(result -> cacheStoreConfig.cacheStore().add("nonce", result)
-                        .then(Mono.just(result)));
-    }
-
     private Mono<String> generateState() {
         return generateCustomNonce()
                 .flatMap(result -> cacheStoreConfig.cacheStore().add("state", result)
+                        .then(Mono.just(result)));
+    }
+
+    private Mono<String> generateNonce() {
+        return generateCustomNonce()
+                .flatMap(result -> cacheStoreConfig.cacheStore().add("nonce", result)
                         .then(Mono.just(result)));
     }
 
