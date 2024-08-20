@@ -1,0 +1,100 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.3.2'
+	id 'io.spring.dependency-management' version '1.1.6'
+	id 'jacoco'
+	id 'checkstyle'
+	id 'org.owasp.dependencycheck' version '9.1.0'
+	id 'io.swagger.core.v3.swagger-gradle-plugin' version '2.2.22'
+}
+
+group = 'es.in2'
+version = '0.1.0'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+		sourceCompatibility = JavaLanguageVersion.of(17)
+		targetCompatibility = JavaLanguageVersion.of(17)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+checkstyle {
+	toolVersion = '10.16.0'
+	configFile = file("${rootDir}/checkstyle/checkstyle.xml")
+}
+
+checkstyleMain {
+	source = 'src/main/java'
+}
+
+checkstyleTest {
+	source = 'src/test/java'
+}
+
+sourceSets {
+	main {
+		java {
+			srcDir("$buildDir/generated/src/main/java")
+		}
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// Starters
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-authorization-server'
+	// DevTools
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	// Testing
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('compileJava') {
+	inputs.files(tasks.named('processResources'))
+}
+
+tasks.register('printProjectName') {
+	doLast {
+		println rootProject.name
+	}
+}
+
+tasks.register('printVersion') {
+	doLast {
+		println version
+	}
+}
+
+tasks.register('checkstyle') {
+	reports {
+		xml.required = false
+		html.required = true
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+	finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+	reports {
+		xml.required.set(true)
+		csv.required.set(false)
+		html.outputLocation.set(layout.buildDirectory.dir("jacocoHtml"))
+	}
+}
