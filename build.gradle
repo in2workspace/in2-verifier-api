@@ -6,6 +6,7 @@ plugins {
 	id 'checkstyle'
 	id 'org.owasp.dependencycheck' version '9.1.0'
 	id 'io.swagger.core.v3.swagger-gradle-plugin' version '2.2.22'
+	id 'org.sonarqube' version '5.1.0.4882'
 }
 
 group = 'es.in2'
@@ -38,11 +39,14 @@ checkstyleTest {
 	source = 'src/test/java'
 }
 
-sourceSets {
-	main {
-		java {
-			srcDir("$buildDir/generated/src/main/java")
-		}
+sonar {
+	properties {
+		property "sonar.projectName", "VC Verifier"
+		property "sonar.projectKey", "in2workspace_in2-vc-verifier"
+		property "sonar.organization", "in2workspace"
+		property "sonar.host.url", "https://sonarcloud.io"
+		property "sonar.coverage.exclusions",
+				"src/main/java/es/in2/desmos/VcVerifierApplication.java, "
 	}
 }
 
