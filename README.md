@@ -1,5 +1,5 @@
 <div align="center">
-<h1>VC Verifer</h1>
+<h1>VC Verifier</h1>
 <span>by </span><a href="https://in2.es">in2.es</a>
 <p><p>
   
