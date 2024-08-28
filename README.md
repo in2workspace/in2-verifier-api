@@ -27,6 +27,10 @@ Spring Authorization Server is a framework that provides implementations of the 
 It is built on top of Spring Security to provide a secure, light-weight, 
 and customizable foundation for building OpenID Connect 1.0 Identity Providers and OAuth2 Authorization Server products.
 
-# Technical Decisions
-- We add Spring Authorization Server without Spring Boot.
-- 
+# Testing
+
+We test the first call by sending a GET request to the '/oauth2/authorize' endpoint.
+
+```text
+http://localhost:9000/oauth2/authorize?response_type=code&client_id=did:key:wejkdew87fwhef9833f4&request_uri=https://dome-marketplace.org/api/v1/request.jwt%23GkurKxf5T0Y-mnPFCHqWOMiZi4VS138cQO_V7PZHAdM&state=af0ifjsldkj&nonce=n-0S6_WzA2Mj
+```
