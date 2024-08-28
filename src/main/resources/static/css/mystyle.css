@@ -1,0 +1,63 @@
+/* The color system, using variables */
+:root {
+    --fore-color-primary:  white!important;
+    --bg-color-primary:  #20295b!important;
+
+    --fore-color-medium:  white!important;
+    --bg-color-medium:  #3f51b5!important;
+
+    --fore-color-light:  black!important;
+    --bg-color-light:  #f3f4fb!important;
+
+    --text-color-primary: #20295b!important;
+    --text-color-medium:  #3f51b5!important;
+
+    --fore-color-secondary:  #04FF00!important;
+    --bg-color-secondary:  #102a3a!important;
+
+    --border-color-primary: #20295b!important;
+    --border-color-medium: #3f51b5!important;
+}
+
+.color-primary,.hover-color-primary:hover{color: var(--fore-color-primary); background-color:var(--bg-color-primary)}
+.color-medium,.hover-color-medium:hover{color: var(--fore-color-medium); background-color:var(--bg-color-medium)}
+.color-light,.hover-color-light:hover{color: var(--fore-color-light); background-color:var(--bg-color-light)}
+
+.text-color-primary{color: var(--text-color-primary)}
+.text-color-medium{color: var(--text-color-medium)}
+.border-color-primary{border-color: var(--border-color-primary)}
+.border-color-medium{border-color: var(--border-color-medium)}
+
+.color-secondary,.hover-color-secondary:hover{color: var(--fore-color-secondary); background-color:var(--bg-color-secondary)}
+
+.color-error{color: white; background-color: red;}
+.color-warning{color: black; background-color: yellow;}
+.color-success{color: black; background-color: #04FF00;}
+
+btn-primary, .btn-primary {
+    color: var(--fore-color-primary)!important;
+    background-color: var(--bg-color-primary)!important;
+    border-radius: 8px;
+    border:none;
+    display: inline-block;
+    padding:8px 16px;
+    vertical-align:middle;
+    overflow:hidden;
+    text-decoration:none;
+    text-align:center;
+    cursor:pointer;
+    white-space:nowrap
+}
+btn-primary:hover, .btn-primary:hover{box-shadow:0 8px 16px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19)}
+btn-primary, .btn-primary{-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}   
+btn-primary:disabled, .btn-primary:disabled{cursor:not-allowed;opacity:0.3}
+btn-primary.w3-disabled:hover,btn-primary:disabled:hover{box-shadow:none}
+.btn-primary.w3-disabled:hover, .btn-primary:disabled:hover{box-shadow:none}
+
+.buttonfixed {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+}
+
+.w3-half-centered{margin:auto;max-width: 500px;}
