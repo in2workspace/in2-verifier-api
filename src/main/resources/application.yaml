@@ -4,7 +4,35 @@ server:
 logging:
   level:
     org.springframework.security: trace
+    es.in2: info
 
 spring:
   application:
     name: VC Verifier
+  web:
+    resources:
+      static-locations:
+        - classpath:/static/
+  security:
+    oauth2:
+      authorizationserver:
+        client:
+          marketplace-client:
+            registration:
+              client-id: "did:key:wejkdew87fwhef9833f4"
+              client-secret: "{noop}secret"
+              client-authentication-methods:
+                - "client_secret_basic"
+              authorization-grant-types:
+                - "authorization_code"
+                - "refresh_token"
+              redirect-uris:
+                - "http://127.0.0.1:8080/login/oauth2/code/oidc-client"
+              post-logout-redirect-uris:
+                - "http://127.0.0.1:8080/"
+              scopes:
+                - "openid_learcredential"
+            require-authorization-consent: true
+
+crypto:
+  privateKey: "0x8f9d3927c7d283c7395aef859d1d1d8b2f3ed02e31b92d7c7ea2fbb943b5d9f7" # for test purposes

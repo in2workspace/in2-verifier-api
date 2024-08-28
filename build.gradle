@@ -54,8 +54,14 @@ repositories {
 
 dependencies {
 	// Starters
-	implementation 'org.springframework.boot:spring-boot-starter-web'
+//	implementation 'org.springframework.security:spring-security-oauth2-authorization-server:1.3.2'
+//	implementation 'org.springframework.boot:spring-boot-starter-web'
+//	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-authorization-server'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	// Cryptography
+	implementation 'com.nimbusds:nimbus-jose-jwt:9.40'
+	implementation 'org.bitcoinj:bitcoinj-core:0.17-alpha5'
 	// DevTools
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
