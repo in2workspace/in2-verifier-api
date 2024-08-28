@@ -1,4 +1,4 @@
-package es.in2.vcverifier.crypto;
+package es.in2.vcverifier.exception;
 
 public class DidKeyCreationException extends RuntimeException {
 

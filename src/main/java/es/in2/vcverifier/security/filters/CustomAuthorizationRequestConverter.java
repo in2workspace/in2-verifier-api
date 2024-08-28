@@ -1,7 +1,7 @@
 package es.in2.vcverifier.security.filters;
 
 import com.nimbusds.jose.JWSObject;
-import es.in2.vcverifier.RequestObjectRetrievalException;
+import es.in2.vcverifier.exception.RequestObjectRetrievalException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;

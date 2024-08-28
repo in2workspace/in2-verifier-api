@@ -3,6 +3,8 @@ package es.in2.vcverifier.crypto;
 import com.nimbusds.jose.crypto.bc.BouncyCastleProviderSingleton;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
+import es.in2.vcverifier.exception.DidKeyCreationException;
+import es.in2.vcverifier.exception.ECKeyCreationException;
 import lombok.RequiredArgsConstructor;
 import org.bitcoinj.base.Base58;
 import org.bouncycastle.jce.ECNamedCurveTable;

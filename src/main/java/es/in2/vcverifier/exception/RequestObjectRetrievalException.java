@@ -1,4 +1,4 @@
-package es.in2.vcverifier;
+package es.in2.vcverifier.exception;
 
 public class RequestObjectRetrievalException extends RuntimeException {
 
