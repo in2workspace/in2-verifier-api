@@ -1,23 +1,9 @@
 package es.in2.vcverifier.service;
 
-import com.nimbusds.jose.crypto.bc.BouncyCastleProviderSingleton;
-import es.in2.vcverifier.exception.DidKeyDecodeException;
+import io.github.novacrypto.base58.Base58;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.base.Base58;
-import org.bouncycastle.jce.ECNamedCurveTable;
-import org.bouncycastle.jce.interfaces.ECPublicKey;
-import org.bouncycastle.jce.spec.ECParameterSpec;
-import org.bouncycastle.jce.spec.ECPublicKeySpec;
-import org.bouncycastle.math.ec.ECPoint;
 import org.springframework.stereotype.Service;
-
-import java.math.BigInteger;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.util.Arrays;
 
 @Slf4j
 @Service
@@ -29,40 +15,36 @@ public class DIDServiceImpl implements DIDService {
         return null;
     }
 
-    public ECPublicKey getPublicKeyFromDidKey(String did) {
-
+    public byte[] getPublicKeyBytesFromDid(String did) {
         if (!did.startsWith("did:key:")) {
-            throw new IllegalArgumentException("The DID is not a did:key type");
+            throw new IllegalArgumentException("Unsupported DID type. Only did:key is supported for the moment.");
         }
 
-        // Extract the multibase base58-btc encoded value
-        String multibaseValue = did.substring("did:key:".length());
-        byte[] multibaseValueBytes = Base58.decode(multibaseValue);
-        // 0xe7 equals secp256k1 signature
-        if (multibaseValueBytes[0] == (byte)0xe7) {
-            try {
-                // Delete prefix
-                byte[] publicKeyBytes = Arrays.copyOfRange(multibaseValueBytes, 1, multibaseValueBytes.length);
-                // Create ECPoint used to generate the ECPublicKey
-                int keyLength = (publicKeyBytes.length - 1) / 2;
-                byte[] xBytes = Arrays.copyOfRange(publicKeyBytes, 1, keyLength + 1);
-                byte[] yBytes = Arrays.copyOfRange(publicKeyBytes, keyLength + 1, publicKeyBytes.length);
+        // Remove the "did:key:" prefix to get the actual encoded public key
+        String encodedPublicKey = did.substring(did.indexOf(":") + 1);
 
-                ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("secp256k1");
-                KeyFactory keyFactory = KeyFactory.getInstance("EC", BouncyCastleProviderSingleton.getInstance());
+        // Decode the public key from its encoded representation
+        return decodePublicKeyIntoBytes(encodedPublicKey);
+    }
 
-                ECPoint ecPoint = new ECPoint(new BigInteger(1, xBytes), new BigInteger(1, yBytes));
-
-                ECPublicKeySpec ecPublicKeySpec = new ECPublicKeySpec(ecPoint, ecSpec);
-                ECPublicKey publicKey = (ECPublicKey) keyFactory.generatePublic(ecPublicKeySpec);
-
-                return (ECPublicKey) publicKey;
-            } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-                throw new DidKeyDecodeException("Error decoding did:key");
-            }
-        } else {
-            throw new IllegalArgumentException("Tipo de clave no soportado o formato desconocido");
+    private byte[] decodePublicKeyIntoBytes(String publicKey) {
+        // Remove the "z" prefix to get the multibase encoded string
+        if (!publicKey.startsWith("z")) {
+            throw new IllegalArgumentException("Invalid Public Key.");
         }
+        String multibaseEncoded = publicKey.substring(1);
+
+        // Multibase decode (Base58) the encoded part to get the bytes
+        byte[] decodedBytes = Base58.base58Decode(multibaseEncoded);
+
+        // The multicodec prefix is fixed at "0x1200" for the secp256r1 curve
+        int prefixLength = 2;
+
+        // Extract public key bytes after the multicodec prefix
+        byte[] publicKeyBytes = new byte[decodedBytes.length - prefixLength];
+        System.arraycopy(decodedBytes, prefixLength, publicKeyBytes, 0, publicKeyBytes.length);
+
+        return publicKeyBytes;
     }
 
 }

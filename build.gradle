@@ -55,12 +55,15 @@ repositories {
 dependencies {
 	// Starters
 //	implementation 'org.springframework.boot:spring-boot-starter-web'
-//	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-authorization-server'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	// Cryptography
 	implementation 'com.nimbusds:nimbus-jose-jwt:9.40'
 	implementation 'org.bitcoinj:bitcoinj-core:0.17-alpha5'
+	implementation 'io.github.novacrypto:Base58:2022.01.17'
+	// JSON
+	implementation 'org.json:json:20230227'
 	// DevTools
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
