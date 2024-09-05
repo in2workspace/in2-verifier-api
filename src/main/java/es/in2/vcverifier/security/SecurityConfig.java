@@ -9,6 +9,8 @@ import es.in2.vcverifier.security.filters.CustomAuthenticationProvider;
 import es.in2.vcverifier.security.filters.CustomAuthorizationRequestConverter;
 import es.in2.vcverifier.security.filters.CustomAuthorizationResponseHandler;
 import es.in2.vcverifier.security.filters.CustomErrorResponseHandler;
+import es.in2.vcverifier.service.DIDService;
+import es.in2.vcverifier.service.JWTService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +33,8 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final CryptoComponent cryptoComponent;
+    private final DIDService didService;
+    private final JWTService jwtService;
 
 
     // A Spring Security filter chain for the Protocol Endpoints.
@@ -46,7 +50,7 @@ public class SecurityConfig {
                                 // Adds an AuthenticationConverter (pre-processor) used when attempting to extract
                                 // an OAuth2 authorization request (or consent) from HttpServletRequest to an instance
                                 // of OAuth2AuthorizationCodeRequestAuthenticationToken or OAuth2AuthorizationConsentAuthenticationToken.
-                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter())
+                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService))
                                 // Adds an AuthenticationProvider (main processor) used for authenticating the
                                 // OAuth2AuthorizationCodeRequestAuthenticationToken or OAuth2AuthorizationConsentAuthenticationToken.
                                 .authenticationProvider(new CustomAuthenticationProvider())
@@ -82,11 +86,13 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/generate-auth").permitAll()
                         .anyRequest().authenticated()
+
                 )
                 // Form login handles the redirect to the login page from the
                 // authorization server filter chain
-                .formLogin(Customizer.withDefaults());
+                .formLogin(AbstractHttpConfigurer::disable);
 
         return http.build();
     }

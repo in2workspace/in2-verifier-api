@@ -21,14 +21,14 @@ public class DIDServiceImpl implements DIDService {
         }
 
         // Remove the "did:key:" prefix to get the actual encoded public key
-        String encodedPublicKey = did.substring(did.indexOf(":") + 1);
+        String encodedPublicKey = did.substring("did:key:".length());
 
         // Decode the public key from its encoded representation
         return decodePublicKeyIntoBytes(encodedPublicKey);
     }
 
     private byte[] decodePublicKeyIntoBytes(String publicKey) {
-        // Remove the "z" prefix to get the multibase encoded string
+        // Remove the prefix "z" to get the multibase encoded string
         if (!publicKey.startsWith("z")) {
             throw new IllegalArgumentException("Invalid Public Key.");
         }
@@ -37,7 +37,7 @@ public class DIDServiceImpl implements DIDService {
         // Multibase decode (Base58) the encoded part to get the bytes
         byte[] decodedBytes = Base58.base58Decode(multibaseEncoded);
 
-        // The multicodec prefix is fixed at "0x1200" for the secp256r1 curve
+        // Multicodec prefix is fixed for "0x1200" for the secp256r1 curve
         int prefixLength = 2;
 
         // Extract public key bytes after the multicodec prefix
