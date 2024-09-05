@@ -4,6 +4,7 @@ import com.nimbusds.jose.JWSObject;
 import es.in2.vcverifier.exception.RequestMismatchException;
 import es.in2.vcverifier.exception.RequestObjectRetrievalException;
 import es.in2.vcverifier.exception.UnauthorizedClientException;
+import es.in2.vcverifier.exception.UnsupportedGrantTypeException;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,67 +49,89 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     public Authentication convert(HttpServletRequest request) {
         log.info("CustomAuthorizationRequestConverter.convert");
 
-        String requestUri = request.getParameter(REQUEST_URI); // request_uri parameter
-        String jwt = request.getParameter("request");     // request parameter (JWT directly)
-        String clientId = request.getParameter(CLIENT_ID);     // client_id parameter
+        String grantType = request.getParameter("grant_type");
 
+        if (grantType == null) {
+            throw new IllegalArgumentException("grant_type is required.");
+        }
+
+        return switch (grantType) {
+            case "code" -> handleAuthorizationCodeGrant(request);
+            case "client_credentials" ->
+                // todo implement M2M logic
+                    null;
+            default -> throw new UnsupportedGrantTypeException("Unsupported grant_type: " + grantType);
+        };
+    }
+
+    // Handles logic for the 'authorization_code' grant type
+    private Authentication handleAuthorizationCodeGrant(HttpServletRequest request) {
+        String clientId = request.getParameter(CLIENT_ID);
         if (clientId == null) {
             throw new IllegalArgumentException("Client ID is required.");
         }
 
-        // Check if client_id is in the allowed list
         if (!isClientIdAllowed(clientId)) {
             throw new UnauthorizedClientException("The following client ID is not authorized: " + clientId);
         }
 
-        // Case 1: JWT is directly provided in the "request" parameter
+        String jwt = retrieveJwtFromRequest(request);
+        validateJwt(request, jwt, clientId);
+
+        return null;  // Replace with actual authentication logic
+    }
+
+    // Retrieves JWT either from 'request' or 'request_uri'
+    private String retrieveJwtFromRequest(HttpServletRequest request) {
+        String jwt = request.getParameter("request");
         if (jwt != null) {
             log.info("JWT found directly in request parameter.");
+            return jwt;
         }
 
-        // Case 2: JWT needs to be retrieved via "request_uri"
-        else if (requestUri != null) {
+        String requestUri = request.getParameter(REQUEST_URI);
+        if (requestUri != null) {
             log.info("Retrieving JWT from request_uri: " + requestUri);
+            return retrieveJwtFromUri(requestUri);
+        }
 
-            // Retrieve the JWT from the request_uri via HTTP GET
+        throw new IllegalArgumentException("Either 'request' or 'request_uri' must be provided.");
+    }
+
+    // Makes HTTP call to retrieve JWT from 'request_uri'
+    private String retrieveJwtFromUri(String requestUri) {
+        try {
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(requestUri))
                     .GET()
                     .build();
-            HttpResponse<String> httpResponse;
-            try {
-                httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-                jwt = httpResponse.body(); // Set the JWT from the HTTP response body
-            } catch (IOException | InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RequestObjectRetrievalException(e.getMessage());
-            }
-        } else {
-            // If neither request nor request_uri is provided, throw an exception
-            throw new IllegalArgumentException("Either 'request' or 'request_uri' must be provided.");
+            HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            return httpResponse.body();
+        } catch (IOException | InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RequestObjectRetrievalException(e.getMessage());
         }
+    }
 
-        // Validate the JWT and create a custom authentication token
+    // Validates the JWT signature and OAuth 2.0 parameters
+    private void validateJwt(HttpServletRequest request, String jwt, String clientId) {
         try {
             JWSObject jwsObject = JWSObject.parse(jwt);
 
-            // Validate OAuth 2.0 parameters against the JWT
             if (!validateOAuth2Parameters(request, jwsObject)) {
                 throw new RequestMismatchException("OAuth 2.0 parameters do not match the JWT claims.");
             }
-            // Use DIDService to get the public key bytes
-            byte[] publicKeyBytes = didService.getPublicKeyBytesFromDid(clientId);
 
-            // Use JWTService to verify the JWT signature
+            byte[] publicKeyBytes = didService.getPublicKeyBytesFromDid(clientId);
             jwtService.verifyJWTSignature(jwt, publicKeyBytes);
 
         } catch (ParseException e) {
             throw new RequestObjectRetrievalException(e.getMessage());
         }
-
-        return null;
     }
+
+
 
     private boolean isClientIdAllowed(String clientId) {
         try {
