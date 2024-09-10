@@ -28,8 +28,8 @@ public class TestController {
                 .issueTime(java.util.Date.from(issueTime))
                 .expirationTime(java.util.Date.from(expirationTime))
                 .claim("client_id", did)
-                .claim("redirect_uri", "https://example.com")
-                .claim("scope", "openid learcredential")
+                .claim("redirect_uri", "http://127.0.0.1:9000/login/oauth2/code/oidc-client")
+                .claim("scope", "openid_learcredential")
                 .claim("response_type", "code")
                 .build();
 

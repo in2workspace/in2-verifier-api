@@ -16,23 +16,6 @@ spring:
   security:
     oauth2:
       authorizationserver:
-        client:
-          marketplace-client:
-            registration:
-              client-id: "did:key:wejkdew87fwhef9833f4"
-              client-secret: "{noop}secret"
-              client-authentication-methods:
-                - "client_secret_basic"
-              authorization-grant-types:
-                - "authorization_code"
-                - "refresh_token"
-              redirect-uris:
-                - "http://127.0.0.1:8080/login/oauth2/code/oidc-client"
-              post-logout-redirect-uris:
-                - "http://127.0.0.1:8080/"
-              scopes:
-                - "openid_learcredential"
-            require-authorization-consent: true
 
 crypto:
   privateKey: "73e509a7681d4a395b1ced75681c4dc4020dbab02da868512276dd766733d5b5" # for test purposes

@@ -4,6 +4,7 @@ import com.nimbusds.jose.JWSObject;
 import es.in2.vcverifier.exception.RequestMismatchException;
 import es.in2.vcverifier.exception.RequestObjectRetrievalException;
 import es.in2.vcverifier.exception.UnauthorizedClientException;
+import es.in2.vcverifier.service.AuthenticationService;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationToken;
 import org.springframework.security.web.authentication.AuthenticationConverter;
 
 import java.io.IOException;
@@ -23,7 +25,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static es.in2.vcverifier.util.Constants.*;
 
@@ -34,6 +39,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private static final String CLIENT_ID_FILE_PATH = "src/main/resources/static/client_id_list.txt";
     private final DIDService didService;
     private final JWTService jwtService;
+    private final AuthenticationService authenticationService;
 
     /**
      * The Authorization Request MUST be signed by the Client, and MUST use the request_uri parameter which enables
@@ -56,6 +62,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
             throw new IllegalArgumentException("Client ID is required.");
         }
 
+        // TODO this check should be done using the preregistered clients
         // Check if client_id is in the allowed list
         if (!isClientIdAllowed(clientId)) {
             throw new UnauthorizedClientException("The following client ID is not authorized: " + clientId);
@@ -103,11 +110,36 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
             // Use JWTService to verify the JWT signature
             jwtService.verifyJWTSignature(jwt, publicKeyBytes);
 
+            String authorizationUri = "http://localhost:9000";
+
+            return getoAuth2AuthorizationCodeRequestAuthenticationToken(jwsObject, clientId, authorizationUri,request.getParameter("state"));
+
         } catch (ParseException e) {
             throw new RequestObjectRetrievalException(e.getMessage());
         }
 
-        return null;
+    }
+
+    private OAuth2AuthorizationCodeRequestAuthenticationToken getoAuth2AuthorizationCodeRequestAuthenticationToken(JWSObject jwsObject, String clientId, String authorizationUri, String state) {
+        String jwtPayload = jwsObject.getPayload().toString();
+        JSONObject jwtClaims = new JSONObject(jwtPayload);
+        String redirectUri = jwtClaims.optString("redirect_uri");
+        Set<String> scopeSet = new HashSet<>();
+        String scope = jwtClaims.optString(SCOPE);
+        if (scope != null) {
+            scopeSet.addAll(Arrays.asList(scope.split(" "))); // Split scope by spaces if multiple scopes exist
+        }
+
+
+        return new OAuth2AuthorizationCodeRequestAuthenticationToken(
+                authorizationUri,
+                clientId,
+                authenticationService.createAuthentication(clientId),
+                redirectUri,
+                state,
+                scopeSet,
+                null
+        );
     }
 
     private boolean isClientIdAllowed(String clientId) {
