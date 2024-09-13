@@ -12,6 +12,7 @@ import java.util.List;
         private List<String> clientAuthenticationMethods;
         private List<String> authorizationGrantTypes;
         private boolean requireAuthorizationConsent;
+        private List<String> postLogoutRedirectUris;
 
         // Getters y setters
 
@@ -41,5 +42,8 @@ import java.util.List;
 
         public void setRequireAuthorizationConsent(boolean requireAuthorizationConsent) {
             this.requireAuthorizationConsent = requireAuthorizationConsent;
+        }
+        public void setPostLogoutRedirectUris(List<String> postLogoutRedirectUris) {
+            this.postLogoutRedirectUris = postLogoutRedirectUris;
         }
     }

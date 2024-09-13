@@ -50,6 +50,7 @@ sonar {
 
 repositories {
 	mavenCentral()
+	maven { url "https://jitpack.io" }
 }
 
 dependencies {
@@ -64,6 +65,8 @@ dependencies {
 	implementation 'io.github.novacrypto:Base58:2022.01.17'
 	// JSON
 	implementation 'org.json:json:20230227'
+	// QR GENERATOR
+	implementation 'com.github.kenglxn.QRGen:javase:3.0.1'
 	// DevTools
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

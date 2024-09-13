@@ -1,10 +1,10 @@
 package es.in2.vcverifier.security.filters;
 
 import com.nimbusds.jose.JWSObject;
-import es.in2.vcverifier.exception.RequestMismatchException;
-import es.in2.vcverifier.exception.RequestObjectRetrievalException;
-import es.in2.vcverifier.exception.UnauthorizedClientException;
-import es.in2.vcverifier.service.AuthenticationService;
+import com.nimbusds.jwt.JWTClaimsSet;
+import es.in2.vcverifier.config.CacheStore;
+import es.in2.vcverifier.crypto.CryptoComponent;
+import es.in2.vcverifier.exception.*;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,22 +13,28 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationConverter;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
-import java.util.Set;
+import java.util.UUID;
 
 import static es.in2.vcverifier.util.Constants.*;
 
@@ -39,7 +45,9 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private static final String CLIENT_ID_FILE_PATH = "src/main/resources/static/client_id_list.txt";
     private final DIDService didService;
     private final JWTService jwtService;
-    private final AuthenticationService authenticationService;
+    private final CryptoComponent cryptoComponent;
+    private final CacheStore<String> cacheStoreForRedirectUri;  // Cache para guardar state -> redirect_uri del OAuth2AuthorizationCodeRequestAuthenticationToken
+    private final CacheStore<String> cacheStoreForJwt;  // Cache para guardar state -> JWT
 
     /**
      * The Authorization Request MUST be signed by the Client, and MUST use the request_uri parameter which enables
@@ -57,6 +65,8 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         String requestUri = request.getParameter(REQUEST_URI); // request_uri parameter
         String jwt = request.getParameter("request");     // request parameter (JWT directly)
         String clientId = request.getParameter(CLIENT_ID);     // client_id parameter
+        String state = request.getParameter("state");
+        String scope = request.getParameter(SCOPE);
 
         if (clientId == null) {
             throw new IllegalArgumentException("Client ID is required.");
@@ -110,37 +120,26 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
             // Use JWTService to verify the JWT signature
             jwtService.verifyJWTSignature(jwt, publicKeyBytes);
 
-            String authorizationUri = "http://localhost:9000";
+            String signedAuthRequest = jwtService.generateJWT(buildAuthorizationRequestJwtPayload(scope, state));
 
-            return getoAuth2AuthorizationCodeRequestAuthenticationToken(jwsObject, clientId, authorizationUri,request.getParameter("state"));
+            cacheStoreForRedirectUri.add(state, signedAuthRequest);
 
+            String nonce = generateNonce();
+
+            cacheStoreForJwt.add(nonce,signedAuthRequest);
+
+            String authRequest = generateOpenId4VpUrl(nonce);
+
+            String redirectUrl = "/login/qr?authRequest=" + URLEncoder.encode(authRequest, StandardCharsets.UTF_8);
+            OAuth2Error error = new OAuth2Error("custom_error", "Redirection required", redirectUrl);
+            throw new OAuth2AuthorizationCodeRequestAuthenticationException(error,null);
         } catch (ParseException e) {
             throw new RequestObjectRetrievalException(e.getMessage());
         }
 
     }
 
-    private OAuth2AuthorizationCodeRequestAuthenticationToken getoAuth2AuthorizationCodeRequestAuthenticationToken(JWSObject jwsObject, String clientId, String authorizationUri, String state) {
-        String jwtPayload = jwsObject.getPayload().toString();
-        JSONObject jwtClaims = new JSONObject(jwtPayload);
-        String redirectUri = jwtClaims.optString("redirect_uri");
-        Set<String> scopeSet = new HashSet<>();
-        String scope = jwtClaims.optString(SCOPE);
-        if (scope != null) {
-            scopeSet.addAll(Arrays.asList(scope.split(" "))); // Split scope by spaces if multiple scopes exist
-        }
 
-
-        return new OAuth2AuthorizationCodeRequestAuthenticationToken(
-                authorizationUri,
-                clientId,
-                authenticationService.createAuthentication(clientId),
-                redirectUri,
-                state,
-                scopeSet,
-                null
-        );
-    }
 
     private boolean isClientIdAllowed(String clientId) {
         try {
@@ -176,5 +175,42 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         }
     }
 
+    private String buildAuthorizationRequestJwtPayload(String scope, String state) {
+
+        if (scope.equals("openid_learcredential")){
+            scope = "dome.credentials.presentation.LEARCredentialEmployee";
+        }
+        else {
+            throw new UnsupportedScopeException("Unsupported scope");
+        }
+        Instant issueTime = Instant.now();
+        Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
+        JWTClaimsSet payload = new JWTClaimsSet.Builder()
+                .issuer(cryptoComponent.getECKey().getKeyID())
+                .issueTime(Date.from(issueTime))
+                .expirationTime(Date.from(expirationTime))
+                .claim("client_id", cryptoComponent.getECKey().getKeyID())
+                .claim("client_id_scheme", "did")
+                .claim("nonce", generateNonce())
+                .claim("response_uri", AUTHORIZATION_RESPONSE_ENDPOINT)
+                .claim("scope", scope)
+                .claim("state", state)
+                .claim("response_type", "vp_token")
+                .claim("response_mode", "direct_post")
+                .build();
+        return payload.toString();
+    }
+
+    private String generateOpenId4VpUrl(String nonce) {
+        String requestUri = String.format("http://localhost:9000/oid4vp/auth-request/%s", nonce);
+
+        return String.format("openid4vp://?client_id=%s&request_uri=%s",
+                URLEncoder.encode(cryptoComponent.getECKey().getKeyID(), StandardCharsets.UTF_8),
+                URLEncoder.encode(requestUri, StandardCharsets.UTF_8));
+    }
+
+    private String generateNonce() {
+        return UUID.randomUUID().toString();
+    }
 
 }

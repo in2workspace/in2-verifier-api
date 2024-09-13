@@ -3,7 +3,9 @@ server:
 
 logging:
   level:
-    org.springframework.security: trace
+    org.springframework.security: TRACE
+    org.springframework.security.oauth2: TRACE
+    org.springframework.web.filter: TRACE
     es.in2: info
 
 spring:

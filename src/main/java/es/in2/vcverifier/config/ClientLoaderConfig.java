@@ -50,6 +50,7 @@ public class ClientLoaderConfig {
                         .authorizationGrantTypes(grantTypes -> clientData.getAuthorizationGrantTypes().forEach(grantType ->
                                 grantTypes.add(new AuthorizationGrantType(grantType))))
                         .redirectUris(uris -> uris.addAll(clientData.getRedirectUris()))
+                        .postLogoutRedirectUris(uris -> uris.addAll(clientData.getPostLogoutRedirectUris()))
                         .scopes(scopes -> scopes.addAll(clientData.getScopes()))
                         .clientSettings(ClientSettings.builder()
                                 .requireAuthorizationConsent(clientData.isRequireAuthorizationConsent())
