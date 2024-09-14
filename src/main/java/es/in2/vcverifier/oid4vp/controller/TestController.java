@@ -1,4 +1,4 @@
-package es.in2.vcverifier.oid4vp;
+package es.in2.vcverifier.oid4vp.controller;
 
 import com.nimbusds.jwt.JWTClaimsSet;
 import es.in2.vcverifier.crypto.CryptoComponent;

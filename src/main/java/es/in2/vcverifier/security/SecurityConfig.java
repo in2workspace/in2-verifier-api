@@ -22,7 +22,6 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfig {
 
 
-    // A Spring Security filter chain for authentication.
     @Bean
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
             throws Exception {
@@ -31,6 +30,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/generate-auth").permitAll()
                         .requestMatchers("/oid4vp/auth-request/*").permitAll()
+                        .requestMatchers("/oid4vp/auth-response").permitAll()
                         .requestMatchers("/login/qr").permitAll()
                         .anyRequest().authenticated()
 

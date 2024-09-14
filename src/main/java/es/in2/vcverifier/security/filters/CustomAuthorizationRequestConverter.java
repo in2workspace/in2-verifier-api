@@ -4,7 +4,10 @@ import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jwt.JWTClaimsSet;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.crypto.CryptoComponent;
-import es.in2.vcverifier.exception.*;
+import es.in2.vcverifier.exception.RequestMismatchException;
+import es.in2.vcverifier.exception.RequestObjectRetrievalException;
+import es.in2.vcverifier.exception.UnauthorizedClientException;
+import es.in2.vcverifier.exception.UnsupportedScopeException;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,9 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
-import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationConverter;
 
@@ -46,8 +47,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private final DIDService didService;
     private final JWTService jwtService;
     private final CryptoComponent cryptoComponent;
-    private final CacheStore<String> cacheStoreForRedirectUri;  // Cache para guardar state -> redirect_uri del OAuth2AuthorizationCodeRequestAuthenticationToken
-    private final CacheStore<String> cacheStoreForJwt;  // Cache para guardar state -> JWT
+    private final CacheStore<String> cacheStore;
 
     /**
      * The Authorization Request MUST be signed by the Client, and MUST use the request_uri parameter which enables
@@ -122,11 +122,11 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
 
             String signedAuthRequest = jwtService.generateJWT(buildAuthorizationRequestJwtPayload(scope, state));
 
-            cacheStoreForRedirectUri.add(state, signedAuthRequest);
+            cacheStore.add(state, signedAuthRequest);
 
             String nonce = generateNonce();
 
-            cacheStoreForJwt.add(nonce,signedAuthRequest);
+            cacheStore.add(nonce,signedAuthRequest);
 
             String authRequest = generateOpenId4VpUrl(nonce);
 
@@ -187,6 +187,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
         JWTClaimsSet payload = new JWTClaimsSet.Builder()
                 .issuer(cryptoComponent.getECKey().getKeyID())
+                .audience(cryptoComponent.getECKey().getKeyID())
                 .issueTime(Date.from(issueTime))
                 .expirationTime(Date.from(expirationTime))
                 .claim("client_id", cryptoComponent.getECKey().getKeyID())

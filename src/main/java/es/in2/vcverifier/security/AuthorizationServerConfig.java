@@ -33,8 +33,7 @@ public class AuthorizationServerConfig {
     private final CryptoComponent cryptoComponent;
     private final DIDService didService;
     private final JWTService jwtService;
-    private final CacheStore<String> cacheStoreForRedirectUri;
-    private final CacheStore<String> cacheStoreForJwt;
+    private final CacheStore<String> cacheStore;
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -47,7 +46,7 @@ public class AuthorizationServerConfig {
                                 // Adds an AuthenticationConverter (pre-processor) used when attempting to extract
                                 // an OAuth2 authorization request (or consent) from HttpServletRequest to an instance
                                 // of OAuth2AuthorizationCodeRequestAuthenticationToken or OAuth2AuthorizationConsentAuthenticationToken.
-                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStoreForRedirectUri,cacheStoreForJwt))
+                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStore))
                                 .errorResponseHandler(new CustomErrorResponseHandler())
                 )
                 .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0

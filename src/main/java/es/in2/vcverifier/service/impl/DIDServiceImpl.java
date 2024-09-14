@@ -1,5 +1,6 @@
-package es.in2.vcverifier.service;
+package es.in2.vcverifier.service.impl;
 
+import es.in2.vcverifier.service.DIDService;
 import io.github.novacrypto.base58.Base58;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ public class DIDServiceImpl implements DIDService {
         return null;
     }
 
+    @Override
     public byte[] getPublicKeyBytesFromDid(String did) {
         if (!did.startsWith("did:key:")) {
             throw new IllegalArgumentException("Unsupported DID type. Only did:key is supported for the moment.");

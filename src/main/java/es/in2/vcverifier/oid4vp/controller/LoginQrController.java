@@ -1,4 +1,4 @@
-package es.in2.vcverifier.oid4vp;
+package es.in2.vcverifier.oid4vp.controller;
 
 import net.glxn.qrgen.javase.QRCode;
 import org.springframework.stereotype.Controller;
@@ -7,9 +7,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Base64;
 
@@ -31,7 +28,7 @@ public class LoginQrController {
             throw new RuntimeException();
         }
 
-        return "qr-page";  // Página donde se mostrará el QR
+        return "qr-page";
     }
 
     private String generateQRCodeImageBase64(String barcodeText){

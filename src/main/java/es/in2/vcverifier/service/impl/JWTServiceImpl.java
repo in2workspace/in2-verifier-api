@@ -1,4 +1,4 @@
-package es.in2.vcverifier.service;
+package es.in2.vcverifier.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -16,6 +16,7 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.crypto.CryptoComponent;
 import es.in2.vcverifier.exception.JWTCreationException;
 import es.in2.vcverifier.exception.JWTVerificationException;
+import es.in2.vcverifier.service.JWTService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jce.ECNamedCurveTable;
