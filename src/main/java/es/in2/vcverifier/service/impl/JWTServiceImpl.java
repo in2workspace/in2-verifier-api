@@ -19,20 +19,10 @@ import es.in2.vcverifier.exception.JWTVerificationException;
 import es.in2.vcverifier.service.JWTService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.jce.ECNamedCurveTable;
-import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
-import org.bouncycastle.jce.spec.ECNamedCurveSpec;
-import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.springframework.stereotype.Service;
 
-import java.math.BigInteger;
-import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
-import java.security.spec.ECPoint;
-import java.security.spec.ECPublicKeySpec;
-import java.util.Arrays;
 import java.util.Map;
 
 @Slf4j
@@ -82,26 +72,8 @@ public class JWTServiceImpl implements JWTService {
 
     }
 
-    public void verifyJWTSignature(String jwt, byte[] publicKeyBytes) {
+    public void verifyJWTSignature(String jwt, PublicKey publicKey) {
         try {
-            // Set the curve as secp256r1
-            ECCurve curve = new SecP256R1Curve();
-            BigInteger x = new BigInteger(1, Arrays.copyOfRange(publicKeyBytes, 1, publicKeyBytes.length));
-
-            // Recover the Y coordinate from the X coordinate and the curve
-            BigInteger y = curve.decodePoint(publicKeyBytes).getYCoord().toBigInteger();
-
-            ECPoint point = new ECPoint(x, y);
-
-            // Fetch the ECParameterSpec for secp256r1
-            ECNamedCurveParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("secp256r1");
-            ECNamedCurveSpec params = new ECNamedCurveSpec("secp256r1", ecSpec.getCurve(), ecSpec.getG(), ecSpec.getN());
-
-            // Create a KeyFactory and generate the public key
-            KeyFactory kf = KeyFactory.getInstance("EC");
-            ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, params);
-            PublicKey publicKey = kf.generatePublic(pubKeySpec);
-
             // Parse the JWT and create a verifier
             SignedJWT signedJWT = SignedJWT.parse(jwt);
             ECDSAVerifier verifier = new ECDSAVerifier((ECPublicKey) publicKey);

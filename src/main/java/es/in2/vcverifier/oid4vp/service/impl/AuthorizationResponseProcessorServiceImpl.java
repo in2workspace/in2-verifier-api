@@ -48,7 +48,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         log.info("VP Token validated successfully");
 
         // Generate a nonce (code)
-        String nonce = generateNonce();
+        String nonce = UUID.randomUUID().toString();
         log.info("Nonce generated: {}", nonce);
 
         // Build the redirect URL with the code (nonce) and the state
@@ -65,11 +65,6 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    // Method to generate a nonce (code)
-    private String generateNonce() {
-        return UUID.randomUUID().toString();
     }
 }
 

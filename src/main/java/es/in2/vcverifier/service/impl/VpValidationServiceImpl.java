@@ -9,10 +9,13 @@ import es.in2.vcverifier.service.JWTService;
 import es.in2.vcverifier.service.VpValidationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.asn1.*;
 import org.springframework.stereotype.Service;
 
 import javax.security.auth.x500.X500Principal;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,6 +26,8 @@ import java.text.ParseException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *This class contains basic validation steps for the scope of validating a Verifiable Presentation (VP)
@@ -57,7 +62,6 @@ public class VpValidationServiceImpl implements VpValidationService {
             String credentialIssuerDid = jwtCredential.getPayload().toJSONObject().get("iss").toString();
 
 
-
             if (!isIssuerIdAllowed(credentialIssuerDid)) {
                 log.error("Issuer DID {} is not a trusted participant", credentialIssuerDid);
                 return false;
@@ -67,7 +71,7 @@ public class VpValidationServiceImpl implements VpValidationService {
             // Step 3: Extract the public key from JWT header and verify the signature
             Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
             PublicKey publicKey = extractAndVerifyCertificate(vcHeader,credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
-            jwtService.verifyJWTSignature(jwtCredential.serialize(), publicKey.getEncoded());  // Use JWTService to verify signature
+            jwtService.verifyJWTSignature(jwtCredential.serialize(), publicKey);  // Use JWTService to verify signature
 
 
             // Step 4: Extract the mandateeId from the Verifiable Credential
@@ -81,7 +85,7 @@ public class VpValidationServiceImpl implements VpValidationService {
             log.info("Mandatee ID {} is valid and allowed", mandateeId);
 
             // Step 5: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
-            byte[] holderPublicKey = didService.getPublicKeyBytesFromDid(mandateeId); // Get the holder's public key in bytes
+            PublicKey holderPublicKey = didService.getPublicKeyBytesFromDid(mandateeId); // Get the holder's public key in bytes
             jwtService.verifyJWTSignature(verifiablePresentation, holderPublicKey); // Validate the VP was signed by the holder DID
 
             return true; // All validations passed
@@ -103,18 +107,42 @@ public class VpValidationServiceImpl implements VpValidationService {
             // Parse the Verifiable Presentation (VP) JWT
             SignedJWT vpSignedJWT = SignedJWT.parse(verifiablePresentation);
 
-            // Extract the "verifiableCredential" claim, which is expected to be an array
-            Object vcClaim = vpSignedJWT.getJWTClaimsSet().getClaim("verifiableCredential");
+            // Extract the "vp" claim
+            Object vpClaim = vpSignedJWT.getJWTClaimsSet().getClaim("vp");
 
+            Object vcClaim = getVcClaim(vpClaim);
+
+            // Extract the first credential if it's a list or if it's a string
             Object firstCredential = getFirstCredential(vcClaim);
 
-            // Parse and return the first Verifiable Credential as a SignedJWT
+            // Parse and return the first Verifiable Credential as SignedJWT
             return SignedJWT.parse((String) firstCredential);
 
         } catch (ParseException e) {
-            throw new RuntimeException("Error extracting Verifiable Credential from Verifiable Presentation", e);
+            throw new RuntimeException("Error parsing the Verifiable Presentation or Verifiable Credential", e);
         }
     }
+
+    private static Object getVcClaim(Object vpClaim) {
+        if (vpClaim == null) {
+            throw new RuntimeException("The 'vp' claim was not found in the Verifiable Presentation");
+        }
+
+        // Ensure that vpClaim is an instance of Map (JSON object)
+        if (!(vpClaim instanceof Map<?, ?> vpMap)) {
+            throw new RuntimeException("The 'vp' claim is not a valid object");
+        }
+
+        // Extract the "verifiableCredential" claim inside "vp"
+        Object vcClaim = vpMap.get("verifiableCredential");
+
+        if (vcClaim == null) {
+            throw new RuntimeException("The 'verifiableCredential' claim was not found within 'vp'");
+        }
+
+        return vcClaim;
+    }
+
 
     private static Object getFirstCredential(Object vcClaim) {
         if (!(vcClaim instanceof List<?> verifiableCredentials)) {
@@ -165,8 +193,8 @@ public class VpValidationServiceImpl implements VpValidationService {
             throw new IllegalArgumentException("No certificate (x5c) found in JWT header");
         }
 
-        // Iterate through the certificate chain and check each one
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+
         for (Object certBase64Obj : x5c) {
             if (!(certBase64Obj instanceof String)) {
                 log.error("Invalid certificate format in x5c");
@@ -177,32 +205,78 @@ public class VpValidationServiceImpl implements VpValidationService {
             byte[] certBytes = Base64.getDecoder().decode((String) certBase64Obj);
             X509Certificate certificate = (X509Certificate) certificateFactory.generateCertificate(new java.io.ByteArrayInputStream(certBytes));
 
-            // Try extracting the organizationIdentifier from the DN (Distinguished Name)
+            // Extract the DN (Distinguished Name)
             X500Principal subject = certificate.getSubjectX500Principal();
             String distinguishedName = subject.getName();
             log.info("Extracted DN: {}", distinguishedName);
 
-            // Check if the expected organization ID is in the DN
-            if (distinguishedName.contains("organizationIdentifier=" + expectedOrgId)) {
-                log.info("Found matching organization identifier in DN: {}", expectedOrgId);
+            // Try to extract the organizationIdentifier from the DN
+            String orgIdentifierFromDN = extractOrganizationIdentifierFromDN(distinguishedName);
+            if (orgIdentifierFromDN != null && orgIdentifierFromDN.equals(expectedOrgId)) {
+                log.info("Found matching organization identifier in DN: {}", orgIdentifierFromDN);
                 return certificate.getPublicKey(); // Return the public key from the certificate
             }
 
-            // If organizationIdentifier might be stored in extensions, extract it from extensions (optional)
-            byte[] extValue = certificate.getExtensionValue("2.5.4.97"); // OID for organizationIdentifier
-            if (extValue != null) {
-                String extractedOrgId = new String(extValue); // Decode this properly, it's usually ASN.1 encoded
-                log.info("Extracted organizationIdentifier from extension: {}", extractedOrgId);
+        }
+        throw new Exception("Organization Identifier not found in certificates.");
+    }
 
-                if (extractedOrgId.contains(expectedOrgId)) {
-                    log.info("Found matching organization identifier in certificate extension: {}", expectedOrgId);
-                    return certificate.getPublicKey(); // Return the public key from the certificate
+    // Helper method to extract and decode the organizationIdentifier from the DN
+    private String extractOrganizationIdentifierFromDN(String distinguishedName) {
+        log.info("Extracting organizationIdentifier from DN: {}", distinguishedName);
+
+        // Use a regular expression to find the 2.5.4.97 OID in the DN
+        Pattern pattern = Pattern.compile("2\\.5\\.4\\.97=#([0-9A-F]+)", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(distinguishedName);
+
+        if (matcher.find()) {
+            String hexValue = matcher.group(1);
+            log.info("Extracted hex value for organizationIdentifier: {}", hexValue);
+
+            // Decode the hex string properly as ASN.1 encoded value
+            return decodeHexToReadableString(hexValue);
+        } else {
+            log.warn("OID 2.5.4.97 not found in DN: {}", distinguishedName);
+        }
+        return null; // Return null if organizationIdentifier is not found
+    }
+
+
+    // Method to properly decode the hex value as an ASN.1 structure
+    private String decodeHexToReadableString(String hexValue) {
+        try {
+            byte[] octets = hexStringToByteArray(hexValue);
+            try (ASN1InputStream asn1InputStream = new ASN1InputStream(new ByteArrayInputStream(octets))) {
+                ASN1Primitive asn1Primitive = asn1InputStream.readObject();
+
+                if (asn1Primitive instanceof ASN1OctetString octetString) {
+                    return new String(octetString.getOctets(), StandardCharsets.UTF_8); // Try to decode as UTF-8
+                } else if (asn1Primitive instanceof ASN1PrintableString) {
+                    return ((ASN1PrintableString) asn1Primitive).getString();
+                } else if (asn1Primitive instanceof ASN1UTF8String) {
+                    return ((ASN1UTF8String) asn1Primitive).getString();
+                } else if (asn1Primitive instanceof ASN1IA5String) {
+                    return ((ASN1IA5String) asn1Primitive).getString();
+                } else {
+                    log.warn("Unrecognized ASN.1 type: {}", asn1Primitive.getClass().getSimpleName());
                 }
             }
+        } catch (IOException e) {
+            log.error("Error decoding hex value to readable string", e);
         }
+        return null;
+    }
 
-        // If no certificate matches the expected organization ID, throw an exception
-        throw new IllegalStateException("No matching organization identifier found in any certificate in the chain");
+
+    // Convert hex string to byte array
+    private byte[] hexStringToByteArray(String hex) {
+        int len = hex.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
+                    + Character.digit(hex.charAt(i+1), 16));
+        }
+        return data;
     }
 }
 

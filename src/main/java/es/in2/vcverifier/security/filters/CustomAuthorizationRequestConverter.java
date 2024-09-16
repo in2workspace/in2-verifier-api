@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.PublicKey;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -115,14 +116,14 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 throw new RequestMismatchException("OAuth 2.0 parameters do not match the JWT claims.");
             }
             // Use DIDService to get the public key bytes
-            byte[] publicKeyBytes = didService.getPublicKeyBytesFromDid(clientId);
+            PublicKey publicKey = didService.getPublicKeyBytesFromDid(clientId);
 
             // Use JWTService to verify the JWT signature
-            jwtService.verifyJWTSignature(jwt, publicKeyBytes);
+            jwtService.verifyJWTSignature(jwt, publicKey);
 
             String signedAuthRequest = jwtService.generateJWT(buildAuthorizationRequestJwtPayload(scope, state));
 
-            cacheStore.add(state, signedAuthRequest);
+            cacheStore.add(state, jwsObject.getPayload().toJSONObject().get("redirect_uri").toString());
 
             String nonce = generateNonce();
 
