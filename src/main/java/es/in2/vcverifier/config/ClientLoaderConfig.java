@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -23,8 +24,6 @@ import java.util.UUID;
 public class ClientLoaderConfig {
 
     private final ObjectMapper objectMapper;
-
-
 
     @Bean
     public RegisteredClientRepository registeredClientRepository() {
@@ -43,7 +42,7 @@ public class ClientLoaderConfig {
 
             // Convertir cada ClientData a RegisteredClient y agregarlo a la lista
             for (ClientData clientData : clientsData) {
-                RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                RegisteredClient.Builder registeredClientBuilder = RegisteredClient.withId(UUID.randomUUID().toString())
                         .clientId(clientData.getClientId())
                         .clientAuthenticationMethods(authMethods -> clientData.getClientAuthenticationMethods().forEach(method ->
                                 authMethods.add(new ClientAuthenticationMethod(method))))
@@ -51,19 +50,36 @@ public class ClientLoaderConfig {
                                 grantTypes.add(new AuthorizationGrantType(grantType))))
                         .redirectUris(uris -> uris.addAll(clientData.getRedirectUris()))
                         .postLogoutRedirectUris(uris -> uris.addAll(clientData.getPostLogoutRedirectUris()))
-                        .scopes(scopes -> scopes.addAll(clientData.getScopes()))
-                        .clientSettings(ClientSettings.builder()
-                                .requireAuthorizationConsent(clientData.isRequireAuthorizationConsent())
-                                .build())
-                        .build();
+                        .scopes(scopes -> scopes.addAll(clientData.getScopes()));
 
-                registeredClients.add(registeredClient);
+                // Configurar ClientSettings
+                ClientSettings.Builder clientSettingsBuilder = ClientSettings.builder()
+                        .requireAuthorizationConsent(clientData.getRequireAuthorizationConsent());
+
+                // Configurar valores opcionales si están presentes en el JSON
+                if (clientData.getJwkSetUrl() != null) {
+                    clientSettingsBuilder.jwkSetUrl(clientData.getJwkSetUrl());
+                }
+
+                if (clientData.getTokenEndpointAuthenticationSigningAlgorithm() != null) {
+                    clientSettingsBuilder.tokenEndpointAuthenticationSigningAlgorithm(
+                            SignatureAlgorithm.from(clientData.getTokenEndpointAuthenticationSigningAlgorithm()));
+                }
+
+                if (clientData.getRequireProofKey() != null) {
+                    clientSettingsBuilder.requireProofKey(clientData.getRequireProofKey());
+                }
+
+                registeredClientBuilder.clientSettings(clientSettingsBuilder.build());
+
+                registeredClients.add(registeredClientBuilder.build());
             }
             return registeredClients;
         } catch (Exception e) {
             throw new RuntimeException("Error loading clients from JSON", e);
         }
     }
+
 }
 
 

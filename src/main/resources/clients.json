@@ -10,5 +10,18 @@
       "http://127.0.0.1:8080/"
     ],
     "requireAuthorizationConsent": true
+  },
+  {
+    "id": "5678",
+    "clientId": "did:key:zDnaesk2GzHK9cUDPMisrgGN2iMzECYqyeiKNnJjUwwf94zcM",
+    "redirectUris": [],
+    "scopes": [],
+    "clientAuthenticationMethods": ["client_secret_jwt"],
+    "authorizationGrantTypes": ["client_credentials"],
+    "postLogoutRedirectUris": [],
+    "requireAuthorizationConsent": false,
+    "requireProofKey" : false,
+    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaesk2GzHK9cUDPMisrgGN2iMzECYqyeiKNnJjUwwf94zcM",
+    "tokenEndpointAuthenticationSigningAlgorithm" : "ES256"
   }
 ]

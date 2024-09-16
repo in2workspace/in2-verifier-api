@@ -1,9 +1,12 @@
 package es.in2.vcverifier.model;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
+
     @Getter
+    @Setter
     public class ClientData {
         private String id;
         private String clientId;
@@ -11,39 +14,9 @@ import java.util.List;
         private List<String> scopes;
         private List<String> clientAuthenticationMethods;
         private List<String> authorizationGrantTypes;
-        private boolean requireAuthorizationConsent;
+        private Boolean requireAuthorizationConsent;
         private List<String> postLogoutRedirectUris;
-
-        // Getters y setters
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public void setClientId(String clientId) {
-            this.clientId = clientId;
-        }
-
-        public void setRedirectUris(List<String> redirectUris) {
-            this.redirectUris = redirectUris;
-        }
-
-        public void setScopes(List<String> scopes) {
-            this.scopes = scopes;
-        }
-
-        public void setClientAuthenticationMethods(List<String> clientAuthenticationMethods) {
-            this.clientAuthenticationMethods = clientAuthenticationMethods;
-        }
-
-        public void setAuthorizationGrantTypes(List<String> authorizationGrantTypes) {
-            this.authorizationGrantTypes = authorizationGrantTypes;
-        }
-
-        public void setRequireAuthorizationConsent(boolean requireAuthorizationConsent) {
-            this.requireAuthorizationConsent = requireAuthorizationConsent;
-        }
-        public void setPostLogoutRedirectUris(List<String> postLogoutRedirectUris) {
-            this.postLogoutRedirectUris = postLogoutRedirectUris;
-        }
+        private Boolean requireProofKey;
+        private String jwkSetUrl;
+        private String tokenEndpointAuthenticationSigningAlgorithm;
     }
