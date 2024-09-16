@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
+import java.text.ParseException;
 import java.util.Map;
 
 @Slf4j
@@ -88,4 +89,13 @@ public class JWTServiceImpl implements JWTService {
     }
 
 
+    @Override
+    public SignedJWT parseJWT(String jwt) {
+        try {
+            return SignedJWT.parse(jwt);
+        } catch (ParseException e) {
+            //TODO Create Custom Exception
+            throw new RuntimeException(e);
+        }
+    }
 }

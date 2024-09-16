@@ -116,7 +116,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 throw new RequestMismatchException("OAuth 2.0 parameters do not match the JWT claims.");
             }
             // Use DIDService to get the public key bytes
-            PublicKey publicKey = didService.getPublicKeyBytesFromDid(clientId);
+            PublicKey publicKey = didService.getPublicKeyFromDid(clientId);
 
             // Use JWTService to verify the JWT signature
             jwtService.verifyJWTSignature(jwt, publicKey);

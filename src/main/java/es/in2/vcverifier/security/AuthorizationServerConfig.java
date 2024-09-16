@@ -7,6 +7,7 @@ import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.crypto.CryptoComponent;
 import es.in2.vcverifier.security.filters.CustomAuthorizationRequestConverter;
 import es.in2.vcverifier.security.filters.CustomErrorResponseHandler;
+import es.in2.vcverifier.security.filters.CustomTokenRequestConverter;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +17,13 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
@@ -49,6 +55,10 @@ public class AuthorizationServerConfig {
                                 .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStore))
                                 .errorResponseHandler(new CustomErrorResponseHandler())
                 )
+                .tokenEndpoint(tokenEndpoint ->
+                        tokenEndpoint
+                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService))
+                )
                 .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
 
 //        http
@@ -74,7 +84,12 @@ public class AuthorizationServerConfig {
 
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
-        return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+        NimbusJwtDecoder jwtDecoder = (NimbusJwtDecoder) OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+        OAuth2TokenValidator<Jwt> audienceValidator = new JwtClaimValidator<>(
+                "aud", "http://localhost:9000"::equals);
+        OAuth2TokenValidator<Jwt> withAudience = new DelegatingOAuth2TokenValidator<>(audienceValidator);
+        jwtDecoder.setJwtValidator(withAudience);
+        return jwtDecoder;
     }
 
     // Customiza los endpoint del Authorization Server
