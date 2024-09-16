@@ -4,10 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.JWSSigner;
+import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.jwk.ECKey;
@@ -97,5 +94,55 @@ public class JWTServiceImpl implements JWTService {
             //TODO Create Custom Exception
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public Payload getPayloadFromSignedJWT(SignedJWT signedJWT) {
+        return signedJWT.getPayload();
+    }
+
+    @Override
+    public String getIssuerFromPayload(Payload payload) {
+        String iss = (String) payload.toJSONObject().get("iss");
+        if (iss == null || iss.trim().isEmpty()) {
+            throw new IllegalArgumentException("The 'iss' (issuer) claim is missing or empty in the JWT payload.");
+        }
+        return iss;
+    }
+
+    @Override
+    public String getSubjectFromPayload(Payload payload) {
+        String sub = (String) payload.toJSONObject().get("sub");
+        if (sub == null || sub.trim().isEmpty()) {
+            throw new IllegalArgumentException("The 'sub' (subject) claim is missing or empty in the JWT payload.");
+        }
+        return sub;
+    }
+
+    @Override
+    public String getAudienceFromPayload(Payload payload) {
+        String aud = (String) payload.toJSONObject().get("aud");
+        if (aud == null || aud.trim().isEmpty()) {
+            throw new IllegalArgumentException("The 'aud' (audience) claim is missing or empty in the JWT payload.");
+        }
+        return aud;
+    }
+
+    @Override
+    public String getJwtIdFromPayload(Payload payload) {
+        String jti = (String) payload.toJSONObject().get("jti");
+        if (jti == null || jti.trim().isEmpty()) {
+            throw new IllegalArgumentException("The 'jti' (JWT ID) claim is missing or empty in the JWT payload.");
+        }
+        return jti;
+    }
+
+    @Override
+    public long getExpirationFromPayload(Payload payload) {
+        Long exp = (Long) payload.toJSONObject().get("exp");
+        if (exp == null || exp <= 0) {
+            throw new IllegalArgumentException("The 'exp' (expiration) claim is missing or invalid in the JWT payload.");
+        }
+        return exp;
     }
 }

@@ -2,6 +2,7 @@ package es.in2.vcverifier.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.model.LEARCredentialEmployee;
 import es.in2.vcverifier.service.DIDService;
@@ -51,6 +52,22 @@ public class VpValidationServiceImpl implements VpValidationService {
     private static final String PARTICIPANTS_ID_FILE_PATH = "src/main/resources/static/participants_id_list.txt";
 
 
+    @Override
+    public boolean validateJWTClaims(String clientId, Payload payload) {
+
+        String iss = jwtService.getIssuerFromPayload(payload);
+        String sub = jwtService.getSubjectFromPayload(payload);
+        String aud = jwtService.getAudienceFromPayload(payload);
+        String jti = jwtService.getJwtIdFromPayload(payload);
+        Long exp = jwtService.getExpirationFromPayload(payload);
+
+        //TODO iss and sub == clientId
+        //     aud == Auth Server value
+        //     jti == check jti
+        //     exp == checkExpiration
+
+        return false;
+    }
 
     @Override
     public boolean validateVerifiablePresentation(String verifiablePresentation) {
