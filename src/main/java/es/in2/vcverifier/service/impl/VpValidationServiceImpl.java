@@ -4,7 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
+import es.in2.vcverifier.config.JtiTokenCache;
+import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.model.LEARCredentialEmployee;
+import es.in2.vcverifier.model.LEARCredentialMachine;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
 import es.in2.vcverifier.service.VpValidationService;
@@ -45,8 +48,10 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class VpValidationServiceImpl implements VpValidationService {
 
+    private final SecurityProperties securityProperties;
     private final DIDService didService; // Service for handling trusted DIDs
     private final JWTService jwtService; // Service for JWT-related validations
+    private final JtiTokenCache jtiTokenCache;
     private final ObjectMapper objectMapper;
     private static final String ISSUER_ID_FILE_PATH = "src/main/resources/static/issuer_id_list.txt";
     private static final String PARTICIPANTS_ID_FILE_PATH = "src/main/resources/static/participants_id_list.txt";
@@ -57,16 +62,43 @@ public class VpValidationServiceImpl implements VpValidationService {
 
         String iss = jwtService.getIssuerFromPayload(payload);
         String sub = jwtService.getSubjectFromPayload(payload);
+
+        // 1. Check if 'iss' (issuer) and 'sub' (subject) are equal to the clientId
+        if (!iss.equals(clientId)) {
+            log.error("VpValidationServiceImpl -- validateJWTClaims -- The 'iss' (issuer) claim does not match the clientId.");
+            return false;
+        }
+        if (!sub.equals(clientId)) {
+            log.error("VpValidationServiceImpl -- validateJWTClaims -- The 'sub' (subject) claim does not match the clientId.");
+            return false;
+        }
+
         String aud = jwtService.getAudienceFromPayload(payload);
+
+        // 2. Validate that 'aud' matches the expected value (the authorization server's audience)
+        String expectedAudience = securityProperties.authorizationServer();
+        if (!aud.equals(expectedAudience)) {
+            log.error("VpValidationServiceImpl -- validateJWTClaims -- The 'aud' (audience) claim does not match the expected audience.");
+            return false;
+        }
+
+        // 3. Verify the uniqueness of 'jti' (if you need to ensure it has not been reused)
         String jti = jwtService.getJwtIdFromPayload(payload);
-        Long exp = jwtService.getExpirationFromPayload(payload);
+        if (jtiTokenCache.isJtiPresent(jti)) {
+            log.error("VpValidationServiceImpl -- validateJWTClaims -- The token with jti: {} has already been used.", jti);
+            return false;
+        } else {
+            jtiTokenCache.addJti(jti);
+        }
 
-        //TODO iss and sub == clientId
-        //     aud == Auth Server value
-        //     jti == check jti
-        //     exp == checkExpiration
-
-        return false;
+        // 4. Validate that 'exp' (expiration) has not passed
+        long exp = jwtService.getExpirationFromPayload(payload);
+        long currentTimeInSeconds = System.currentTimeMillis() / 1000;
+        if (exp <= currentTimeInSeconds) {
+            log.error("VpValidationServiceImpl -- validateJWTClaims -- The 'exp' (expiration) claim has expired.");
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -74,10 +106,10 @@ public class VpValidationServiceImpl implements VpValidationService {
         try {
             // Step 1: Extract the Verifiable Credential (VC) from the VP (JWT)
             SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
+            Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
 
             // Step 2: Validate the issuer
-            String credentialIssuerDid = jwtCredential.getPayload().toJSONObject().get("iss").toString();
-
+            String credentialIssuerDid = jwtService.getIssuerFromPayload(payload);
 
             if (!isIssuerIdAllowed(credentialIssuerDid)) {
                 log.error("Issuer DID {} is not a trusted participant", credentialIssuerDid);
@@ -90,9 +122,11 @@ public class VpValidationServiceImpl implements VpValidationService {
             PublicKey publicKey = extractAndVerifyCertificate(vcHeader,credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
             jwtService.verifyJWTSignature(jwtCredential.serialize(), publicKey);  // Use JWTService to verify signature
 
+            //TODO Differentiate LEARCredentialEmployee against LEARCredentialMachine
 
             // Step 4: Extract the mandateeId from the Verifiable Credential
-            LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(jwtCredential.getPayload().toJSONObject().get("vc").toString());
+            LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(jwtService.getVcFromPayload(payload));
+
             String mandateeId = learCredentialEmployee.credentialSubject().mandate().mandatee().id();
 
             if (!isParticipantIdAllowed(mandateeId)) {
@@ -109,6 +143,14 @@ public class VpValidationServiceImpl implements VpValidationService {
         } catch (Exception e) {
             log.error("Error during VP validation: {}", e.getMessage());
             return false;
+        }
+    }
+    //TODO implement this method
+    private LEARCredentialMachine mapCredentialToLEARCredentialMachine(String learCredential) {
+        try {
+            return objectMapper.readValue(learCredential, LEARCredentialMachine.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
     }
 

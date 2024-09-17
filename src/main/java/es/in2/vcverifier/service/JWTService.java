@@ -25,4 +25,6 @@ public interface JWTService {
 
     long getExpirationFromPayload(Payload payload);
 
+    String getVcFromPayload(Payload payload);
+
 }

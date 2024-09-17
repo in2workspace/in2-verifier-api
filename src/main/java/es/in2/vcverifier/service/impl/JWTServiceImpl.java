@@ -145,4 +145,13 @@ public class JWTServiceImpl implements JWTService {
         }
         return exp;
     }
+
+    @Override
+    public String getVcFromPayload(Payload payload) {
+        String vc = payload.toJSONObject().get("vc").toString();
+        if (vc == null || vc.trim().isEmpty()) {
+            throw new IllegalArgumentException("The 'vc' (Verifiable Credential) claim is missing or empty in the JWT payload.");
+        }
+        return vc;
+    }
 }

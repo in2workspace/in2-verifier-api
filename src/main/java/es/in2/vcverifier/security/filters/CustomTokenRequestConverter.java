@@ -57,8 +57,18 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         SignedJWT signedJWT = jwtService.parseJWT(clientAssertion);
         Payload payload = jwtService.getPayloadFromSignedJWT(signedJWT);
 
-        boolean claimsValidated = vpValidationService.validateJWTClaims(clientId,payload);
+        boolean isValid = vpValidationService.validateJWTClaims(clientId,payload);
+        if (!isValid) {
+            log.error("JWT Claims from Assertion are Invalid");
+            throw new IllegalArgumentException("Invalid JWT Claims from Assertion");
+        }
 
+        isValid = vpValidationService.validateVerifiablePresentation(clientAssertion);
+        if (!isValid) {
+            log.error("VP Token is invalid");
+            throw new IllegalArgumentException("Invalid VP Token");
+        }
+        log.info("VP Token validated successfully");
 
         return new OAuth2ClientCredentialsAuthenticationToken(clientPrincipal,null,null);
     }
