@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigInteger;
+import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECPoint;
 import java.util.Arrays;
 import java.util.Base64;
@@ -25,10 +27,11 @@ public class ResolverController {
 
     @GetMapping("/{id}")
     public CustomJWKS resolveDid(@PathVariable String id) {
-        byte [] publicKeyBytes = didService.getPublicKeyBytesFromDid(id);
-        BigInteger x = new BigInteger(1, Arrays.copyOfRange(publicKeyBytes, 1, publicKeyBytes.length));
-        BigInteger y = new SecP256R1Curve().decodePoint(publicKeyBytes).getYCoord().toBigInteger();
-        ECPoint point = new ECPoint(x, y);
+        PublicKey publicKey = didService.getPublicKeyFromDid(id);
+
+        ECPublicKey ecPublicKey = (ECPublicKey) publicKey;
+        ECPoint point = ecPublicKey.getW();
+
         CustomJWKS customJWKS = CustomJWKS.builder()
                 .keys(List.of(CustomJWKS.CustomJWK.builder()
                         .kty("EC")
@@ -39,8 +42,10 @@ public class ResolverController {
                         .build()
                 ))
                 .build();
+
         log.info("Resolved DID {} to JWK {}", id, customJWKS);
         return customJWKS;
     }
+
 
 }
