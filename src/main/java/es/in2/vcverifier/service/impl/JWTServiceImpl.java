@@ -7,12 +7,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
+import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.crypto.CryptoComponent;
 import es.in2.vcverifier.exception.JWTCreationException;
 import es.in2.vcverifier.exception.JWTVerificationException;
+import es.in2.vcverifier.model.KeyType;
 import es.in2.vcverifier.service.JWTService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.util.Map;
 
@@ -69,21 +72,45 @@ public class JWTServiceImpl implements JWTService {
         }
 
     }
+    @Override
 
-    public void verifyJWTSignature(String jwt, PublicKey publicKey) {
+    public void verifyJWTSignature(String jwt, PublicKey publicKey, KeyType keyType) {
         try {
-            // Parse the JWT and create a verifier
+            // Parse the JWT
             SignedJWT signedJWT = SignedJWT.parse(jwt);
-            ECDSAVerifier verifier = new ECDSAVerifier((ECPublicKey) publicKey);
+
+            // Create the appropriate verifier based on the key type
+            JWSVerifier verifier = createVerifier(publicKey, keyType);
 
             // Verify the signature
             if (!signedJWT.verify(verifier)) {
                 throw new JWTVerificationException("Invalid JWT signature");
             }
+
         } catch (Exception e) {
             throw new RuntimeException("JWT signature verification failed.", e);
         }
     }
+
+    private JWSVerifier createVerifier(PublicKey publicKey, KeyType keyType) throws JOSEException {
+        return switch (keyType) {
+            case EC -> {
+                if (!(publicKey instanceof ECPublicKey)) {
+                    throw new IllegalArgumentException("Invalid key type for EC verification");
+                }
+                yield new ECDSAVerifier((ECPublicKey) publicKey);
+            }
+            case RSA -> {
+                if (!(publicKey instanceof RSAPublicKey)) {
+                    throw new IllegalArgumentException("Invalid key type for RSA verification");
+                }
+                yield new RSASSAVerifier((RSAPublicKey) publicKey);
+            }
+            default -> throw new IllegalArgumentException("Unsupported key type");
+        };
+    }
+
+
 
 
     @Override
