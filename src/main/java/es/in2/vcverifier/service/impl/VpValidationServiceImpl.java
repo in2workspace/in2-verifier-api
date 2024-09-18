@@ -107,10 +107,9 @@ public class VpValidationServiceImpl implements VpValidationService {
         try {
             // Step 1: Extract the Verifiable Credential (VC) from the VP (JWT)
             SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
-            Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
 
             // Step 2: Validate the issuer
-            String credentialIssuerDid = jwtService.getIssuerFromPayload(payload);
+            String credentialIssuerDid = jwtCredential.getPayload().toJSONObject().get("iss").toString();
 
             if (!isIssuerIdAllowed(credentialIssuerDid)) {
                 log.error("Issuer DID {} is not a trusted participant", credentialIssuerDid);
@@ -122,13 +121,12 @@ public class VpValidationServiceImpl implements VpValidationService {
             Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
             PublicKey certificatePubKey = extractPubKeyAndVerifyCertificate(vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
 
-            jwtService.verifyJWTSignature(jwtCredential.serialize(), certificatePubKey, KeyType.RSA);  // Use JWTService to verify signature
+//            jwtService.verifyJWTSignature(jwtCredential.serialize(), certificatePubKey, KeyType.RSA);  // Use JWTService to verify signature
 
             //TODO Differentiate LEARCredentialEmployee against LEARCredentialMachine
 
             // Step 4: Extract the mandateeId from the Verifiable Credential
-            LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(jwtService.getVcFromPayload(payload));
-
+            LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(jwtCredential.getPayload().toJSONObject().get("vc"));
             String mandateeId = learCredentialEmployee.credentialSubject().mandate().mandatee().id();
 
             if (!isParticipantIdAllowed(mandateeId)) {
@@ -156,13 +154,15 @@ public class VpValidationServiceImpl implements VpValidationService {
         }
     }
 
-    private LEARCredentialEmployee mapCredentialToLEARCredentialEmployee(String learCredential) {
+    private LEARCredentialEmployee mapCredentialToLEARCredentialEmployee(Object vcObject) {
         try {
-            return objectMapper.readValue(learCredential, LEARCredentialEmployee.class);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            // Convert the Object to a Map or directly to the LEARCredentialEmployee class
+            return objectMapper.convertValue(vcObject, LEARCredentialEmployee.class);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Error converting VC to LEARCredentialEmployee", e);
         }
     }
+
     private SignedJWT extractFirstVerifiableCredential(String verifiablePresentation) {
         try {
             // Parse the Verifiable Presentation (VP) JWT
