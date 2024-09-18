@@ -1,6 +1,5 @@
 package es.in2.vcverifier.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
@@ -117,15 +116,16 @@ public class VpValidationServiceImpl implements VpValidationService {
             }
             log.info("Issuer DID {} is a trusted participant", credentialIssuerDid);
 
-            // Step 3: Extract the public key from JWT header and verify the signature
+            // Step 3: Verify the signature and the organizationId of the credential signature
             Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
-            PublicKey certificatePubKey = extractPubKeyAndVerifyCertificate(vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
-
-            //jwtService.verifyJWTSignature(jwtCredential.serialize(), certificatePubKey, KeyType.RSA);  // Use JWTService to verify signature
-
-            //TODO Differentiate LEARCredentialEmployee against LEARCredentialMachine
+            // TODO this must validate the JADES signature in the future
+            boolean isCertValid = extractAndVerifyCertificate(vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
+            if (!isCertValid) {
+                throw new RuntimeException("Certificate validation failed");
+            }
 
             // Step 4: Extract the mandateeId from the Verifiable Credential
+            //TODO Differentiate LEARCredentialEmployee against LEARCredentialMachine
             LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(jwtCredential.getPayload().toJSONObject().get("vc"));
             String mandateeId = learCredentialEmployee.credentialSubject().mandate().mandatee().id();
 
@@ -242,7 +242,7 @@ public class VpValidationServiceImpl implements VpValidationService {
     }
 
 
-    private PublicKey extractPubKeyAndVerifyCertificate(Map<String, Object> vcHeader, String expectedOrgId) throws Exception {
+    private boolean extractAndVerifyCertificate(Map<String, Object> vcHeader, String expectedOrgId) throws Exception {
         // Retrieve the x5c claim (certificate chain)
         Object x5cObj = vcHeader.get("x5c");
 
@@ -275,12 +275,14 @@ public class VpValidationServiceImpl implements VpValidationService {
             String orgIdentifierFromDN = extractOrganizationIdentifierFromDN(distinguishedName);
             if (orgIdentifierFromDN != null && orgIdentifierFromDN.equals("VATEU-B99999999")) {
                 log.info("Found matching organization identifier in DN: {}", orgIdentifierFromDN);
-                return certificate.getPublicKey(); // Return the public key from the certificate
+                return true; // Organization identifier matches, return true
             }
-
         }
+
+        // If the loop finishes without finding a match, throw an exception
         throw new Exception("Organization Identifier not found in certificates.");
     }
+
 
     // Helper method to extract and decode the organizationIdentifier from the DN
     private String extractOrganizationIdentifierFromDN(String distinguishedName) {
