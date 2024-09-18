@@ -1,6 +1,5 @@
 package es.in2.vcverifier.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
@@ -119,18 +118,14 @@ public class VpValidationServiceImpl implements VpValidationService {
 
             // Step 3: Verify the signature and the organizationId of the credential signature
             Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
-            PublicKey certificatePubKey = extractPubKeyAndVerifyCertificate(vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
-
-            //jwtService.verifyJWTSignature(jwtCredential.serialize(), certificatePubKey, KeyType.RSA);  // Use JWTService to verify signature
-
-            //TODO Differentiate LEARCredentialEmployee against LEARCredentialMachine
-
             // TODO this must validate the JADES signature in the future
             boolean isCertValid = extractAndVerifyCertificate(vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
             if (!isCertValid) {
                 throw new RuntimeException("Certificate validation failed");
             }
+
             // Step 4: Extract the mandateeId from the Verifiable Credential
+            //TODO Differentiate LEARCredentialEmployee against LEARCredentialMachine
             LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(jwtCredential.getPayload().toJSONObject().get("vc"));
             String mandateeId = learCredentialEmployee.credentialSubject().mandate().mandatee().id();
 

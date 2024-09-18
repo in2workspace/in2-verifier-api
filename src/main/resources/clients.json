@@ -10,44 +10,5 @@
       "http://127.0.0.1:8080/"
     ],
     "requireAuthorizationConsent": true
-  },
-  {
-    "id": "5678",
-    "clientId": "did:key:zDnaesk2GzHK9cUDPMisrgGN2iMzECYqyeiKNnJjUwwf94zcM",
-    "redirectUris": [],
-    "scopes": [],
-    "clientAuthenticationMethods": ["client_secret_jwt"],
-    "authorizationGrantTypes": ["client_credentials"],
-    "postLogoutRedirectUris": [],
-    "requireAuthorizationConsent": false,
-    "requireProofKey" : false,
-    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaesk2GzHK9cUDPMisrgGN2iMzECYqyeiKNnJjUwwf94zcM",
-    "tokenEndpointAuthenticationSigningAlgorithm" : "ES256"
-  },
-  {
-    "clientId": "did:key:zDnaemGipR9rLvqZXmTrqjdTc1AsSdZ2K7pWfF5qPUxf1Kk1P",
-    "redirectUris": [],
-    "scopes": [],
-    "clientAuthenticationMethods": ["client_secret_jwt"],
-    "authorizationGrantTypes": ["client_credentials"],
-    "postLogoutRedirectUris": [],
-    "requireAuthorizationConsent": false,
-    "requireProofKey" : false,
-    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaemGipR9rLvqZXmTrqjdTc1AsSdZ2K7pWfF5qPUxf1Kk1P",
-    "tokenEndpointAuthenticationSigningAlgorithm" : "ES256",
-    "tokenIdSigningAlgorithm" : "ES256"
-  },
-  {
-    "clientId": "did:key:zDnaeV2n9nK8Uabvcgaa9XdJkdbqUahLLpbt4WqS83F8pPCv7",
-    "redirectUris": [],
-    "scopes": [],
-    "clientAuthenticationMethods": ["client_secret_jwt"],
-    "authorizationGrantTypes": ["client_credentials"],
-    "postLogoutRedirectUris": [],
-    "requireAuthorizationConsent": false,
-    "requireProofKey" : false,
-    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaeV2n9nK8Uabvcgaa9XdJkdbqUahLLpbt4WqS83F8pPCv7",
-    "tokenEndpointAuthenticationSigningAlgorithm" : "ES256",
-    "tokenIdSigningAlgorithm" : "ES256"
   }
 ]
