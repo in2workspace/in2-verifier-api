@@ -25,7 +25,7 @@
     "tokenEndpointAuthenticationSigningAlgorithm" : "ES256"
   },
   {
-    "clientId": "did:key:zDnaek9mFoa575nT8BanQgEukTHijjoC33R9Mq9hx7bhBDtMN",
+    "clientId": "did:key:zDnaemGipR9rLvqZXmTrqjdTc1AsSdZ2K7pWfF5qPUxf1Kk1P",
     "redirectUris": [],
     "scopes": [],
     "clientAuthenticationMethods": ["client_secret_jwt"],
@@ -33,7 +33,21 @@
     "postLogoutRedirectUris": [],
     "requireAuthorizationConsent": false,
     "requireProofKey" : false,
-    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaek9mFoa575nT8BanQgEukTHijjoC33R9Mq9hx7bhBDtMN",
-    "tokenEndpointAuthenticationSigningAlgorithm" : "ES256"
+    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaemGipR9rLvqZXmTrqjdTc1AsSdZ2K7pWfF5qPUxf1Kk1P",
+    "tokenEndpointAuthenticationSigningAlgorithm" : "ES256",
+    "tokenIdSigningAlgorithm" : "ES256"
+  },
+  {
+    "clientId": "did:key:zDnaeV2n9nK8Uabvcgaa9XdJkdbqUahLLpbt4WqS83F8pPCv7",
+    "redirectUris": [],
+    "scopes": [],
+    "clientAuthenticationMethods": ["client_secret_jwt"],
+    "authorizationGrantTypes": ["client_credentials"],
+    "postLogoutRedirectUris": [],
+    "requireAuthorizationConsent": false,
+    "requireProofKey" : false,
+    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaeV2n9nK8Uabvcgaa9XdJkdbqUahLLpbt4WqS83F8pPCv7",
+    "tokenEndpointAuthenticationSigningAlgorithm" : "ES256",
+    "tokenIdSigningAlgorithm" : "ES256"
   }
 ]

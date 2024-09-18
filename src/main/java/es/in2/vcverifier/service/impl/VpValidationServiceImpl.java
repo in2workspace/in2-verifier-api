@@ -121,7 +121,7 @@ public class VpValidationServiceImpl implements VpValidationService {
             Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
             PublicKey certificatePubKey = extractPubKeyAndVerifyCertificate(vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
 
-//            jwtService.verifyJWTSignature(jwtCredential.serialize(), certificatePubKey, KeyType.RSA);  // Use JWTService to verify signature
+            //jwtService.verifyJWTSignature(jwtCredential.serialize(), certificatePubKey, KeyType.RSA);  // Use JWTService to verify signature
 
             //TODO Differentiate LEARCredentialEmployee against LEARCredentialMachine
 
@@ -146,11 +146,11 @@ public class VpValidationServiceImpl implements VpValidationService {
         }
     }
     //TODO implement this method
-    private LEARCredentialMachine mapCredentialToLEARCredentialMachine(String learCredential) {
+    private LEARCredentialMachine mapCredentialToLEARCredentialMachine(Object vcObject) {
         try {
-            return objectMapper.readValue(learCredential, LEARCredentialMachine.class);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            return objectMapper.convertValue(vcObject, LEARCredentialMachine.class);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Error converting VC to LEARCredentialMachine", e);
         }
     }
 
