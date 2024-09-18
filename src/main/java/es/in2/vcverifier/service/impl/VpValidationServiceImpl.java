@@ -83,14 +83,14 @@ public class VpValidationServiceImpl implements VpValidationService {
             return false;
         }
 
-        // 3. Verify the uniqueness of 'jti' (if you need to ensure it has not been reused)
-        String jti = jwtService.getJwtIdFromPayload(payload);
-        if (jtiTokenCache.isJtiPresent(jti)) {
-            log.error("VpValidationServiceImpl -- validateJWTClaims -- The token with jti: {} has already been used.", jti);
-            return false;
-        } else {
-            jtiTokenCache.addJti(jti);
-        }
+//        // 3. Verify the uniqueness of 'jti' (if you need to ensure it has not been reused)
+//        String jti = jwtService.getJwtIdFromPayload(payload);
+//        if (jtiTokenCache.isJtiPresent(jti)) {
+//            log.error("VpValidationServiceImpl -- validateJWTClaims -- The token with jti: {} has already been used.", jti);
+//            return false;
+//        } else {
+//            jtiTokenCache.addJti(jti);
+//        }
 
         // 4. Validate that 'exp' (expiration) has not passed
         long exp = jwtService.getExpirationFromPayload(payload);
@@ -122,8 +122,9 @@ public class VpValidationServiceImpl implements VpValidationService {
             Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
             PublicKey certificatePubKey = extractPubKeyAndVerifyCertificate(vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
 
-            //TODO Differentiate LEARCredentialEmployee against LEARCredentialMachine
             jwtService.verifyJWTSignature(jwtCredential.serialize(), certificatePubKey, KeyType.RSA);  // Use JWTService to verify signature
+
+            //TODO Differentiate LEARCredentialEmployee against LEARCredentialMachine
 
             // Step 4: Extract the mandateeId from the Verifiable Credential
             LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(jwtService.getVcFromPayload(payload));

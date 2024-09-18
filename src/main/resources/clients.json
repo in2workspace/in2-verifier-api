@@ -25,7 +25,7 @@
     "tokenEndpointAuthenticationSigningAlgorithm" : "ES256"
   },
   {
-    "clientId": "did:key:zDnaemfbP2HuvSKmkYg5PdPCQigMvexFqLb8dzhHYj5xqrYpN",
+    "clientId": "did:key:zDnaek9mFoa575nT8BanQgEukTHijjoC33R9Mq9hx7bhBDtMN",
     "redirectUris": [],
     "scopes": [],
     "clientAuthenticationMethods": ["client_secret_jwt"],
@@ -33,7 +33,7 @@
     "postLogoutRedirectUris": [],
     "requireAuthorizationConsent": false,
     "requireProofKey" : false,
-    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaemfbP2HuvSKmkYg5PdPCQigMvexFqLb8dzhHYj5xqrYpN",
+    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaek9mFoa575nT8BanQgEukTHijjoC33R9Mq9hx7bhBDtMN",
     "tokenEndpointAuthenticationSigningAlgorithm" : "ES256"
   }
 ]

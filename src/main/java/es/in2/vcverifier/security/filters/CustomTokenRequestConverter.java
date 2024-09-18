@@ -59,8 +59,8 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
 
         boolean isValid = vpValidationService.validateJWTClaims(clientId,payload);
         if (!isValid) {
-            log.error("JWT Claims from Assertion are Invalid");
-            throw new IllegalArgumentException("Invalid JWT Claims from Assertion");
+            log.error("JWT claims from assertion are invalid");
+            throw new IllegalArgumentException("Invalid JWT claims from assertion");
         }
 
         isValid = vpValidationService.validateVerifiablePresentation(clientAssertion);
