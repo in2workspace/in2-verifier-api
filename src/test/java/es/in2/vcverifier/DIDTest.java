@@ -145,7 +145,8 @@ class DIDTest {
         JWSObject jwsObject = new JWSObject(
                 new JWSHeader.Builder(JWSAlgorithm.ES256)
                         .type(JOSEObjectType.JWT)
-                        .keyID(ecKey.getKeyID() + "#" + ecKey.getKeyID().replace("did:key:","")).build(),
+                        //.keyID(ecKey.getKeyID() + "#" + ecKey.getKeyID().replace("did:key:","")).build(),
+                        .keyID(ecKey.getKeyID()).build(),
                 payload);
         // Compute the EC signature
         jwsObject.sign(signer);

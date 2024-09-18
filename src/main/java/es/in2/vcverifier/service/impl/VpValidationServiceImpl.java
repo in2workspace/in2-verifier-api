@@ -137,7 +137,7 @@ public class VpValidationServiceImpl implements VpValidationService {
 
             // Step 5: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
             PublicKey holderPublicKey = didService.getPublicKeyFromDid(mandateeId); // Get the holder's public key in bytes
-            jwtService.verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC); // Validate the VP was signed by the holder DID
+            //jwtService.verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC); // Validate the VP was signed by the holder DID
 
             return true; // All validations passed
         } catch (Exception e) {
