@@ -4,12 +4,14 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import es.in2.vcverifier.config.CacheStore;
+import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.crypto.CryptoComponent;
 import es.in2.vcverifier.security.filters.CustomAuthorizationRequestConverter;
 import es.in2.vcverifier.security.filters.CustomErrorResponseHandler;
 import es.in2.vcverifier.security.filters.CustomTokenRequestConverter;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
+import es.in2.vcverifier.service.VpValidationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,7 +41,10 @@ public class AuthorizationServerConfig {
     private final CryptoComponent cryptoComponent;
     private final DIDService didService;
     private final JWTService jwtService;
+    private final VpValidationService vpValidationService;
     private final CacheStore<String> cacheStore;
+    private final SecurityProperties securityProperties;
+
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -57,7 +62,7 @@ public class AuthorizationServerConfig {
                 )
                 .tokenEndpoint(tokenEndpoint ->
                         tokenEndpoint
-                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService))
+                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService,vpValidationService))
                 )
                 .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
 
@@ -86,7 +91,7 @@ public class AuthorizationServerConfig {
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
         NimbusJwtDecoder jwtDecoder = (NimbusJwtDecoder) OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
         OAuth2TokenValidator<Jwt> audienceValidator = new JwtClaimValidator<>(
-                "aud", "http://localhost:9000"::equals);
+                "aud", securityProperties.authorizationServer()::equals);
         OAuth2TokenValidator<Jwt> withAudience = new DelegatingOAuth2TokenValidator<>(audienceValidator);
         jwtDecoder.setJwtValidator(withAudience);
         return jwtDecoder;

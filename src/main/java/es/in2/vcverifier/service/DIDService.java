@@ -4,5 +4,4 @@ import java.security.PublicKey;
 
 public interface DIDService {
     PublicKey getPublicKeyFromDid(String did);
-    byte[] getPublicKeyBytesFromDid(String did);
 }

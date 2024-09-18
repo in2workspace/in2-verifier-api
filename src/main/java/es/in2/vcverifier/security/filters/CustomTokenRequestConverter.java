@@ -4,6 +4,7 @@ import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.exception.UnsupportedGrantTypeException;
 import es.in2.vcverifier.service.JWTService;
+import es.in2.vcverifier.service.VpValidationService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ import java.util.Map;
 public class CustomTokenRequestConverter implements AuthenticationConverter {
 
     private final JWTService jwtService;
+    private final VpValidationService vpValidationService;
 
     @Override
     public Authentication convert(HttpServletRequest request) {
@@ -50,18 +52,23 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         MultiValueMap<String, String> parameters = getParameters(request);
 
         String clientId = parameters.getFirst(OAuth2ParameterNames.CLIENT_ID);
-
         String clientAssertion = parameters.getFirst(OAuth2ParameterNames.CLIENT_ASSERTION);
 
         SignedJWT signedJWT = jwtService.parseJWT(clientAssertion);
+        Payload payload = jwtService.getPayloadFromSignedJWT(signedJWT);
 
-        Payload payload = signedJWT.getPayload();
+        boolean isValid = vpValidationService.validateJWTClaims(clientId,payload);
+        if (!isValid) {
+            log.error("JWT claims from assertion are invalid");
+            throw new IllegalArgumentException("Invalid JWT claims from assertion");
+        }
 
-        String iss = payload.toJSONObject().get("iss").toString();
-        String sub = payload.toJSONObject().get("sub").toString();
-        String aud = payload.toJSONObject().get("aud").toString();
-        String jti = payload.toJSONObject().get("jti").toString();
-        String exp = payload.toJSONObject().get("exp").toString();
+        isValid = vpValidationService.validateVerifiablePresentation(clientAssertion);
+        if (!isValid) {
+            log.error("VP Token is invalid");
+            throw new IllegalArgumentException("Invalid VP Token");
+        }
+        log.info("VP Token validated successfully");
 
         return new OAuth2ClientCredentialsAuthenticationToken(clientPrincipal,null,null);
     }

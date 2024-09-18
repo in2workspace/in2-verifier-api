@@ -1,5 +1,6 @@
 package es.in2.vcverifier.service;
 
+import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.model.KeyType;
 
@@ -11,5 +12,19 @@ public interface JWTService {
 
     void verifyJWTSignature(String jwt, PublicKey publicKey, KeyType keyType);
     SignedJWT parseJWT(String jwt);
+
+    Payload getPayloadFromSignedJWT(SignedJWT signedJWT);
+
+    String getIssuerFromPayload(Payload payload);
+
+    String getSubjectFromPayload(Payload payload);
+
+    String getAudienceFromPayload(Payload payload);
+
+    String getJwtIdFromPayload(Payload payload);
+
+    long getExpirationFromPayload(Payload payload);
+
+    String getVcFromPayload(Payload payload);
 
 }
