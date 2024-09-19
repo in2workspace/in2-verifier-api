@@ -12,8 +12,7 @@
     "requireAuthorizationConsent": true
   },
   {
-    "id": "5678",
-    "clientId": "did:key:zDnaesk2GzHK9cUDPMisrgGN2iMzECYqyeiKNnJjUwwf94zcM",
+    "clientId": "did:key:zDnaesPi5SAa5fP3TQrZtHae8QGRkg4f14gBwKxApQtmreFXy",
     "redirectUris": [],
     "scopes": [],
     "clientAuthenticationMethods": ["client_secret_jwt"],
@@ -21,7 +20,7 @@
     "postLogoutRedirectUris": [],
     "requireAuthorizationConsent": false,
     "requireProofKey" : false,
-    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaesk2GzHK9cUDPMisrgGN2iMzECYqyeiKNnJjUwwf94zcM",
+    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaesPi5SAa5fP3TQrZtHae8QGRkg4f14gBwKxApQtmreFXy",
     "tokenEndpointAuthenticationSigningAlgorithm" : "ES256"
   },
   {
@@ -58,6 +57,18 @@
     "requireAuthorizationConsent": false,
     "requireProofKey" : false,
     "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaeV2n9nK8Uabvcgaa9XdJkdbqUahLLpbt4WqS83F8pPCv7",
+    "tokenEndpointAuthenticationSigningAlgorithm" : "ES256"
+  },
+  {
+    "clientId": "did:key:zDnaemRBsoWAYLM9aKNz3Bd6C9Hb9kMRE6eF5dt8eEqexx9u5",
+    "redirectUris": [],
+    "scopes": [],
+    "clientAuthenticationMethods": ["client_secret_jwt"],
+    "authorizationGrantTypes": ["client_credentials"],
+    "postLogoutRedirectUris": [],
+    "requireAuthorizationConsent": false,
+    "requireProofKey" : false,
+    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaemRBsoWAYLM9aKNz3Bd6C9Hb9kMRE6eF5dt8eEqexx9u5",
     "tokenEndpointAuthenticationSigningAlgorithm" : "ES256"
   }
 ]

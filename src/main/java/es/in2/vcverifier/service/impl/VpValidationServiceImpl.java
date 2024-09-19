@@ -1,11 +1,9 @@
 package es.in2.vcverifier.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.config.JtiTokenCache;
 import es.in2.vcverifier.config.properties.SecurityProperties;
-import es.in2.vcverifier.model.KeyType;
 import es.in2.vcverifier.model.LEARCredentialEmployee;
 import es.in2.vcverifier.model.LEARCredentialMachine;
 import es.in2.vcverifier.service.DIDService;
@@ -48,58 +46,11 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class VpValidationServiceImpl implements VpValidationService {
 
-    private final SecurityProperties securityProperties;
     private final DIDService didService; // Service for handling trusted DIDs
-    private final JWTService jwtService; // Service for JWT-related validations
-    private final JtiTokenCache jtiTokenCache;
     private final ObjectMapper objectMapper;
     private static final String ISSUER_ID_FILE_PATH = "src/main/resources/static/issuer_id_list.txt";
     private static final String PARTICIPANTS_ID_FILE_PATH = "src/main/resources/static/participants_id_list.txt";
 
-
-    @Override
-    public boolean validateJWTClaims(String clientId, Payload payload) {
-
-        String iss = jwtService.getIssuerFromPayload(payload);
-        String sub = jwtService.getSubjectFromPayload(payload);
-
-        // 1. Check if 'iss' (issuer) and 'sub' (subject) are equal to the clientId
-        if (!iss.equals(clientId)) {
-            log.error("VpValidationServiceImpl -- validateJWTClaims -- The 'iss' (issuer) claim does not match the clientId.");
-            return false;
-        }
-        if (!sub.equals(clientId)) {
-            log.error("VpValidationServiceImpl -- validateJWTClaims -- The 'sub' (subject) claim does not match the clientId.");
-            return false;
-        }
-
-        String aud = jwtService.getAudienceFromPayload(payload);
-
-        // 2. Validate that 'aud' matches the expected value (the authorization server's audience)
-        String expectedAudience = securityProperties.authorizationServer();
-        if (!aud.equals(expectedAudience)) {
-            log.error("VpValidationServiceImpl -- validateJWTClaims -- The 'aud' (audience) claim does not match the expected audience.");
-            return false;
-        }
-
-//        // 3. Verify the uniqueness of 'jti' (if you need to ensure it has not been reused)
-//        String jti = jwtService.getJwtIdFromPayload(payload);
-//        if (jtiTokenCache.isJtiPresent(jti)) {
-//            log.error("VpValidationServiceImpl -- validateJWTClaims -- The token with jti: {} has already been used.", jti);
-//            return false;
-//        } else {
-//            jtiTokenCache.addJti(jti);
-//        }
-
-        // 4. Validate that 'exp' (expiration) has not passed
-        long exp = jwtService.getExpirationFromPayload(payload);
-        long currentTimeInSeconds = System.currentTimeMillis() / 1000;
-        if (exp <= currentTimeInSeconds) {
-            log.error("VpValidationServiceImpl -- validateJWTClaims -- The 'exp' (expiration) claim has expired.");
-            return false;
-        }
-        return true;
-    }
 
     @Override
     public boolean validateVerifiablePresentation(String verifiablePresentation) {

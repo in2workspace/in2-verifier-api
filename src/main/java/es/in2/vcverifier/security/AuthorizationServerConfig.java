@@ -9,6 +9,7 @@ import es.in2.vcverifier.crypto.CryptoComponent;
 import es.in2.vcverifier.security.filters.CustomAuthorizationRequestConverter;
 import es.in2.vcverifier.security.filters.CustomErrorResponseHandler;
 import es.in2.vcverifier.security.filters.CustomTokenRequestConverter;
+import es.in2.vcverifier.service.ClientAssertionValidationService;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
 import es.in2.vcverifier.service.VpValidationService;
@@ -42,6 +43,7 @@ public class AuthorizationServerConfig {
     private final DIDService didService;
     private final JWTService jwtService;
     private final VpValidationService vpValidationService;
+    private final ClientAssertionValidationService clientAssertionValidationService;
     private final CacheStore<String> cacheStore;
     private final SecurityProperties securityProperties;
 
@@ -62,7 +64,7 @@ public class AuthorizationServerConfig {
                 )
                 .tokenEndpoint(tokenEndpoint ->
                         tokenEndpoint
-                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService,vpValidationService))
+                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService,vpValidationService,clientAssertionValidationService))
                 )
                 .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
 
@@ -94,6 +96,7 @@ public class AuthorizationServerConfig {
                 "aud", securityProperties.authorizationServer()::equals);
         OAuth2TokenValidator<Jwt> withAudience = new DelegatingOAuth2TokenValidator<>(audienceValidator);
         jwtDecoder.setJwtValidator(withAudience);
+
         return jwtDecoder;
     }
 

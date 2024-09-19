@@ -3,6 +3,7 @@ package es.in2.vcverifier.security.filters;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.exception.UnsupportedGrantTypeException;
+import es.in2.vcverifier.service.ClientAssertionValidationService;
 import es.in2.vcverifier.service.JWTService;
 import es.in2.vcverifier.service.VpValidationService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +25,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
 
     private final JWTService jwtService;
     private final VpValidationService vpValidationService;
+    private final ClientAssertionValidationService clientAssertionValidationService;
 
     @Override
     public Authentication convert(HttpServletRequest request) {
@@ -57,13 +59,18 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         SignedJWT signedJWT = jwtService.parseJWT(clientAssertion);
         Payload payload = jwtService.getPayloadFromSignedJWT(signedJWT);
 
-        boolean isValid = vpValidationService.validateJWTClaims(clientId,payload);
+        boolean isValid = clientAssertionValidationService.validateClientAssertionJWTClaims(clientId,payload);
         if (!isValid) {
             log.error("JWT claims from assertion are invalid");
             throw new IllegalArgumentException("Invalid JWT claims from assertion");
         }
 
-        isValid = vpValidationService.validateVerifiablePresentation(clientAssertion);
+        String vpToken = jwtService.getClaimFromPayload(payload,"vp_token");
+        signedJWT = jwtService.parseJWT(vpToken);
+        payload = jwtService.getPayloadFromSignedJWT(signedJWT);
+        String vp = jwtService.getClaimFromPayload(payload,"vp");
+
+        isValid = vpValidationService.validateVerifiablePresentation(vp);
         if (!isValid) {
             log.error("VP Token is invalid");
             throw new IllegalArgumentException("Invalid VP Token");

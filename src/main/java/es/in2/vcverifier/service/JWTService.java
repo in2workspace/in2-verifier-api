@@ -15,16 +15,9 @@ public interface JWTService {
 
     Payload getPayloadFromSignedJWT(SignedJWT signedJWT);
 
-    String getIssuerFromPayload(Payload payload);
-
-    String getSubjectFromPayload(Payload payload);
-
-    String getAudienceFromPayload(Payload payload);
-
-    String getJwtIdFromPayload(Payload payload);
+    String getClaimFromPayload(Payload payload, String claimName);
 
     long getExpirationFromPayload(Payload payload);
 
-    String getVcFromPayload(Payload payload);
 
 }

@@ -125,39 +125,12 @@ public class JWTServiceImpl implements JWTService {
     }
 
     @Override
-    public String getIssuerFromPayload(Payload payload) {
-        String iss = (String) payload.toJSONObject().get("iss");
-        if (iss == null || iss.trim().isEmpty()) {
-            throw new IllegalArgumentException("The 'iss' (issuer) claim is missing or empty in the JWT payload.");
+    public String getClaimFromPayload(Payload payload, String claimName) {
+        String claimValue = (String) payload.toJSONObject().get(claimName);
+        if (claimValue == null || claimValue.trim().isEmpty()) {
+            throw new IllegalArgumentException(String.format("The '%s' claim is missing or empty in the JWT payload.", claimName));
         }
-        return iss;
-    }
-
-    @Override
-    public String getSubjectFromPayload(Payload payload) {
-        String sub = (String) payload.toJSONObject().get("sub");
-        if (sub == null || sub.trim().isEmpty()) {
-            throw new IllegalArgumentException("The 'sub' (subject) claim is missing or empty in the JWT payload.");
-        }
-        return sub;
-    }
-
-    @Override
-    public String getAudienceFromPayload(Payload payload) {
-        String aud = (String) payload.toJSONObject().get("aud");
-        if (aud == null || aud.trim().isEmpty()) {
-            throw new IllegalArgumentException("The 'aud' (audience) claim is missing or empty in the JWT payload.");
-        }
-        return aud;
-    }
-
-    @Override
-    public String getJwtIdFromPayload(Payload payload) {
-        String jti = (String) payload.toJSONObject().get("jti");
-        if (jti == null || jti.trim().isEmpty()) {
-            throw new IllegalArgumentException("The 'jti' (JWT ID) claim is missing or empty in the JWT payload.");
-        }
-        return jti;
+        return claimValue;
     }
 
     @Override
@@ -167,14 +140,5 @@ public class JWTServiceImpl implements JWTService {
             throw new IllegalArgumentException("The 'exp' (expiration) claim is missing or invalid in the JWT payload.");
         }
         return exp;
-    }
-
-    @Override
-    public String getVcFromPayload(Payload payload) {
-        String vc = payload.toJSONObject().get("vc").toString();
-        if (vc == null || vc.trim().isEmpty()) {
-            throw new IllegalArgumentException("The 'vc' (Verifiable Credential) claim is missing or empty in the JWT payload.");
-        }
-        return vc;
     }
 }
