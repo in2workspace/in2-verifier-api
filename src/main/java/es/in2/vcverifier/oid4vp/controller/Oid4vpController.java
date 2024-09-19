@@ -1,6 +1,7 @@
 package es.in2.vcverifier.oid4vp.controller;
 
 import es.in2.vcverifier.config.CacheStore;
+import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import es.in2.vcverifier.oid4vp.service.AuthorizationResponseProcessorService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,14 +16,16 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class Oid4vpController {
 
-    private final CacheStore<String> cacheStore;
+    private final CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT;
     private final AuthorizationResponseProcessorService authorizationResponseProcessorService;
 
     // Este método manejará las solicitudes GET al endpoint
     @GetMapping("/auth-request/{id}")
     public ResponseEntity<String> getJwtFromCache(@PathVariable String id) {
         // Intentamos recuperar el JWT de la caché usando el ID proporcionado
-        String jwt = cacheStore.get(id);
+        AuthorizationRequestJWT authorizationRequestJWT = cacheStoreForAuthorizationRequestJWT.get(id);
+        cacheStoreForAuthorizationRequestJWT.delete(id);
+        String jwt = authorizationRequestJWT.authRequest();
 
         if (jwt != null) {
             // Si el JWT existe en la caché, lo devolvemos en la respuesta

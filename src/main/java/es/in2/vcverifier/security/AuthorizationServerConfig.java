@@ -6,12 +6,15 @@ import com.nimbusds.jose.proc.SecurityContext;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.crypto.CryptoComponent;
+import es.in2.vcverifier.model.AuthenticationRequestClientData;
+import es.in2.vcverifier.model.AuthorizationCodeData;
+import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import es.in2.vcverifier.security.filters.CustomAuthorizationRequestConverter;
 import es.in2.vcverifier.security.filters.CustomErrorResponseHandler;
 import es.in2.vcverifier.security.filters.CustomTokenRequestConverter;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
-import es.in2.vcverifier.service.VpValidationService;
+import es.in2.vcverifier.service.VpService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,8 +44,10 @@ public class AuthorizationServerConfig {
     private final CryptoComponent cryptoComponent;
     private final DIDService didService;
     private final JWTService jwtService;
-    private final VpValidationService vpValidationService;
-    private final CacheStore<String> cacheStore;
+    private final VpService vpService;
+    private final CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT;
+    private final CacheStore<AuthenticationRequestClientData> cacheStoreForAuthenticationRequestClientData;
+    private final CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
     private final SecurityProperties securityProperties;
 
     @Bean
@@ -57,12 +62,12 @@ public class AuthorizationServerConfig {
                                 // Adds an AuthenticationConverter (pre-processor) used when attempting to extract
                                 // an OAuth2 authorization request (or consent) from HttpServletRequest to an instance
                                 // of OAuth2AuthorizationCodeRequestAuthenticationToken or OAuth2AuthorizationConsentAuthenticationToken.
-                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStore))
+                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStoreForAuthorizationRequestJWT,cacheStoreForAuthenticationRequestClientData))
                                 .errorResponseHandler(new CustomErrorResponseHandler())
                 )
                 .tokenEndpoint(tokenEndpoint ->
                         tokenEndpoint
-                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService,vpValidationService))
+                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService, vpService,cacheStoreForAuthorizationCodeData,cryptoComponent))
                 )
                 .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
 

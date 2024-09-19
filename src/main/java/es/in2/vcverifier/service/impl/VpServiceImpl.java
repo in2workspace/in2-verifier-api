@@ -1,5 +1,6 @@
 package es.in2.vcverifier.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
@@ -10,10 +11,11 @@ import es.in2.vcverifier.model.LEARCredentialEmployee;
 import es.in2.vcverifier.model.LEARCredentialMachine;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
-import es.in2.vcverifier.service.VpValidationService;
+import es.in2.vcverifier.service.VpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.*;
+import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
 import javax.security.auth.x500.X500Principal;
@@ -46,7 +48,7 @@ import java.util.regex.Pattern;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class VpValidationServiceImpl implements VpValidationService {
+public class VpServiceImpl implements VpService {
 
     private final SecurityProperties securityProperties;
     private final DIDService didService; // Service for handling trusted DIDs
@@ -145,6 +147,35 @@ public class VpValidationServiceImpl implements VpValidationService {
             return false;
         }
     }
+
+    @Override
+    public JsonNode getCredentialFromTheVerifiablePresentation(String verifiablePresentation) {
+        // Step 1: Extract the Verifiable Credential (VC) from the VP (JWT)
+        SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
+        Object vcObject = jwtCredential.getPayload().toJSONObject().get("vc");
+        return convertObjectToJSONNode(vcObject);
+    }
+
+    private JsonNode convertObjectToJSONNode(Object vcObject) {
+        JsonNode jsonNode = null;
+
+        try {
+            if (vcObject instanceof Map) {
+                // Si el objeto es un Map, lo convertimos directamente a JsonNode
+                jsonNode = objectMapper.convertValue(vcObject, JsonNode.class);
+            } else if (vcObject instanceof JSONObject) {
+                // Si el objeto es un JSONObject, lo convertimos a String y luego a JsonNode
+                jsonNode = objectMapper.readTree(vcObject.toString());
+            } else {
+                throw new IllegalArgumentException("El tipo del objeto no es compatible para la conversión a JsonNode.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Manejar la excepción adecuadamente
+        }
+        return jsonNode;
+    }
+
     //TODO implement this method
     private LEARCredentialMachine mapCredentialToLEARCredentialMachine(Object vcObject) {
         try {

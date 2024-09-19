@@ -1,8 +1,10 @@
 package es.in2.vcverifier.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.Payload;
 
-public interface VpValidationService {
+public interface VpService {
     boolean validateJWTClaims(String clientId, Payload payload);
     boolean validateVerifiablePresentation(String verifiablePresentation);
+    JsonNode getCredentialFromTheVerifiablePresentation(String verifiablePresentation);
 }

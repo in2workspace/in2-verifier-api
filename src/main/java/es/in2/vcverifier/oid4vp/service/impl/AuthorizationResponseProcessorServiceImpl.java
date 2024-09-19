@@ -1,8 +1,10 @@
 package es.in2.vcverifier.oid4vp.service.impl;
 
 import es.in2.vcverifier.config.CacheStore;
+import es.in2.vcverifier.model.AuthenticationRequestClientData;
+import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.oid4vp.service.AuthorizationResponseProcessorService;
-import es.in2.vcverifier.service.VpValidationService;
+import es.in2.vcverifier.service.VpService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,20 +21,22 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthorizationResponseProcessorServiceImpl implements AuthorizationResponseProcessorService {
 
-    private final CacheStore<String> cacheStore;
-    private final VpValidationService vpValidationService; // Service responsible for VP validation
+    private final CacheStore<AuthenticationRequestClientData> cacheStoreForAuthenticationRequestClientData;
+    private final CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
+    private final VpService vpService; // Service responsible for VP validation
 
     @Override
     public void processAuthResponse(String state, String vpToken, HttpServletResponse response){
         // Validate if the state exists in the cache
-        String redirectUri = cacheStore.get(state);
+        AuthenticationRequestClientData authenticationRequestClientData = cacheStoreForAuthenticationRequestClientData.get(state);
+        String redirectUri = authenticationRequestClientData.redirectUri();
         if (redirectUri == null) {
             log.error("State {} does not exist in cache", state);
             throw new IllegalStateException("Invalid or expired state");
         }
 
         // Remove the state from cache after retrieving the redirect URL
-        cacheStore.delete(state);
+        cacheStoreForAuthenticationRequestClientData.delete(state);
         log.info("State {} has been removed from cache", state);
 
         // Decode vpToken from Base64
@@ -40,7 +44,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         log.info("Decoded VP Token: {}", decodedVpToken);
 
         // Send the decoded token to a service for validation
-        boolean isValid = vpValidationService.validateVerifiablePresentation(decodedVpToken);
+        boolean isValid = vpService.validateVerifiablePresentation(decodedVpToken);
         if (!isValid) {
             log.error("VP Token is invalid");
             throw new IllegalArgumentException("Invalid VP Token");
@@ -50,6 +54,11 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         // Generate a nonce (code)
         String nonce = UUID.randomUUID().toString();
         log.info("Nonce generated: {}", nonce);
+
+        cacheStoreForAuthorizationCodeData.add(nonce, AuthorizationCodeData.builder()
+                .state(state)
+                .verifiableCredential(vpService.getCredentialFromTheVerifiablePresentation(vpToken))
+                .build());
 
         // Build the redirect URL with the code (nonce) and the state
         String redirectUrl = UriComponentsBuilder.fromHttpUrl(redirectUri)
