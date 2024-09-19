@@ -29,6 +29,7 @@ import org.springframework.util.MultiValueMap;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -111,14 +112,16 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         String vpToken = jwtService.getClaimFromPayload(payload,"vp_token");
         signedJWT = jwtService.parseJWT(vpToken);
 
-        isValid = vpService.validateVerifiablePresentation(signedJWT.serialize());
-        if (!isValid) {
-            log.error("VP Token is invalid");
-            throw new IllegalArgumentException("Invalid VP Token");
-        }
-        log.info("VP Token validated successfully");
+//        isValid = vpService.validateVerifiablePresentation(signedJWT.serialize());
+//        if (!isValid) {
+//            log.error("VP Token is invalid");
+//            throw new IllegalArgumentException("Invalid VP Token");
+//        }
+//        log.info("VP Token validated successfully");
 
-        return new OAuth2ClientCredentialsAuthenticationToken(clientPrincipal,null,null);
+        Map<String, Object> additionalParameters = new HashMap<>();
+        additionalParameters.put("vc","vc");
+        return new OAuth2ClientCredentialsAuthenticationToken(clientPrincipal,null,additionalParameters);
     }
 
     private static MultiValueMap<String, String> getParameters(HttpServletRequest request) {

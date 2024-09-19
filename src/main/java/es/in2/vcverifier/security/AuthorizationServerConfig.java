@@ -1,5 +1,6 @@
 package es.in2.vcverifier.security;
 
+import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
@@ -23,6 +24,8 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
@@ -31,12 +34,16 @@ import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientCredentialsAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
-import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
+import org.springframework.security.oauth2.server.authorization.token.*;
 import org.springframework.security.web.SecurityFilterChain;
+
+import java.time.Instant;
+import java.util.Map;
 
 @Configuration(proxyBeanMethods = false)
 @RequiredArgsConstructor
@@ -70,6 +77,7 @@ public class AuthorizationServerConfig {
                 .tokenEndpoint(tokenEndpoint ->
                         tokenEndpoint
                                 .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService, clientAssertionValidationService, vpService,cacheStoreForAuthorizationCodeData,cryptoComponent))
+                               // .accessTokenResponseHandler(new CustomTokenResponseHandler())
                 )
                 .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
 
@@ -85,14 +93,28 @@ public class AuthorizationServerConfig {
         JWKSet jwkSet = new JWKSet(cryptoComponent.getECKey());
         return ( jwkSelector, context ) -> jwkSelector.select(jwkSet);
     }
+
     @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
         return context -> {
             if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
-                context.getJwsHeader().algorithm(SignatureAlgorithm.ES256);
+                Authentication authentication = context.getPrincipal();
+                if (authentication instanceof OAuth2ClientAuthenticationToken) {
+                    OAuth2ClientAuthenticationToken auth =
+                            (OAuth2ClientAuthenticationToken) authentication;
+                    Map<String, Object> additionalParameters = auth.getAdditionalParameters();
+                    // Agrega los parámetros adicionales al token JWT
+                    additionalParameters.forEach((key, value) -> {
+                        context.getClaims().claim(key, value);
+                    });
+                }
             }
+
         };
+
     }
+
+
 
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
