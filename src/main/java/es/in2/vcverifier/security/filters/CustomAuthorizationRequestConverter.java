@@ -8,6 +8,8 @@ import es.in2.vcverifier.exception.RequestMismatchException;
 import es.in2.vcverifier.exception.RequestObjectRetrievalException;
 import es.in2.vcverifier.exception.UnauthorizedClientException;
 import es.in2.vcverifier.exception.UnsupportedScopeException;
+import es.in2.vcverifier.model.AuthenticationRequestClientData;
+import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import es.in2.vcverifier.model.KeyType;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
@@ -49,7 +51,8 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private final DIDService didService;
     private final JWTService jwtService;
     private final CryptoComponent cryptoComponent;
-    private final CacheStore<String> cacheStore;
+    private final CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT;
+    private final CacheStore<AuthenticationRequestClientData> cacheStoreForAuthenticationRequestClientData;
 
     /**
      * The Authorization Request MUST be signed by the Client, and MUST use the request_uri parameter which enables
@@ -124,11 +127,17 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
 
             String signedAuthRequest = jwtService.generateJWT(buildAuthorizationRequestJwtPayload(scope, state));
 
-            cacheStore.add(state, jwsObject.getPayload().toJSONObject().get("redirect_uri").toString());
+            cacheStoreForAuthenticationRequestClientData.add(state, AuthenticationRequestClientData.builder()
+                    .redirectUri(jwsObject.getPayload().toJSONObject().get("redirect_uri").toString())
+                    .build()
+            );
 
             String nonce = generateNonce();
 
-            cacheStore.add(nonce,signedAuthRequest);
+            cacheStoreForAuthorizationRequestJWT.add(nonce,AuthorizationRequestJWT.builder()
+                    .authRequest(signedAuthRequest)
+                    .build()
+            );
 
             String authRequest = generateOpenId4VpUrl(nonce);
 
