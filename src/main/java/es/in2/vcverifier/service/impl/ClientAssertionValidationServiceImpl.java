@@ -5,7 +5,6 @@ import es.in2.vcverifier.config.JtiTokenCache;
 import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.service.ClientAssertionValidationService;
 import es.in2.vcverifier.service.JWTService;
-import es.in2.vcverifier.service.VpValidationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

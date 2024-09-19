@@ -69,7 +69,7 @@ public class AuthorizationServerConfig {
                 )
                 .tokenEndpoint(tokenEndpoint ->
                         tokenEndpoint
-                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService, vpService,clientAssertionValidationService,cacheStoreForAuthorizationCodeData,cryptoComponent))
+                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService, clientAssertionValidationService, vpService,cacheStoreForAuthorizationCodeData,cryptoComponent))
                 )
                 .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
 

@@ -39,7 +39,6 @@ import static es.in2.vcverifier.util.Constants.AUTHORIZATION_RESPONSE_ENDPOINT;
 public class CustomTokenRequestConverter implements AuthenticationConverter {
 
     private final JWTService jwtService;
-    //private final VpValidationService vpValidationService;
     private final ClientAssertionValidationService clientAssertionValidationService;
     private final VpService vpService;
     private final CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
