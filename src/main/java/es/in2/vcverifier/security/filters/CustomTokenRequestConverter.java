@@ -67,10 +67,10 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
 
         String vpToken = jwtService.getClaimFromPayload(payload,"vp_token");
         signedJWT = jwtService.parseJWT(vpToken);
-        payload = jwtService.getPayloadFromSignedJWT(signedJWT);
-        String vp = jwtService.getClaimFromPayload(payload,"vp");
+//        payload = jwtService.getPayloadFromSignedJWT(signedJWT);
+//        String vp = jwtService.getClaimFromPayload(payload,"vp");
 
-        isValid = vpValidationService.validateVerifiablePresentation(vp);
+        isValid = vpValidationService.validateVerifiablePresentation(signedJWT.serialize());
         if (!isValid) {
             log.error("VP Token is invalid");
             throw new IllegalArgumentException("Invalid VP Token");
