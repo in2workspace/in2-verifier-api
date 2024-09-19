@@ -9,9 +9,7 @@ import es.in2.vcverifier.crypto.CryptoComponent;
 import es.in2.vcverifier.model.AuthenticationRequestClientData;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
-import es.in2.vcverifier.security.filters.CustomAuthorizationRequestConverter;
-import es.in2.vcverifier.security.filters.CustomErrorResponseHandler;
-import es.in2.vcverifier.security.filters.CustomTokenRequestConverter;
+import es.in2.vcverifier.security.filters.*;
 import es.in2.vcverifier.service.ClientAssertionValidationService;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
@@ -31,6 +29,7 @@ import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
@@ -51,6 +50,7 @@ public class AuthorizationServerConfig {
     private final CacheStore<AuthenticationRequestClientData> cacheStoreForAuthenticationRequestClientData;
     private final CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
     private final SecurityProperties securityProperties;
+    private final RegisteredClientRepository registeredClientRepository;
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -69,7 +69,9 @@ public class AuthorizationServerConfig {
                 )
                 .tokenEndpoint(tokenEndpoint ->
                         tokenEndpoint
-                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService, clientAssertionValidationService, vpService,cacheStoreForAuthorizationCodeData,cryptoComponent))
+                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService, clientAssertionValidationService, vpService,cacheStoreForAuthorizationCodeData))
+                                .authenticationProvider(new CustomAuthenticationProvider(cacheStoreForAuthorizationCodeData,cryptoComponent,jwtService,registeredClientRepository))
+                                .accessTokenResponseHandler(new CustomTokenResponseHandler())
                 )
                 .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
 
@@ -90,6 +92,7 @@ public class AuthorizationServerConfig {
         return context -> {
             if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
                 context.getJwsHeader().algorithm(SignatureAlgorithm.ES256);
+
             }
         };
     }

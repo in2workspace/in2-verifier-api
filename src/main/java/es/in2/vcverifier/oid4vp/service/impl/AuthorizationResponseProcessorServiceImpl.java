@@ -57,7 +57,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
 
         cacheStoreForAuthorizationCodeData.add(nonce, AuthorizationCodeData.builder()
                 .state(state)
-                .verifiableCredential(vpService.getCredentialFromTheVerifiablePresentation(vpToken))
+                .verifiableCredential(vpService.getCredentialFromTheVerifiablePresentation(decodedVpToken))
                 .build());
 
         // Build the redirect URL with the code (nonce) and the state

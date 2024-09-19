@@ -4,6 +4,7 @@ import lombok.Builder;
 
 @Builder
 public record AuthenticationRequestClientData (
-        String redirectUri
+        String redirectUri,
+        String clientId
 ){
 }
