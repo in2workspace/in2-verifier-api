@@ -88,15 +88,6 @@ public class AuthorizationServerConfig {
         JWKSet jwkSet = new JWKSet(cryptoComponent.getECKey());
         return ( jwkSelector, context ) -> jwkSelector.select(jwkSet);
     }
-    @Bean
-    public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
-        return context -> {
-            if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
-                context.getJwsHeader().algorithm(SignatureAlgorithm.ES256);
-
-            }
-        };
-    }
 
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
