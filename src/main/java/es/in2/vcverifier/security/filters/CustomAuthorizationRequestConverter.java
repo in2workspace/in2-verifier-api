@@ -129,6 +129,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
 
             cacheStoreForAuthenticationRequestClientData.add(state, AuthenticationRequestClientData.builder()
                     .redirectUri(jwsObject.getPayload().toJSONObject().get("redirect_uri").toString())
+                    .clientId(clientId)
                     .build()
             );
 
