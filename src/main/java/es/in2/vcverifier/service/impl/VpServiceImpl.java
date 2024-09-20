@@ -79,7 +79,9 @@ public class VpServiceImpl implements VpService {
 
             // Step 4: Extract the mandateeId from the Verifiable Credential
             //TODO Differentiate LEARCredentialEmployee against LEARCredentialMachine
-            LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(jwtCredential.getPayload().toJSONObject().get("vc"));
+            Object vcObject = jwtCredential.getPayload().toJSONObject().get("vc");
+
+            LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(vcObject);
             String mandateeId = learCredentialEmployee.credentialSubject().mandate().mandatee().id();
 
             if (!isParticipantIdAllowed(mandateeId)) {
