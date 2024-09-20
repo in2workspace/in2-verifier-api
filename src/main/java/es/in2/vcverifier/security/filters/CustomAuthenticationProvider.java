@@ -1,8 +1,11 @@
 package es.in2.vcverifier.security.filters;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import es.in2.vcverifier.config.CacheStore;
+import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.crypto.CryptoComponent;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.service.JWTService;
@@ -14,15 +17,12 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
-import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
+import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AccessTokenAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientCredentialsAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
-import org.springframework.security.oauth2.server.authorization.context.AuthorizationServerContextHolder;
-import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
-import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -36,7 +36,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     private final CryptoComponent cryptoComponent;
     private final JWTService jwtService;
     private final RegisteredClientRepository registeredClientRepository; // Repositorio para obtener el RegisteredClient
-    private final OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer;
+    private final SecurityProperties securityProperties;
+    private final ObjectMapper objectMapper;
 
 
 
@@ -66,7 +67,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         }
 
         Instant issueTime = Instant.now();
-        Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
+        Instant expirationTime = issueTime.plus(securityProperties.token().accessToken().expiration(), ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit()));
         String jwtToken = generateAccessTokenWithVc(authorizationCodeData.verifiableCredential(),issueTime,expirationTime);
         OAuth2AccessToken oAuth2AccessToken = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER,jwtToken,issueTime,expirationTime);
 
@@ -74,24 +75,28 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     }
 
     private Authentication handleM2MGrant(OAuth2ClientCredentialsAuthenticationToken authentication) {
-//        // Lógica de validación del cliente, etc.
-//
-//        OAuth2TokenContext tokenContext = DefaultOAuth2TokenContext.builder()
-//                .registeredClient(authentication.getRegisteredClient())
-//                .principal(authentication.getPrincipal())
-//                .authorizationServerContext(AuthorizationServerContextHolder.getContext())
-//                .tokenType(OAuth2TokenType.ACCESS_TOKEN)
-//                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-//                .authorizationGrant(authentication)
-//                .build();
-//
-//        OAuth2Token generatedAccessToken = tokenGenerator.generate(tokenContext);
-//        if (generatedAccessToken == null) {
-//            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR);
-//        }
-//
-//        return new OAuth2AccessTokenAuthenticationToken(authentication.getRegisteredClient(), authentication.getPrincipal(), (OAuth2AccessToken) generatedAccessToken);
-    return null;
+        String clientId = authentication.getAdditionalParameters().get("clientId").toString();
+        RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
+
+        if (registeredClient == null) {
+            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
+        }
+
+        Instant issueTime = Instant.now();
+        Instant expirationTime = issueTime.plus(securityProperties.token().accessToken().expiration(), ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit()));
+
+        String jsonVc = authentication.getAdditionalParameters().get("vc").toString();
+        JsonNode jsonNode;
+        try {
+            jsonNode = objectMapper.readTree(jsonVc);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        String jwtToken = generateAccessTokenWithVc(jsonNode,issueTime,expirationTime);
+        OAuth2AccessToken oAuth2AccessToken = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER,jwtToken,issueTime,expirationTime);
+        OAuth2RefreshToken oAuth2RefreshToken = generateRefreshToken();
+        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken,oAuth2RefreshToken);
     }
 
     private String generateAccessTokenWithVc(JsonNode verifiableCredential,Instant issueTime,Instant expirationTime){
@@ -102,11 +107,17 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .issueTime(Date.from(issueTime))
                 .expirationTime(Date.from(expirationTime))
                 .claim("client_id", cryptoComponent.getECKey().getKeyID())
-//                .claim("verifiableCredential", )
-//                .claim("scope", )
+                .claim("verifiableCredential", verifiableCredential)
+                //.claim("scope", )
                 .build();
         return jwtService.generateJWT(payload.toString());
+    }
 
+    private OAuth2RefreshToken generateRefreshToken(){
+        Instant refreshTokenIssueTime = Instant.now();
+        Instant refreshTokenExpirationTime = refreshTokenIssueTime.plus(securityProperties.token().refreshToken().expiration(), ChronoUnit.valueOf(securityProperties.token().refreshToken().cronUnit()));
+        String refreshTokenValue = UUID.randomUUID().toString();
+        return new OAuth2RefreshToken(refreshTokenValue, refreshTokenIssueTime, refreshTokenExpirationTime);
     }
 
     @Override

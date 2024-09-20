@@ -1,5 +1,6 @@
 package es.in2.vcverifier.security.filters;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.config.CacheStore;
@@ -101,8 +102,11 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
 //        }
 //        log.info("VP Token validated successfully");
 
+        JsonNode vc = vpService.getCredentialFromTheVerifiablePresentation(vpToken);
+
         Map<String, Object> additionalParameters = new HashMap<>();
-        additionalParameters.put("vc","vc");
+        additionalParameters.put("clientId",clientId);
+        additionalParameters.put("vc",vc);
         return new OAuth2ClientCredentialsAuthenticationToken(clientPrincipal,null,additionalParameters);
     }
 
