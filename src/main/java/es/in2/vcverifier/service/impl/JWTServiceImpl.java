@@ -42,6 +42,7 @@ public class JWTServiceImpl implements JWTService {
             // Set Header
             JWSHeader jwsHeader = new JWSHeader.Builder(JWSAlgorithm.ES256)
                     .keyID(cryptoComponent.getECKey().getKeyID())
+                    .type(JOSEObjectType.JWT)
                     .build();
             // Set Payload
             JWTClaimsSet claimsSet = convertPayloadToJWTClaimsSet(payload);
