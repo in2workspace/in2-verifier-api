@@ -95,12 +95,12 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         String vpToken = jwtService.getClaimFromPayload(payload,"vp_token");
         signedJWT = jwtService.parseJWT(vpToken);
 
-//        isValid = vpService.validateVerifiablePresentation(signedJWT.serialize());
-//        if (!isValid) {
-//            log.error("VP Token is invalid");
-//            throw new IllegalArgumentException("Invalid VP Token");
-//        }
-//        log.info("VP Token validated successfully");
+        isValid = vpService.validateVerifiablePresentation(signedJWT.serialize());
+        if (!isValid) {
+            log.error("VP Token is invalid");
+            throw new IllegalArgumentException("Invalid VP Token");
+        }
+        log.info("VP Token validated successfully");
 
         JsonNode vc = vpService.getCredentialFromTheVerifiablePresentation(vpToken);
 
