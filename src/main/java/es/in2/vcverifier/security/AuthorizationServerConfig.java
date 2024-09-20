@@ -37,7 +37,7 @@ import org.springframework.security.oauth2.server.authorization.token.JwtEncodin
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 
-@Configuration(proxyBeanMethods = false)
+@Configuration
 @RequiredArgsConstructor
 public class AuthorizationServerConfig {
 
@@ -70,7 +70,7 @@ public class AuthorizationServerConfig {
                 .tokenEndpoint(tokenEndpoint ->
                         tokenEndpoint
                                 .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService, clientAssertionValidationService, vpService,cacheStoreForAuthorizationCodeData))
-                                .authenticationProvider(new CustomAuthenticationProvider(cacheStoreForAuthorizationCodeData,cryptoComponent,jwtService,registeredClientRepository))
+                                .authenticationProvider(new CustomAuthenticationProvider(cacheStoreForAuthorizationCodeData,cryptoComponent,jwtService,registeredClientRepository,jwtCustomizer()))
                                 .accessTokenResponseHandler(new CustomTokenResponseHandler())
                 )
                 .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0

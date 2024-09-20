@@ -14,11 +14,15 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AccessTokenAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientCredentialsAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.context.AuthorizationServerContextHolder;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -32,6 +36,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     private final CryptoComponent cryptoComponent;
     private final JWTService jwtService;
     private final RegisteredClientRepository registeredClientRepository; // Repositorio para obtener el RegisteredClient
+    private final OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer;
+
 
 
     @Override
