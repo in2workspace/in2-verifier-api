@@ -8,6 +8,7 @@ import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.crypto.CryptoComponent;
 import es.in2.vcverifier.model.AuthorizationCodeData;
+import es.in2.vcverifier.model.LEARCredentialMachine;
 import es.in2.vcverifier.service.JWTService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -85,21 +86,16 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(securityProperties.token().accessToken().expiration(), ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit()));
 
-        String jsonVc = authentication.getAdditionalParameters().get("vc").toString();
-        JsonNode jsonNode;
-        try {
-            jsonNode = objectMapper.readTree(jsonVc);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        JsonNode jsonNode = (JsonNode) authentication.getAdditionalParameters().get("vc");
 
-        String jwtToken = generateAccessTokenWithVc(jsonNode,issueTime,expirationTime);
+        LEARCredentialMachine learCredentialMachine = objectMapper.convertValue(jsonNode, LEARCredentialMachine.class);
+
+        String jwtToken = generateAccessTokenWithVc(learCredentialMachine,issueTime,expirationTime);
         OAuth2AccessToken oAuth2AccessToken = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER,jwtToken,issueTime,expirationTime);
-        OAuth2RefreshToken oAuth2RefreshToken = generateRefreshToken();
-        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken,oAuth2RefreshToken);
+        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken);
     }
 
-    private String generateAccessTokenWithVc(JsonNode verifiableCredential,Instant issueTime,Instant expirationTime){
+    private String generateAccessTokenWithVc(Object verifiableCredential,Instant issueTime,Instant expirationTime){
         JWTClaimsSet payload = new JWTClaimsSet.Builder()
                 .issuer(cryptoComponent.getECKey().getKeyID())
                 .audience(cryptoComponent.getECKey().getKeyID())
@@ -111,13 +107,6 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 //.claim("scope", )
                 .build();
         return jwtService.generateJWT(payload.toString());
-    }
-
-    private OAuth2RefreshToken generateRefreshToken(){
-        Instant refreshTokenIssueTime = Instant.now();
-        Instant refreshTokenExpirationTime = refreshTokenIssueTime.plus(securityProperties.token().refreshToken().expiration(), ChronoUnit.valueOf(securityProperties.token().refreshToken().cronUnit()));
-        String refreshTokenValue = UUID.randomUUID().toString();
-        return new OAuth2RefreshToken(refreshTokenValue, refreshTokenIssueTime, refreshTokenExpirationTime);
     }
 
     @Override

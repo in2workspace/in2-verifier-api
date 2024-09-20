@@ -13,9 +13,14 @@ public record LEARCredentialMachine(
         @JsonProperty("credentialSubject") CredentialSubject credentialSubject,
         @JsonProperty("expirationDate") String expirationDate,
         @JsonProperty("issuanceDate") String issuanceDate,
-        @JsonProperty("issuer") String issuer,
+        @JsonProperty("issuer") Issuer issuer,
         @JsonProperty("validFrom") String validFrom
 ) {
+
+    @Builder
+    public record Issuer(@JsonProperty("id")String id) {
+    }
+
     @Builder
     public record CredentialSubject(
             @JsonProperty("mandate") Mandate mandate
