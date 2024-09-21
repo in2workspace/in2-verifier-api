@@ -14,8 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientCredentialsAuthenticationToken;
@@ -44,7 +42,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
 
         assert grantType != null;
         return switch (grantType) {
-            case "authorization_code " -> handleH2MGrant(parameters);
+            case "authorization_code" -> handleH2MGrant(parameters);
             case "client_credentials" -> handleM2MGrant(parameters);
             default -> throw new UnsupportedGrantTypeException("Unsupported grant_type: " + grantType);
         };
@@ -52,16 +50,13 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
     }
 
     private Authentication handleH2MGrant(MultiValueMap<String, String> parameters) {
-        // 1. Obtener y validar el código y el estado
         String code = parameters.getFirst(OAuth2ParameterNames.CODE);
         String state = parameters.getFirst(OAuth2ParameterNames.STATE);
+        String clientId = parameters.getFirst(OAuth2ParameterNames.CLIENT_ID);
 
         AuthorizationCodeData authorizationCodeData = cacheStoreForAuthorizationCodeData.get(code);
-
-        if (authorizationCodeData == null) {
-            log.error("Invalid or expired authorization code: {}", code);
-            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
-        }
+        // Remove the state from cache after retrieving the Object
+        cacheStoreForAuthorizationCodeData.delete(code);
 
         if (!authorizationCodeData.state().equals(state)) {
             log.error("State mismatch. Expected: {}, Actual: {}", authorizationCodeData.state(), state);
@@ -73,7 +68,11 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         // 3. Generar un JWT que contenga la VC como un claim
         log.info("Authorization code grant successfully handled");
 
-        return new OAuth2AuthorizationCodeAuthenticationToken(code, clientPrincipal, null,null);
+        Map<String, Object> additionalParameters = new HashMap<>();
+        additionalParameters.put(OAuth2ParameterNames.CLIENT_ID,clientId);
+        additionalParameters.put("vc",authorizationCodeData.verifiableCredential());
+
+        return new OAuth2AuthorizationCodeAuthenticationToken(code, clientPrincipal, null,additionalParameters);
     }
 
     private Authentication handleM2MGrant(MultiValueMap<String, String> parameters) {
@@ -105,7 +104,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         JsonNode vc = vpService.getCredentialFromTheVerifiablePresentation(vpToken);
 
         Map<String, Object> additionalParameters = new HashMap<>();
-        additionalParameters.put("clientId",clientId);
+        additionalParameters.put(OAuth2ParameterNames.CLIENT_ID,clientId);
         additionalParameters.put("vc",vc);
         return new OAuth2ClientCredentialsAuthenticationToken(clientPrincipal,null,additionalParameters);
     }

@@ -89,7 +89,7 @@ public class VpServiceImpl implements VpService {
             log.info("Mandatee ID {} is valid and allowed", mandateeId);
 
             // Step 5: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
-            PublicKey holderPublicKey = didService.getPublicKeyFromDid(mandateeId); // Get the holder's public key in bytes
+            // PublicKey holderPublicKey = didService.getPublicKeyFromDid(mandateeId); // Get the holder's public key in bytes
             //jwtService.verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC); // Validate the VP was signed by the holder DID
 
             return true; // All validations passed
@@ -296,12 +296,12 @@ public class VpServiceImpl implements VpService {
 
                 if (asn1Primitive instanceof ASN1OctetString octetString) {
                     return new String(octetString.getOctets(), StandardCharsets.UTF_8); // Try to decode as UTF-8
-                } else if (asn1Primitive instanceof ASN1PrintableString) {
-                    return ((ASN1PrintableString) asn1Primitive).getString();
-                } else if (asn1Primitive instanceof ASN1UTF8String) {
-                    return ((ASN1UTF8String) asn1Primitive).getString();
-                } else if (asn1Primitive instanceof ASN1IA5String) {
-                    return ((ASN1IA5String) asn1Primitive).getString();
+                } else if (asn1Primitive instanceof ASN1PrintableString asn1PrintableString) {
+                    return ( asn1PrintableString.getString());
+                } else if (asn1Primitive instanceof ASN1UTF8String asn1UTF8String) {
+                    return (asn1UTF8String.getString());
+                } else if (asn1Primitive instanceof ASN1IA5String asn1IA5String) {
+                    return (asn1IA5String.getString());
                 } else {
                     log.warn("Unrecognized ASN.1 type: {}", asn1Primitive.getClass().getSimpleName());
                 }

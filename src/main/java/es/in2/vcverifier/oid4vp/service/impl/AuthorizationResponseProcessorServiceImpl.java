@@ -1,6 +1,7 @@
 package es.in2.vcverifier.oid4vp.service.impl;
 
 import es.in2.vcverifier.config.CacheStore;
+import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.model.AuthenticationRequestClientData;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.oid4vp.service.AuthorizationResponseProcessorService;
@@ -8,11 +9,24 @@ import es.in2.vcverifier.service.VpService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationCode;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationToken;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.UUID;
 
@@ -21,23 +35,26 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthorizationResponseProcessorServiceImpl implements AuthorizationResponseProcessorService {
 
-    private final CacheStore<AuthenticationRequestClientData> cacheStoreForAuthenticationRequestClientData;
+    private final CacheStore<OAuth2AuthorizationRequest> cacheStoreForOAuth2AuthorizationRequest;
     private final CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
     private final VpService vpService; // Service responsible for VP validation
+    private final SecurityProperties securityProperties;
+    private final RegisteredClientRepository registeredClientRepository; // Repositorio para obtener el RegisteredClient
+    private final OAuth2AuthorizationService oAuth2AuthorizationService;
+
 
     @Override
     public void processAuthResponse(String state, String vpToken, HttpServletResponse response){
         // Validate if the state exists in the cache
-        AuthenticationRequestClientData authenticationRequestClientData = cacheStoreForAuthenticationRequestClientData.get(state);
-        String redirectUri = authenticationRequestClientData.redirectUri();
+        OAuth2AuthorizationRequest oAuth2AuthorizationRequest = cacheStoreForOAuth2AuthorizationRequest.get(state);
+        // Remove the state from cache after retrieving the Object
+        cacheStoreForOAuth2AuthorizationRequest.delete(state);
+        String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
         if (redirectUri == null) {
             log.error("State {} does not exist in cache", state);
             throw new IllegalStateException("Invalid or expired state");
         }
 
-        // Remove the state from cache after retrieving the redirect URL
-        cacheStoreForAuthenticationRequestClientData.delete(state);
-        log.info("State {} has been removed from cache", state);
 
         // Decode vpToken from Base64
         String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
@@ -60,6 +77,26 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
                 .verifiableCredential(vpService.getCredentialFromTheVerifiablePresentation(decodedVpToken))
                 .build());
 
+        RegisteredClient registeredClient = registeredClientRepository.findByClientId(oAuth2AuthorizationRequest.getClientId());
+
+        if (registeredClient == null) {
+            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
+        }
+        Instant issueTime = Instant.now();
+        Instant expirationTime = issueTime.plus(securityProperties.token().accessToken().expiration(), ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit()));
+        // Ejemplo de cómo registrar el código de autorización
+        OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(registeredClient)
+                .id(registeredClient.getId())
+                .principalName(registeredClient.getClientId())
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .token(new OAuth2AuthorizationCode(nonce, issueTime, expirationTime)) // Generar código aquí
+                .attribute(OAuth2AuthorizationRequest.class.getName(), oAuth2AuthorizationRequest)
+                .build();
+
+        log.info("State {} has been removed from cache", state);
+
+        oAuth2AuthorizationService.save(authorization);
+
         // Build the redirect URL with the code (nonce) and the state
         String redirectUrl = UriComponentsBuilder.fromHttpUrl(redirectUri)
                 .queryParam("code", nonce)
@@ -67,7 +104,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
                 .build()
                 .toUriString();
 
-        // Perform the redirection using HttpServletResponse
+        //Perform the redirection using HttpServletResponse
         log.info("Redirecting to URL: {}", redirectUrl);
         try {
             response.sendRedirect(redirectUrl);

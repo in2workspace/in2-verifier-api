@@ -10,6 +10,7 @@ import java.util.List;
     public class ClientData {
         private String id;
         private String clientId;
+        private String clientSecret;
         private List<String> redirectUris;
         private List<String> scopes;
         private List<String> clientAuthenticationMethods;

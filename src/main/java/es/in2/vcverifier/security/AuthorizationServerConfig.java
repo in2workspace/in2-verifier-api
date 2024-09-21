@@ -7,10 +7,12 @@ import com.nimbusds.jose.proc.SecurityContext;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.crypto.CryptoComponent;
-import es.in2.vcverifier.model.AuthenticationRequestClientData;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
-import es.in2.vcverifier.security.filters.*;
+import es.in2.vcverifier.security.filters.CustomAuthenticationProvider;
+import es.in2.vcverifier.security.filters.CustomAuthorizationRequestConverter;
+import es.in2.vcverifier.security.filters.CustomErrorResponseHandler;
+import es.in2.vcverifier.security.filters.CustomTokenRequestConverter;
 import es.in2.vcverifier.service.ClientAssertionValidationService;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
@@ -24,18 +26,17 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
-import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
+import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
-import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -48,10 +49,10 @@ public class AuthorizationServerConfig {
     private final ClientAssertionValidationService clientAssertionValidationService;
     private final VpService vpService;
     private final CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT;
-    private final CacheStore<AuthenticationRequestClientData> cacheStoreForAuthenticationRequestClientData;
-    private final CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
+    private final CacheStore<OAuth2AuthorizationRequest> cacheStoreForOAuth2AuthorizationRequest;
     private final SecurityProperties securityProperties;
     private final RegisteredClientRepository registeredClientRepository;
+    private final CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
     private final ObjectMapper objectMapper;
 
     @Bean
@@ -66,21 +67,15 @@ public class AuthorizationServerConfig {
                                 // Adds an AuthenticationConverter (pre-processor) used when attempting to extract
                                 // an OAuth2 authorization request (or consent) from HttpServletRequest to an instance
                                 // of OAuth2AuthorizationCodeRequestAuthenticationToken or OAuth2AuthorizationConsentAuthenticationToken.
-                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStoreForAuthorizationRequestJWT,cacheStoreForAuthenticationRequestClientData))
+                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStoreForAuthorizationRequestJWT,cacheStoreForOAuth2AuthorizationRequest,securityProperties))
                                 .errorResponseHandler(new CustomErrorResponseHandler())
                 )
                 .tokenEndpoint(tokenEndpoint ->
                         tokenEndpoint
-                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService, clientAssertionValidationService, vpService,cacheStoreForAuthorizationCodeData))
-                                .authenticationProvider(new CustomAuthenticationProvider(cacheStoreForAuthorizationCodeData,cryptoComponent,jwtService,registeredClientRepository,securityProperties,objectMapper))
+                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService, clientAssertionValidationService, vpService, cacheStoreForAuthorizationCodeData))
+                                .authenticationProvider(new CustomAuthenticationProvider(cryptoComponent,jwtService,registeredClientRepository,securityProperties,objectMapper))
                 )
                 .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
-
-//        http
-//                .csrf(AbstractHttpConfigurer::disable) // We use JWT tokens instead of sessions
-//                .httpBasic(AbstractHttpConfigurer::disable)
-//                .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()))
-
         return http.build();
     }
     @Bean
@@ -98,6 +93,12 @@ public class AuthorizationServerConfig {
         jwtDecoder.setJwtValidator(withAudience);
         return jwtDecoder;
     }
+    @Bean
+    public OAuth2AuthorizationService oAuth2AuthorizationService() {
+        return new InMemoryOAuth2AuthorizationService();
+    }
+
+
 
     // Customiza los endpoint del Authorization Server
     @Bean

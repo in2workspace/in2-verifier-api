@@ -4,12 +4,13 @@
     "clientId": "did:key:zDnaekiwkWcXnHaW6au3BpmfWfrtVTJZrA3EHgLvcbm6EZnup",
     "redirectUris": ["http://127.0.0.1:8080/login/oauth2/code/oidc-client"],
     "scopes": ["openid_learcredential"],
-    "clientAuthenticationMethods": ["client_secret_basic"],
+    "clientAuthenticationMethods": ["none"],
     "authorizationGrantTypes": ["authorization_code", "refresh_token"],
     "postLogoutRedirectUris": [
       "http://127.0.0.1:8080/"
     ],
-    "requireAuthorizationConsent": true
+    "requireAuthorizationConsent": false,
+    "requireProofKey" : false
   },
   {
     "clientId": "did:key:zDnaesPi5SAa5fP3TQrZtHae8QGRkg4f14gBwKxApQtmreFXy",

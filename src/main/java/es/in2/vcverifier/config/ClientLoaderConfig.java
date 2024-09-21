@@ -52,6 +52,9 @@ public class ClientLoaderConfig {
                         .postLogoutRedirectUris(uris -> uris.addAll(clientData.getPostLogoutRedirectUris()))
                         .scopes(scopes -> scopes.addAll(clientData.getScopes()));
 
+                if (clientData.getClientSecret() != null && !clientData.getClientSecret().isEmpty()) {
+                    registeredClientBuilder.clientSecret(clientData.getClientSecret());
+                }
                 // Configurar ClientSettings
                 ClientSettings.Builder clientSettingsBuilder = ClientSettings.builder()
                         .requireAuthorizationConsent(clientData.getRequireAuthorizationConsent());
@@ -69,6 +72,7 @@ public class ClientLoaderConfig {
                 if (clientData.getRequireProofKey() != null) {
                     clientSettingsBuilder.requireProofKey(clientData.getRequireProofKey());
                 }
+
 
                 registeredClientBuilder.clientSettings(clientSettingsBuilder.build());
 

@@ -3,12 +3,12 @@ package es.in2.vcverifier.security.filters;
 import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jwt.JWTClaimsSet;
 import es.in2.vcverifier.config.CacheStore;
+import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.crypto.CryptoComponent;
 import es.in2.vcverifier.exception.RequestMismatchException;
 import es.in2.vcverifier.exception.RequestObjectRetrievalException;
 import es.in2.vcverifier.exception.UnauthorizedClientException;
 import es.in2.vcverifier.exception.UnsupportedScopeException;
-import es.in2.vcverifier.model.AuthenticationRequestClientData;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import es.in2.vcverifier.model.KeyType;
 import es.in2.vcverifier.service.DIDService;
@@ -20,6 +20,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.security.oauth2.core.endpoint.PkceParameterNames;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationConverter;
 
@@ -39,6 +41,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static es.in2.vcverifier.util.Constants.*;
@@ -52,7 +55,8 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private final JWTService jwtService;
     private final CryptoComponent cryptoComponent;
     private final CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT;
-    private final CacheStore<AuthenticationRequestClientData> cacheStoreForAuthenticationRequestClientData;
+    private final CacheStore<OAuth2AuthorizationRequest> cacheStoreForOAuth2AuthorizationRequest;
+    private final SecurityProperties securityProperties;
 
     /**
      * The Authorization Request MUST be signed by the Client, and MUST use the request_uri parameter which enables
@@ -72,6 +76,8 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         String clientId = request.getParameter(CLIENT_ID);     // client_id parameter
         String state = request.getParameter("state");
         String scope = request.getParameter(SCOPE);
+        String codeChallenge = request.getParameter(PkceParameterNames.CODE_CHALLENGE);
+        String codeChallengeMethod = request.getParameter(PkceParameterNames.CODE_CHALLENGE_METHOD);
 
         if (clientId == null) {
             throw new IllegalArgumentException("Client ID is required.");
@@ -127,9 +133,16 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
 
             String signedAuthRequest = jwtService.generateJWT(buildAuthorizationRequestJwtPayload(scope, state));
 
-            cacheStoreForAuthenticationRequestClientData.add(state, AuthenticationRequestClientData.builder()
-                    .redirectUri(jwsObject.getPayload().toJSONObject().get("redirect_uri").toString())
+            cacheStoreForOAuth2AuthorizationRequest.add(state, OAuth2AuthorizationRequest.authorizationCode()
+                    .state(state)
                     .clientId(clientId)
+                    .redirectUri(jwsObject.getPayload().toJSONObject().get("redirect_uri").toString())
+                    .scope(scope)
+                    .authorizationUri(securityProperties.authorizationServer())
+                    .additionalParameters(Map.of(
+                            PkceParameterNames.CODE_CHALLENGE, codeChallenge,
+                            PkceParameterNames.CODE_CHALLENGE_METHOD, codeChallengeMethod
+                    ))
                     .build()
             );
 
