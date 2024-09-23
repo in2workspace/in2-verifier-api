@@ -146,21 +146,19 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .subject(subject)
                 .jwtID(UUID.randomUUID().toString())
                 .issueTime(Date.from(issueTime))
-                .jwtID(UUID.randomUUID().toString())
-                .claim("client_id", cryptoComponent.getECKey().getKeyID())
-                .claim("scope", getScope(verifiableCredential))
                 .expirationTime(Date.from(expirationTime))
+                .claim(OAuth2ParameterNames.SCOPE, getScope(verifiableCredential))
                 .claim(OAuth2ParameterNames.CLIENT_ID, cryptoComponent.getECKey().getKeyID())
                 .claim("verifiableCredential", verifiableCredential)
                 .build();
         return jwtService.generateJWT(payload.toString());
     }
 
-    private String getAudience(Object verifiableCredential){
+    private String getScope(Object verifiableCredential){
         if (verifiableCredential instanceof LEARCredentialEmployee) {
-            return cryptoComponent.getECKey().getKeyID();
+            return "openid learcred";
         } else if (verifiableCredential instanceof LEARCredentialMachine) {
-            return securityProperties.authorizationServer();
+            return "machine learcred";
         } else {
             throw new InvalidCredentialTypeException("Credential Type not supported: " + verifiableCredential.getClass().getName());
         }
