@@ -72,10 +72,10 @@ public class VpServiceImpl implements VpService {
             // Step 3: Verify the signature and the organizationId of the credential signature
             Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
             // TODO this must validate the JADES signature in the future
-            boolean isCertValid = extractAndVerifyCertificate(vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
-            if (!isCertValid) {
-                throw new RuntimeException("Certificate validation failed");
-            }
+//            boolean isCertValid = extractAndVerifyCertificate(vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
+//            if (!isCertValid) {
+//                throw new RuntimeException("Certificate validation failed");
+//            }
 
             // Step 4: Extract the mandateeId from the Verifiable Credential
             //TODO Differentiate LEARCredentialEmployee against LEARCredentialMachine

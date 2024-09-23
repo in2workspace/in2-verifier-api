@@ -1,7 +1,7 @@
 [
   {
     "id": "1234",
-    "clientId": "did:key:zDnaekiwkWcXnHaW6au3BpmfWfrtVTJZrA3EHgLvcbm6EZnup",
+    "clientId": "did:key:zDnaeUcW7pAV2xfcEMRsi3tsgYSYkLEf8mbSCZ7YFhKDu6XcR",
     "redirectUris": ["http://127.0.0.1:8081/cb"],
     "scopes": ["openid_learcredential"],
     "clientAuthenticationMethods": ["client_secret_jwt"],
@@ -9,7 +9,7 @@
     "postLogoutRedirectUris": [
       "http://127.0.0.1:8081/cb"
     ],
-    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaekiwkWcXnHaW6au3BpmfWfrtVTJZrA3EHgLvcbm6EZnup",
+    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaeUcW7pAV2xfcEMRsi3tsgYSYkLEf8mbSCZ7YFhKDu6XcR",
     "tokenEndpointAuthenticationSigningAlgorithm" : "ES256",
     "requireAuthorizationConsent": false,
     "requireProofKey" : false
