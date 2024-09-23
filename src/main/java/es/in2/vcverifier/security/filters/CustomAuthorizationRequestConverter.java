@@ -21,7 +21,6 @@ import org.json.JSONObject;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
-import org.springframework.security.oauth2.core.endpoint.PkceParameterNames;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationConverter;
 
@@ -41,7 +40,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static es.in2.vcverifier.util.Constants.*;
@@ -72,12 +70,10 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         log.info("CustomAuthorizationRequestConverter.convert");
 
         String requestUri = request.getParameter(REQUEST_URI); // request_uri parameter
-        String jwt = request.getParameter("request");     // request parameter (JWT directly)
+        String jwt;     // request parameter (JWT directly)
         String clientId = request.getParameter(CLIENT_ID);     // client_id parameter
         String state = request.getParameter("state");
         String scope = request.getParameter(SCOPE);
-        String codeChallenge = request.getParameter(PkceParameterNames.CODE_CHALLENGE);
-        String codeChallengeMethod = request.getParameter(PkceParameterNames.CODE_CHALLENGE_METHOD);
 
         if (clientId == null) {
             throw new IllegalArgumentException("Client ID is required.");
@@ -89,13 +85,8 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
             throw new UnauthorizedClientException("The following client ID is not authorized: " + clientId);
         }
 
-        // Case 1: JWT is directly provided in the "request" parameter
-        if (jwt != null) {
-            log.info("JWT found directly in request parameter.");
-        }
-
-        // Case 2: JWT needs to be retrieved via "request_uri"
-        else if (requestUri != null) {
+        // Case 1: JWT needs to be retrieved via "request_uri"
+        if (requestUri != null) {
             log.info("Retrieving JWT from request_uri: " + requestUri);
 
             // Retrieve the JWT from the request_uri via HTTP GET
@@ -139,10 +130,6 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                     .redirectUri(jwsObject.getPayload().toJSONObject().get("redirect_uri").toString())
                     .scope(scope)
                     .authorizationUri(securityProperties.authorizationServer())
-                    .additionalParameters(Map.of(
-                            PkceParameterNames.CODE_CHALLENGE, codeChallenge,
-                            PkceParameterNames.CODE_CHALLENGE_METHOD, codeChallengeMethod
-                    ))
                     .build()
             );
 
@@ -201,7 +188,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     }
 
     private String buildAuthorizationRequestJwtPayload(String scope, String state) {
-
+        // TODO this should be mapped with his presentation definition and return the presentation definition
         if (scope.equals("openid_learcredential")){
             scope = "dome.credentials.presentation.LEARCredentialEmployee";
         }
@@ -228,7 +215,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     }
 
     private String generateOpenId4VpUrl(String nonce) {
-        String requestUri = String.format("http://localhost:9000/oid4vp/auth-request/%s", nonce);
+        String requestUri = String.format("%s/oid4vp/auth-request/%s", securityProperties.authorizationServer(), nonce);
 
         return String.format("openid4vp://?client_id=%s&request_uri=%s",
                 URLEncoder.encode(cryptoComponent.getECKey().getKeyID(), StandardCharsets.UTF_8),

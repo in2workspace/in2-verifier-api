@@ -36,7 +36,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
     private final CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
     private final VpService vpService; // Service responsible for VP validation
     private final SecurityProperties securityProperties;
-    private final RegisteredClientRepository registeredClientRepository; // Repositorio para obtener el RegisteredClient
+    private final RegisteredClientRepository registeredClientRepository;
     private final OAuth2AuthorizationService oAuth2AuthorizationService;
 
 
@@ -76,7 +76,8 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         }
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(securityProperties.token().accessToken().expiration(), ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit()));
-        // Ejemplo de cómo registrar el código de autorización
+
+        // Register the Oauth2Authorization because is needed for verifications
         OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(registeredClient)
                 .id(registeredClient.getId())
                 .principalName(registeredClient.getClientId())

@@ -59,8 +59,9 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         );
         Object credential = getVerifiableCredential(authentication);
         String subject = getCredentialSubjectFromVerifiableCredential(credential);
+        String audience = getAudience(authentication,credential);
 
-        String jwtToken = generateAccessTokenWithVc(credential, issueTime, expirationTime, subject);
+        String jwtToken = generateAccessTokenWithVc(credential, issueTime, expirationTime, subject, audience);
         OAuth2AccessToken oAuth2AccessToken = new OAuth2AccessToken(
                 OAuth2AccessToken.TokenType.BEARER,
                 jwtToken,
@@ -121,19 +122,35 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
     }
 
+    private String getAudience(OAuth2AuthorizationGrantAuthenticationToken authentication, Object credential) {
+        // Extraer el audience en función del tipo de credencial
+        if (credential instanceof LEARCredentialMachine) {
+            return securityProperties.authorizationServer();
+        } else if (credential instanceof LEARCredentialEmployee) {
+            // Obtener el audience de los parámetros adicionales
+            Map<String, Object> additionalParameters = authentication.getAdditionalParameters();
+            if (additionalParameters.containsKey(OAuth2ParameterNames.AUDIENCE)) {
+                return additionalParameters.get(OAuth2ParameterNames.AUDIENCE).toString();
+            } else {
+                throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
+            }
+        }
 
+        throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
+    }
 
-    private String generateAccessTokenWithVc(Object verifiableCredential, Instant issueTime, Instant expirationTime, String subject) {
-
+    private String generateAccessTokenWithVc(Object verifiableCredential, Instant issueTime, Instant expirationTime, String subject, String audience) {
         JWTClaimsSet payload = new JWTClaimsSet.Builder()
                 .issuer(cryptoComponent.getECKey().getKeyID())
+                .audience(audience) // Utiliza el valor de "audience" calculado
                 .subject(subject)
-                .audience(getAudience(verifiableCredential))
-                .expirationTime(Date.from(expirationTime))
+                .jwtID(UUID.randomUUID().toString())
                 .issueTime(Date.from(issueTime))
                 .jwtID(UUID.randomUUID().toString())
                 .claim("client_id", cryptoComponent.getECKey().getKeyID())
                 .claim("scope", getScope(verifiableCredential))
+                .expirationTime(Date.from(expirationTime))
+                .claim(OAuth2ParameterNames.CLIENT_ID, cryptoComponent.getECKey().getKeyID())
                 .claim("verifiableCredential", verifiableCredential)
                 .build();
         return jwtService.generateJWT(payload.toString());
@@ -144,16 +161,6 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             return cryptoComponent.getECKey().getKeyID();
         } else if (verifiableCredential instanceof LEARCredentialMachine) {
             return securityProperties.authorizationServer();
-        } else {
-            throw new InvalidCredentialTypeException("Credential Type not supported: " + verifiableCredential.getClass().getName());
-        }
-    }
-
-    private String getScope(Object verifiableCredential){
-        if (verifiableCredential instanceof LEARCredentialEmployee) {
-            return "openid learcred";
-        } else if (verifiableCredential instanceof LEARCredentialMachine) {
-            return "machine learcred";
         } else {
             throw new InvalidCredentialTypeException("Credential Type not supported: " + verifiableCredential.getClass().getName());
         }

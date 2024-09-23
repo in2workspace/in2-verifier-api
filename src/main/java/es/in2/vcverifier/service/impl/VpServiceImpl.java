@@ -5,12 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.shaded.gson.internal.LinkedTreeMap;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.vcverifier.config.JtiTokenCache;
-import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.exception.InvalidCredentialTypeException;
 import es.in2.vcverifier.model.LEARCredentialEmployee;
 import es.in2.vcverifier.model.LEARCredentialMachine;
-import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
 import es.in2.vcverifier.service.VpService;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.PublicKey;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
@@ -274,7 +270,7 @@ public class VpServiceImpl implements VpService {
 
             // Try to extract the organizationIdentifier from the DN
             String orgIdentifierFromDN = extractOrganizationIdentifierFromDN(distinguishedName);
-            if (orgIdentifierFromDN != null && orgIdentifierFromDN.equals("VATEU-B99999999")) {
+            if (orgIdentifierFromDN != null && orgIdentifierFromDN.equals(expectedOrgId)) {
                 log.info("Found matching organization identifier in DN: {}", orgIdentifierFromDN);
                 return true; // Organization identifier matches, return true
             }
