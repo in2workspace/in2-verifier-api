@@ -1,11 +1,15 @@
 package es.in2.vcverifier.security.filters;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.config.CacheStore;
+import es.in2.vcverifier.exception.InvalidCredentialTypeException;
 import es.in2.vcverifier.exception.UnsupportedGrantTypeException;
 import es.in2.vcverifier.model.AuthorizationCodeData;
+import es.in2.vcverifier.model.LEARCredentialMachine;
+import es.in2.vcverifier.model.LEARCredentialType;
 import es.in2.vcverifier.service.ClientAssertionValidationService;
 import es.in2.vcverifier.service.JWTService;
 import es.in2.vcverifier.service.VpService;
@@ -26,6 +30,7 @@ import org.springframework.util.MultiValueMap;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -37,6 +42,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
     private final VpService vpService;
     private final CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
     private final OAuth2AuthorizationService oAuth2AuthorizationService;
+    private final ObjectMapper objectMapper;
 
 
 
@@ -96,24 +102,31 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
 
         SignedJWT signedJWT = jwtService.parseJWT(clientAssertion);
         Payload payload = jwtService.getPayloadFromSignedJWT(signedJWT);
+        String vpToken = jwtService.getClaimFromPayload(payload,"vp_token");
 
+        // Check if VC is LEARCredentialMachine Type
+        JsonNode vc = vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(vpToken);
+        LEARCredentialMachine learCredentialMachine = objectMapper.convertValue(vc, LEARCredentialMachine.class);
+        List<String> types = learCredentialMachine.type();
+        if (!types.contains(LEARCredentialType.LEARCredentialMachine.getValue())){
+            log.error("LEARCredentialType Expected: {}", LEARCredentialType.LEARCredentialMachine.getValue());
+            throw new InvalidCredentialTypeException("Invalid LEARCredentialType. Expected LEARCredentialMachine");
+        }
+
+        // Check Client Assertion JWT Claims
         boolean isValid = clientAssertionValidationService.validateClientAssertionJWTClaims(clientId,payload);
         if (!isValid) {
             log.error("JWT claims from assertion are invalid");
             throw new IllegalArgumentException("Invalid JWT claims from assertion");
         }
 
-        String vpToken = jwtService.getClaimFromPayload(payload,"vp_token");
-        signedJWT = jwtService.parseJWT(vpToken);
-
-        isValid = vpService.validateVerifiablePresentation(signedJWT.serialize());
+        // Validate VP
+        isValid = vpService.validateVerifiablePresentation(vpToken);
         if (!isValid) {
             log.error("VP Token is invalid");
             throw new IllegalArgumentException("Invalid VP Token");
         }
         log.info("VP Token validated successfully");
-
-        JsonNode vc = vpService.getCredentialFromTheVerifiablePresentation(vpToken);
 
         Map<String, Object> additionalParameters = new HashMap<>();
         additionalParameters.put(OAuth2ParameterNames.CLIENT_ID,clientId);

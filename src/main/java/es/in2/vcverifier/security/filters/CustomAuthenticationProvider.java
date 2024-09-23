@@ -58,9 +58,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         );
         Object credential = getVerifiableCredential(authentication);
         String subject = getCredentialSubjectFromVerifiableCredential(credential);
-        String audience = getAudience(authentication, credential);
 
-        String jwtToken = generateAccessTokenWithVc(credential, issueTime, expirationTime, subject, audience);
+        String jwtToken = generateAccessTokenWithVc(credential, issueTime, expirationTime, subject);
         OAuth2AccessToken oAuth2AccessToken = new OAuth2AccessToken(
                 OAuth2AccessToken.TokenType.BEARER,
                 jwtToken,
@@ -72,6 +71,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     }
 
     private String getClientId(OAuth2AuthorizationGrantAuthenticationToken authentication) {
+        // Asumiendo que el clientId puede estar en los parámetros adicionales o como atributo
         Map<String, Object> additionalParameters = authentication.getAdditionalParameters();
         if (additionalParameters != null && additionalParameters.containsKey(OAuth2ParameterNames.CLIENT_ID)) {
             return additionalParameters.get(OAuth2ParameterNames.CLIENT_ID).toString();
@@ -79,6 +79,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
     }
+
 
     private RegisteredClient getRegisteredClient(String clientId) {
         RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
@@ -89,15 +90,19 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     }
 
     private Object getVerifiableCredential(OAuth2AuthorizationGrantAuthenticationToken authentication) {
+        // Obtener el JsonNode de los parámetros adicionales
         Map<String, Object> additionalParameters = authentication.getAdditionalParameters();
         if (!additionalParameters.containsKey("vc")) {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
         }
         JsonNode verifiableCredential = objectMapper.convertValue(additionalParameters.get("vc"), JsonNode.class);
 
+        // Diferenciar el tipo de credencial basado en la clase concreta de autenticación
         if (authentication instanceof OAuth2AuthorizationCodeAuthenticationToken) {
+            // Retorna la credencial específica para el tipo `LEARCredentialEmployee`
             return objectMapper.convertValue(verifiableCredential, LEARCredentialEmployee.class);
         } else if (authentication instanceof OAuth2ClientCredentialsAuthenticationToken) {
+            // Retorna la credencial específica para el tipo `LEARCredentialMachine`
             return objectMapper.convertValue(verifiableCredential, LEARCredentialMachine.class);
         }
 
@@ -106,8 +111,10 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     private String getCredentialSubjectFromVerifiableCredential(Object verifiableCredential) {
         if (verifiableCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
+            // Extrae y retorna el credentialSubject específico para `LEARCredentialEmployee`
             return learCredentialEmployee.credentialSubject().mandate().mandatee().id();
         } else if (verifiableCredential instanceof LEARCredentialMachine learCredentialMachine) {
+            // Extrae y retorna el credentialSubject específico para `LEARCredentialMachine`
             return learCredentialMachine.credentialSubject().mandate().mandatee().id();
         }
 
@@ -151,5 +158,4 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 || OAuth2ClientCredentialsAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }
-
 

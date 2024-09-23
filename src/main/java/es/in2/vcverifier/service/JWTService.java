@@ -19,5 +19,7 @@ public interface JWTService {
 
     long getExpirationFromPayload(Payload payload);
 
+    Object getVCFromPayload(Payload payload);
+
 
 }

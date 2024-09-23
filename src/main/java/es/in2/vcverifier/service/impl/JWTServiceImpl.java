@@ -142,4 +142,9 @@ public class JWTServiceImpl implements JWTService {
         }
         return exp;
     }
+
+    @Override
+    public Object getVCFromPayload(Payload payload) {
+        return payload.toJSONObject().get("vc");
+    }
 }

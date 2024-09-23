@@ -4,5 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 public interface VpService {
     boolean validateVerifiablePresentation(String verifiablePresentation);
-    JsonNode getCredentialFromTheVerifiablePresentation(String verifiablePresentation);
+    Object getCredentialFromTheVerifiablePresentation(String verifiablePresentation);
+    JsonNode getCredentialFromTheVerifiablePresentationAsJsonNode(String verifiablePresentation);
 }
