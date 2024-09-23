@@ -21,15 +21,31 @@ public class TestController {
         String did = cryptoComponent.getECKey().getKeyID();
 
         Instant issueTime = Instant.now();
-        Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
+        Instant expirationTime = issueTime.plus(360, ChronoUnit.DAYS);
         JWTClaimsSet payload = new JWTClaimsSet.Builder()
                 .issuer(did)
                 .issueTime(java.util.Date.from(issueTime))
                 .expirationTime(java.util.Date.from(expirationTime))
                 .claim("client_id", did)
-                .claim("redirect_uri", "http://127.0.0.1:8080/login/oauth2/code/oidc-client")
+                .claim("redirect_uri", "http://127.0.0.1:8081/cb")
                 .claim("scope", "openid_learcredential")
                 .claim("response_type", "code")
+                .build();
+
+        return jwtService.generateJWT(payload.toString());
+    }
+    @GetMapping("/generate-simple-jwt")
+    public String generateSimpleJWT() {
+        String did = cryptoComponent.getECKey().getKeyID();
+
+        Instant issueTime = Instant.now();
+        Instant expirationTime = issueTime.plus(360, ChronoUnit.DAYS);
+        JWTClaimsSet payload = new JWTClaimsSet.Builder()
+                .issuer(did)
+                .issueTime(java.util.Date.from(issueTime))
+                .expirationTime(java.util.Date.from(expirationTime))
+                .subject(cryptoComponent.getECKey().getKeyID())
+                .audience("http://localhost:9000")
                 .build();
 
         return jwtService.generateJWT(payload.toString());

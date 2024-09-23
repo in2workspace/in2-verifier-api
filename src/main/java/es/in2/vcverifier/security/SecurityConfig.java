@@ -20,7 +20,6 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/generate-auth").permitAll()
                         .requestMatchers("/oid4vp/auth-request/*").permitAll()
                         .requestMatchers("/oid4vp/auth-response").permitAll()
                         .requestMatchers("/login/qr").permitAll()

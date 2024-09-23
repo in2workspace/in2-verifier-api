@@ -2,13 +2,15 @@
   {
     "id": "1234",
     "clientId": "did:key:zDnaekiwkWcXnHaW6au3BpmfWfrtVTJZrA3EHgLvcbm6EZnup",
-    "redirectUris": ["http://127.0.0.1:8080/login/oauth2/code/oidc-client"],
+    "redirectUris": ["http://127.0.0.1:8081/cb"],
     "scopes": ["openid_learcredential"],
-    "clientAuthenticationMethods": ["none"],
-    "authorizationGrantTypes": ["authorization_code", "refresh_token"],
+    "clientAuthenticationMethods": ["client_secret_jwt"],
+    "authorizationGrantTypes": ["authorization_code"],
     "postLogoutRedirectUris": [
-      "http://127.0.0.1:8080/"
+      "http://127.0.0.1:8081/cb"
     ],
+    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaekiwkWcXnHaW6au3BpmfWfrtVTJZrA3EHgLvcbm6EZnup",
+    "tokenEndpointAuthenticationSigningAlgorithm" : "ES256",
     "requireAuthorizationConsent": false,
     "requireProofKey" : false
   },

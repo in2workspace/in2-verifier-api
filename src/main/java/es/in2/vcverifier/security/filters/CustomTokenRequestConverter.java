@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeAuthenticationToken;
@@ -22,6 +23,8 @@ import org.springframework.security.web.authentication.AuthenticationConverter;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,17 +49,19 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
 
         assert grantType != null;
         return switch (grantType) {
-            case "authorization_code" -> handleH2MGrant(parameters);
+            case "authorization_code" -> handleH2MGrant(parameters,request);
             case "client_credentials" -> handleM2MGrant(parameters);
             default -> throw new UnsupportedGrantTypeException("Unsupported grant_type: " + grantType);
         };
 
     }
 
-    private Authentication handleH2MGrant(MultiValueMap<String, String> parameters) {
+    private Authentication handleH2MGrant(MultiValueMap<String, String> parameters,HttpServletRequest request) {
         String code = parameters.getFirst(OAuth2ParameterNames.CODE);
         String state = parameters.getFirst(OAuth2ParameterNames.STATE);
         String clientId = parameters.getFirst(OAuth2ParameterNames.CLIENT_ID);
+        String clientDomain = getClientDomain(request);
+
         AuthorizationCodeData authorizationCodeData = cacheStoreForAuthorizationCodeData.get(code);
         // Remove the state from cache after retrieving the Object
         cacheStoreForAuthorizationCodeData.delete(code);
@@ -77,6 +82,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         Map<String, Object> additionalParameters = new HashMap<>();
         additionalParameters.put(OAuth2ParameterNames.CLIENT_ID,clientId);
         additionalParameters.put("vc",authorizationCodeData.verifiableCredential());
+        additionalParameters.put(OAuth2ParameterNames.AUDIENCE,clientDomain);
 
         return new OAuth2AuthorizationCodeAuthenticationToken(code, clientPrincipal, null,additionalParameters);
     }
@@ -125,4 +131,29 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         });
         return parameters;
     }
+
+    private String getClientDomain(HttpServletRequest request) {
+        // Intentar obtener el dominio desde el header "Origin"
+        String origin = request.getHeader("Origin");
+        if (origin != null) {
+            return origin;
+        }
+
+        // Si no está presente, intentar con el header "Referer"
+        String referer = request.getHeader("Referer");
+        if (referer != null) {
+            try {
+                URL url = new URL(referer);
+                return url.getHost();
+            } catch (MalformedURLException e) {
+                log.error("Invalid Referer URL: {}", referer);
+                throw new OAuth2AuthenticationException("Invalid Referer URL: " + referer);
+            }
+        }
+
+        // Si no se puede obtener, lanzar una excepción indicando que falta el dominio
+        log.error("Missing domain information in request headers 'Origin' or 'Referer'");
+        throw new OAuth2AuthenticationException("Missing domain information in request headers 'Origin' or 'Referer'");
+    }
+
 }

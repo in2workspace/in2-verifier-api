@@ -255,7 +255,7 @@ public class VpServiceImpl implements VpService {
 
             // Try to extract the organizationIdentifier from the DN
             String orgIdentifierFromDN = extractOrganizationIdentifierFromDN(distinguishedName);
-            if (orgIdentifierFromDN != null && orgIdentifierFromDN.equals("VATEU-B99999999")) {
+            if (orgIdentifierFromDN != null && orgIdentifierFromDN.equals(expectedOrgId)) {
                 log.info("Found matching organization identifier in DN: {}", orgIdentifierFromDN);
                 return true; // Organization identifier matches, return true
             }

@@ -21,7 +21,7 @@ public class Oid4vpController {
 
     // Este método manejará las solicitudes GET al endpoint
     @GetMapping("/auth-request/{id}")
-    public ResponseEntity<String> getJwtFromCache(@PathVariable String id) {
+    public ResponseEntity<String> getAuthorizationRequest(@PathVariable String id) {
         // Intentamos recuperar el JWT de la caché usando el ID proporcionado
         AuthorizationRequestJWT authorizationRequestJWT = cacheStoreForAuthorizationRequestJWT.get(id);
         cacheStoreForAuthorizationRequestJWT.delete(id);
