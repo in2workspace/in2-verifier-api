@@ -205,7 +205,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .claim("client_id", cryptoComponent.getECKey().getKeyID())
                 .claim("client_id_scheme", "did")
                 .claim("nonce", generateNonce())
-                .claim("response_uri", AUTHORIZATION_RESPONSE_ENDPOINT)
+                .claim("response_uri", securityProperties.authorizationServer() + AUTHORIZATION_RESPONSE_ENDPOINT)
                 .claim("scope", scope)
                 .claim("state", state)
                 .claim("response_type", "vp_token")
