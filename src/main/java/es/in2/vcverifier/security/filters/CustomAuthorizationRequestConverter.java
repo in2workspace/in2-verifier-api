@@ -142,7 +142,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
 
             String authRequest = generateOpenId4VpUrl(nonce);
 
-            String redirectUrl = "/login/qr?authRequest=" + URLEncoder.encode(authRequest, StandardCharsets.UTF_8);
+            String redirectUrl = "/login?authRequest=" + URLEncoder.encode(authRequest, StandardCharsets.UTF_8);
             OAuth2Error error = new OAuth2Error("custom_error", "Redirection required", redirectUrl);
             throw new OAuth2AuthorizationCodeRequestAuthenticationException(error,null);
         } catch (ParseException e) {
