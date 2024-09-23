@@ -2,14 +2,12 @@ package es.in2.vcverifier.oid4vp.service.impl;
 
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.properties.SecurityProperties;
-import es.in2.vcverifier.model.AuthenticationRequestClientData;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.oid4vp.service.AuthorizationResponseProcessorService;
 import es.in2.vcverifier.service.VpService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
@@ -17,7 +15,6 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequ
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationCode;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.stereotype.Service;
@@ -68,14 +65,9 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         }
         log.info("VP Token validated successfully");
 
-        // Generate a nonce (code)
-        String nonce = UUID.randomUUID().toString();
-        log.info("Nonce generated: {}", nonce);
-
-        cacheStoreForAuthorizationCodeData.add(nonce, AuthorizationCodeData.builder()
-                .state(state)
-                .verifiableCredential(vpService.getCredentialFromTheVerifiablePresentation(decodedVpToken))
-                .build());
+        // Generate a code (code)
+        String code = UUID.randomUUID().toString();
+        log.info("Code generated: {}", code);
 
         RegisteredClient registeredClient = registeredClientRepository.findByClientId(oAuth2AuthorizationRequest.getClientId());
 
@@ -89,17 +81,23 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
                 .id(registeredClient.getId())
                 .principalName(registeredClient.getClientId())
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .token(new OAuth2AuthorizationCode(nonce, issueTime, expirationTime)) // Generar código aquí
+                .token(new OAuth2AuthorizationCode(code, issueTime, expirationTime)) // Generar código aquí
                 .attribute(OAuth2AuthorizationRequest.class.getName(), oAuth2AuthorizationRequest)
                 .build();
 
-        log.info("State {} has been removed from cache", state);
+        log.info("OAuth2Authorization generated");
+
+        cacheStoreForAuthorizationCodeData.add(code, AuthorizationCodeData.builder()
+                .state(state)
+                .verifiableCredential(vpService.getCredentialFromTheVerifiablePresentation(decodedVpToken))
+                .oAuth2Authorization(authorization)
+                .build());
 
         oAuth2AuthorizationService.save(authorization);
 
-        // Build the redirect URL with the code (nonce) and the state
+        // Build the redirect URL with the code (code) and the state
         String redirectUrl = UriComponentsBuilder.fromHttpUrl(redirectUri)
-                .queryParam("code", nonce)
+                .queryParam("code", code)
                 .queryParam("state", state)
                 .build()
                 .toUriString();

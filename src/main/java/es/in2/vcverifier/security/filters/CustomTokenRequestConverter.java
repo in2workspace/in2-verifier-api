@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientCredentialsAuthenticationToken;
 import org.springframework.security.web.authentication.AuthenticationConverter;
@@ -32,6 +33,9 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
     private final ClientAssertionValidationService clientAssertionValidationService;
     private final VpService vpService;
     private final CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
+    private final OAuth2AuthorizationService oAuth2AuthorizationService;
+
+
 
     @Override
     public Authentication convert(HttpServletRequest request) {
@@ -53,10 +57,12 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         String code = parameters.getFirst(OAuth2ParameterNames.CODE);
         String state = parameters.getFirst(OAuth2ParameterNames.STATE);
         String clientId = parameters.getFirst(OAuth2ParameterNames.CLIENT_ID);
-
         AuthorizationCodeData authorizationCodeData = cacheStoreForAuthorizationCodeData.get(code);
         // Remove the state from cache after retrieving the Object
         cacheStoreForAuthorizationCodeData.delete(code);
+
+        // Remove the authorization from the initial request
+        oAuth2AuthorizationService.remove(authorizationCodeData.oAuth2Authorization());
 
         if (!authorizationCodeData.state().equals(state)) {
             log.error("State mismatch. Expected: {}, Actual: {}", authorizationCodeData.state(), state);
