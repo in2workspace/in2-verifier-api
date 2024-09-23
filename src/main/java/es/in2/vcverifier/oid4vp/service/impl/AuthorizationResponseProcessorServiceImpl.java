@@ -89,7 +89,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
 
         cacheStoreForAuthorizationCodeData.add(code, AuthorizationCodeData.builder()
                 .state(state)
-                .verifiableCredential(vpService.getCredentialFromTheVerifiablePresentation(decodedVpToken))
+                .verifiableCredential(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(decodedVpToken))
                 .oAuth2Authorization(authorization)
                 .build());
 

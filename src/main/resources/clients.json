@@ -13,54 +13,6 @@
     "requireProofKey" : false
   },
   {
-    "clientId": "did:key:zDnaesPi5SAa5fP3TQrZtHae8QGRkg4f14gBwKxApQtmreFXy",
-    "redirectUris": [],
-    "scopes": [],
-    "clientAuthenticationMethods": ["client_secret_jwt"],
-    "authorizationGrantTypes": ["client_credentials"],
-    "postLogoutRedirectUris": [],
-    "requireAuthorizationConsent": false,
-    "requireProofKey" : false,
-    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaesPi5SAa5fP3TQrZtHae8QGRkg4f14gBwKxApQtmreFXy",
-    "tokenEndpointAuthenticationSigningAlgorithm" : "ES256"
-  },
-  {
-    "clientId": "did:key:zDnaeg7JwPrB9FnYn5A3hiTjDgMNeKLd38PXPwurZugAN2iMf",
-    "redirectUris": [],
-    "scopes": [],
-    "clientAuthenticationMethods": ["client_secret_jwt"],
-    "authorizationGrantTypes": ["client_credentials"],
-    "postLogoutRedirectUris": [],
-    "requireAuthorizationConsent": false,
-    "requireProofKey" : false,
-    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaeg7JwPrB9FnYn5A3hiTjDgMNeKLd38PXPwurZugAN2iMf",
-    "tokenEndpointAuthenticationSigningAlgorithm" : "ES256"
-  },
-  {
-    "clientId": "did:key:zDnaemGipR9rLvqZXmTrqjdTc1AsSdZ2K7pWfF5qPUxf1Kk1P",
-    "redirectUris": [],
-    "scopes": [],
-    "clientAuthenticationMethods": ["client_secret_jwt"],
-    "authorizationGrantTypes": ["client_credentials"],
-    "postLogoutRedirectUris": [],
-    "requireAuthorizationConsent": false,
-    "requireProofKey" : false,
-    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaemGipR9rLvqZXmTrqjdTc1AsSdZ2K7pWfF5qPUxf1Kk1P",
-    "tokenEndpointAuthenticationSigningAlgorithm" : "ES256"
-  },
-  {
-    "clientId": "did:key:zDnaeV2n9nK8Uabvcgaa9XdJkdbqUahLLpbt4WqS83F8pPCv7",
-    "redirectUris": [],
-    "scopes": [],
-    "clientAuthenticationMethods": ["client_secret_jwt"],
-    "authorizationGrantTypes": ["client_credentials"],
-    "postLogoutRedirectUris": [],
-    "requireAuthorizationConsent": false,
-    "requireProofKey" : false,
-    "jwkSetUrl" : "http://localhost:9000/oidc/did/did:key:zDnaeV2n9nK8Uabvcgaa9XdJkdbqUahLLpbt4WqS83F8pPCv7",
-    "tokenEndpointAuthenticationSigningAlgorithm" : "ES256"
-  },
-  {
     "clientId": "did:key:zDnaemRBsoWAYLM9aKNz3Bd6C9Hb9kMRE6eF5dt8eEqexx9u5",
     "redirectUris": [],
     "scopes": [],

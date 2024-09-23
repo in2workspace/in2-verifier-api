@@ -2,9 +2,12 @@ package es.in2.vcverifier.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.shaded.gson.internal.LinkedTreeMap;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.config.JtiTokenCache;
 import es.in2.vcverifier.config.properties.SecurityProperties;
+import es.in2.vcverifier.exception.InvalidCredentialTypeException;
 import es.in2.vcverifier.model.LEARCredentialEmployee;
 import es.in2.vcverifier.model.LEARCredentialMachine;
 import es.in2.vcverifier.service.DIDService;
@@ -48,7 +51,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class VpServiceImpl implements VpService {
 
-    private final DIDService didService; // Service for handling trusted DIDs
+    private final JWTService jwtService;
     private final ObjectMapper objectMapper;
     private static final String ISSUER_ID_FILE_PATH = "src/main/resources/static/issuer_id_list.txt";
     private static final String PARTICIPANTS_ID_FILE_PATH = "src/main/resources/static/participants_id_list.txt";
@@ -59,9 +62,10 @@ public class VpServiceImpl implements VpService {
         try {
             // Step 1: Extract the Verifiable Credential (VC) from the VP (JWT)
             SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
+            Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
 
             // Step 2: Validate the issuer
-            String credentialIssuerDid = jwtCredential.getPayload().toJSONObject().get("iss").toString();
+            String credentialIssuerDid = jwtService.getClaimFromPayload(payload,"iss");
 
             if (!isIssuerIdAllowed(credentialIssuerDid)) {
                 log.error("Issuer DID {} is not a trusted participant", credentialIssuerDid);
@@ -70,19 +74,28 @@ public class VpServiceImpl implements VpService {
             log.info("Issuer DID {} is a trusted participant", credentialIssuerDid);
 
             // Step 3: Verify the signature and the organizationId of the credential signature
-            Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
-            // TODO this must validate the JADES signature in the future
-            boolean isCertValid = extractAndVerifyCertificate(vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
-            if (!isCertValid) {
-                throw new RuntimeException("Certificate validation failed");
-            }
+//            Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
+//            // TODO this must validate the JADES signature in the future
+//            boolean isCertValid = extractAndVerifyCertificate(vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
+//            if (!isCertValid) {
+//                throw new RuntimeException("Certificate validation failed");
+//            }
 
             // Step 4: Extract the mandateeId from the Verifiable Credential
-            //TODO Differentiate LEARCredentialEmployee against LEARCredentialMachine
-            Object vcObject = jwtCredential.getPayload().toJSONObject().get("vc");
+            LinkedTreeMap<String, Object> vcObject = (LinkedTreeMap<String, Object>) jwtService.getVCFromPayload(payload);
+            List<String> types = (List<String>) vcObject.get("type");
 
-            LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(vcObject);
-            String mandateeId = learCredentialEmployee.credentialSubject().mandate().mandatee().id();
+            String mandateeId;
+
+            if (types.contains("LEARCredentialEmployee")) {
+                LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(vcObject);
+                mandateeId = learCredentialEmployee.credentialSubject().mandate().mandatee().id();
+            } else if (types.contains("LEARCredentialMachine")) {
+                LEARCredentialMachine learCredentialMachine = mapCredentialToLEARCredentialMachine(vcObject);
+                mandateeId = learCredentialMachine.credentialSubject().mandate().mandatee().id();
+            } else {
+                throw new InvalidCredentialTypeException("Invalid Credential Type. LEARCredentialEmployee or LEARCredentialMachine required.");
+            }
 
             if (!isParticipantIdAllowed(mandateeId)) {
                 log.error("Mandatee ID {} is not in the allowed list", mandateeId);
@@ -102,11 +115,16 @@ public class VpServiceImpl implements VpService {
     }
 
     @Override
-    public JsonNode getCredentialFromTheVerifiablePresentation(String verifiablePresentation) {
+    public Object getCredentialFromTheVerifiablePresentation(String verifiablePresentation) {
         // Step 1: Extract the Verifiable Credential (VC) from the VP (JWT)
         SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
-        Object vcObject = jwtCredential.getPayload().toJSONObject().get("vc");
-        return convertObjectToJSONNode(vcObject);
+        Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
+        return jwtService.getVCFromPayload(payload);
+    }
+
+    @Override
+    public JsonNode getCredentialFromTheVerifiablePresentationAsJsonNode(String verifiablePresentation) {
+        return convertObjectToJSONNode(getCredentialFromTheVerifiablePresentation(verifiablePresentation));
     }
 
     private JsonNode convertObjectToJSONNode(Object vcObject) {
@@ -129,7 +147,6 @@ public class VpServiceImpl implements VpService {
         return jsonNode;
     }
 
-    //TODO implement this method
     private LEARCredentialMachine mapCredentialToLEARCredentialMachine(Object vcObject) {
         try {
             return objectMapper.convertValue(vcObject, LEARCredentialMachine.class);
@@ -248,7 +265,7 @@ public class VpServiceImpl implements VpService {
 
             // Decode each certificate
             byte[] certBytes = Base64.getDecoder().decode((String) certBase64Obj);
-            X509Certificate certificate = (X509Certificate) certificateFactory.generateCertificate(new java.io.ByteArrayInputStream(certBytes));
+            X509Certificate certificate = (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certBytes));
 
             // Extract the DN (Distinguished Name)
             X500Principal subject = certificate.getSubjectX500Principal();

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.crypto.CryptoComponent;
+import es.in2.vcverifier.exception.InvalidCredentialTypeException;
 import es.in2.vcverifier.model.LEARCredentialEmployee;
 import es.in2.vcverifier.model.LEARCredentialMachine;
 import es.in2.vcverifier.service.JWTService;
@@ -123,17 +124,29 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
 
     private String generateAccessTokenWithVc(Object verifiableCredential, Instant issueTime, Instant expirationTime, String subject) {
+
         JWTClaimsSet payload = new JWTClaimsSet.Builder()
                 .issuer(cryptoComponent.getECKey().getKeyID())
-                .audience(cryptoComponent.getECKey().getKeyID())
                 .subject(subject)
-                .jwtID(UUID.randomUUID().toString())
-                .issueTime(Date.from(issueTime))
+                .audience(getAudience(verifiableCredential))
                 .expirationTime(Date.from(expirationTime))
+                .issueTime(Date.from(issueTime))
+                .jwtID(UUID.randomUUID().toString())
                 .claim("client_id", cryptoComponent.getECKey().getKeyID())
+                .claim("scope", "openid learcred")
                 .claim("verifiableCredential", verifiableCredential)
                 .build();
         return jwtService.generateJWT(payload.toString());
+    }
+
+    private String getAudience(Object verifiableCredential){
+        if (verifiableCredential instanceof LEARCredentialEmployee) {
+            return cryptoComponent.getECKey().getKeyID();
+        } else if (verifiableCredential instanceof LEARCredentialMachine) {
+            return securityProperties.authorizationServer();
+        } else {
+            throw new InvalidCredentialTypeException("Credential Type not supported: " + verifiableCredential.getClass().getName());
+        }
     }
 
     @Override
