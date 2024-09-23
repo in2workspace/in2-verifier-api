@@ -5,12 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.shaded.gson.internal.LinkedTreeMap;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.vcverifier.config.JtiTokenCache;
-import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.exception.InvalidCredentialTypeException;
 import es.in2.vcverifier.model.LEARCredentialEmployee;
 import es.in2.vcverifier.model.LEARCredentialMachine;
-import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
 import es.in2.vcverifier.service.VpService;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.PublicKey;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
@@ -51,7 +47,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class VpServiceImpl implements VpService {
 
-    private final DIDService didService; // Service for handling trusted DIDs
+    private final JWTService jwtService;
     private final ObjectMapper objectMapper;
     private static final String ISSUER_ID_FILE_PATH = "src/main/resources/static/issuer_id_list.txt";
     private static final String PARTICIPANTS_ID_FILE_PATH = "src/main/resources/static/participants_id_list.txt";

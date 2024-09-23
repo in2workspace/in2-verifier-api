@@ -58,8 +58,9 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         );
         Object credential = getVerifiableCredential(authentication);
         String subject = getCredentialSubjectFromVerifiableCredential(credential);
+        String audience = getAudience(authentication,credential);
 
-        String jwtToken = generateAccessTokenWithVc(credential, issueTime, expirationTime, subject);
+        String jwtToken = generateAccessTokenWithVc(credential, issueTime, expirationTime, subject, audience);
         OAuth2AccessToken oAuth2AccessToken = new OAuth2AccessToken(
                 OAuth2AccessToken.TokenType.BEARER,
                 jwtToken,
