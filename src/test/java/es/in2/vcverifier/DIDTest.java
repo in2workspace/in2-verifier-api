@@ -22,6 +22,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
@@ -29,6 +30,7 @@ import java.security.spec.ECPoint;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -256,6 +258,14 @@ eyJraWQiOiJkaWQ6a2V5OnpEbmFlVjJuOW5LOFVhYnZjZ2FhOVhkSmtkYnFVYWhMTHBidDRXcVM4M0Y4
         byte[] publicKeyBytes = new byte[decodedBytes.length - prefixLength];
         System.arraycopy(decodedBytes, prefixLength, publicKeyBytes, 0, publicKeyBytes.length);
         return publicKeyBytes;
+    }
+
+    @Test
+    void generateCodeChallenge() throws NoSuchAlgorithmException {
+        String codeVerifier = "hola123";
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        byte[] digest = md.digest(codeVerifier.getBytes(StandardCharsets.US_ASCII));
+        System.out.println(Base64.getUrlEncoder().withoutPadding().encodeToString(digest));
     }
 
 }

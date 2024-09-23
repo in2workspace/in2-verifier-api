@@ -1,11 +1,11 @@
 package es.in2.vcverifier.config;
 
-import es.in2.vcverifier.model.AuthenticationRequestClientData;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -19,7 +19,7 @@ public class CacheStoreConfig {
         return new CacheStore<>(10, TimeUnit.MINUTES);
     }
     @Bean
-    public CacheStore<AuthenticationRequestClientData> cacheStoreForAuthenticationRequestClientData() {
+    public CacheStore<OAuth2AuthorizationRequest> cacheStoreForOAuth2AuthorizationRequest() {
         return new CacheStore<>(10, TimeUnit.MINUTES);
     }
     @Bean

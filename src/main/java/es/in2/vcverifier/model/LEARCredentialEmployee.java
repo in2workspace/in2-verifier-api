@@ -13,12 +13,12 @@ public record LEARCredentialEmployee(
         @JsonProperty("credentialSubject") CredentialSubject credentialSubject,
         @JsonProperty("expirationDate") String expirationDate,
         @JsonProperty("issuanceDate") String issuanceDate,
-        @JsonProperty("issuer") Issuer issuer,
+        @JsonProperty("issuer") String issuer,
         @JsonProperty("validFrom") String validFrom
 ) {
-    @Builder
-    public record Issuer(@JsonProperty("id")String id) {
-    }
+//    @Builder
+//    public record Issuer(@JsonProperty("id")String id) {
+//    }
 
     @Builder
     public record CredentialSubject(
