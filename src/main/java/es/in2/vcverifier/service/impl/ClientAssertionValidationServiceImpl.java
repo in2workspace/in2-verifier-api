@@ -22,7 +22,7 @@ public class ClientAssertionValidationServiceImpl implements ClientAssertionVali
     public boolean validateClientAssertionJWTClaims(String clientId, Payload payload) {
         return validateIssuerAndSubject(clientId, payload) &&
                 validateAudience(payload) &&
-                //validateJti(payload) &&
+                validateJti(payload) &&
                 validateExpiration(payload);
     }
 

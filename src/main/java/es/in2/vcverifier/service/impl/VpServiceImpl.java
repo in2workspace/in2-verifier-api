@@ -8,6 +8,7 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.exception.InvalidCredentialTypeException;
 import es.in2.vcverifier.model.LEARCredentialEmployee;
 import es.in2.vcverifier.model.LEARCredentialMachine;
+import es.in2.vcverifier.model.LEARCredentialType;
 import es.in2.vcverifier.service.JWTService;
 import es.in2.vcverifier.service.VpService;
 import lombok.RequiredArgsConstructor;
@@ -83,10 +84,10 @@ public class VpServiceImpl implements VpService {
 
             String mandateeId;
 
-            if (types.contains("LEARCredentialEmployee")) {
+            if (types.contains(LEARCredentialType.LEARCredentialEmployee.getValue())) {
                 LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(vcObject);
                 mandateeId = learCredentialEmployee.credentialSubject().mandate().mandatee().id();
-            } else if (types.contains("LEARCredentialMachine")) {
+            } else if (types.contains(LEARCredentialType.LEARCredentialMachine.getValue())) {
                 LEARCredentialMachine learCredentialMachine = mapCredentialToLEARCredentialMachine(vcObject);
                 mandateeId = learCredentialMachine.credentialSubject().mandate().mandatee().id();
             } else {

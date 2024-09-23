@@ -10,11 +10,11 @@ public record LEARCredentialMachine(
         @JsonProperty("@context") List<String> context,
         @JsonProperty("id") String id,
         @JsonProperty("type") List<String> type,
-        @JsonProperty("credentialSubject") CredentialSubject credentialSubject,
-        @JsonProperty("expirationDate") String expirationDate,
-        @JsonProperty("issuanceDate") String issuanceDate,
         @JsonProperty("issuer") Issuer issuer,
-        @JsonProperty("validFrom") String validFrom
+        @JsonProperty("issuanceDate") String issuanceDate,
+        @JsonProperty("validFrom") String validFrom,
+        @JsonProperty("expirationDate") String expirationDate,
+        @JsonProperty("credentialSubject") CredentialSubject credentialSubject
 ) {
 
     @Builder
@@ -36,17 +36,27 @@ public record LEARCredentialMachine(
         ) {
             @Builder
             public record LifeSpan(
-                    @JsonProperty("end_date_time") String endDateTime,
-                    @JsonProperty("start_date_time") String startDateTime
+                    @JsonProperty("startDateTime") String startDateTime,
+                    @JsonProperty("endDateTime") String endDateTime
             ) {}
             @Builder
             public record Mandatee(
                     @JsonProperty("id") String id,
-                    @JsonProperty("email") String email,
-                    @JsonProperty("first_name") String firstName,
-                    @JsonProperty("last_name") String lastName,
-                    @JsonProperty("mobile_phone") String mobilePhone
+                    @JsonProperty("serviceName") String serviceName,
+                    @JsonProperty("serviceType") String serviceType,
+                    @JsonProperty("version") String version,
+                    @JsonProperty("domain") String domain,
+                    @JsonProperty("ipAddress") String ipAddress,
+                    @JsonProperty("description") String description,
+                    @JsonProperty("contact") Contact contact
             ) {}
+
+            @Builder
+            public record Contact(
+                    @JsonProperty("email") String email,
+                    @JsonProperty("phone") String mobilePhone
+            ){}
+
             @Builder
             public record Mandator(
                     @JsonProperty("commonName") String commonName,
@@ -60,10 +70,9 @@ public record LEARCredentialMachine(
 
             public record Power(
                     @JsonProperty("id") String id,
-                    @JsonProperty("tmf_action") Object tmfAction,
-                    @JsonProperty("tmf_domain") String tmfDomain,
-                    @JsonProperty("tmf_function") String tmfFunction,
-                    @JsonProperty("tmf_type") String tmfType
+                    @JsonProperty("domain") String domain,
+                    @JsonProperty("function") String function,
+                    @JsonProperty("action") String action
             ) {}
 
             @Builder
