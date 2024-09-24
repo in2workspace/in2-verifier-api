@@ -7,7 +7,6 @@ import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.crypto.CryptoComponent;
 import es.in2.vcverifier.exception.RequestMismatchException;
 import es.in2.vcverifier.exception.RequestObjectRetrievalException;
-import es.in2.vcverifier.exception.UnauthorizedClientException;
 import es.in2.vcverifier.exception.UnsupportedScopeException;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import es.in2.vcverifier.model.KeyType;
@@ -31,15 +30,11 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.PublicKey;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 import static es.in2.vcverifier.util.Constants.*;
@@ -48,7 +43,6 @@ import static es.in2.vcverifier.util.Constants.*;
 @RequiredArgsConstructor
 public class CustomAuthorizationRequestConverter implements AuthenticationConverter {
 
-    private static final String CLIENT_ID_FILE_PATH = "src/main/resources/static/client_id_list.txt";
     private final DIDService didService;
     private final JWTService jwtService;
     private final CryptoComponent cryptoComponent;
@@ -77,12 +71,6 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
 
         if (clientId == null) {
             throw new IllegalArgumentException("Client ID is required.");
-        }
-
-        // TODO this check should be done using the preregistered clients
-        // Check if client_id is in the allowed list
-        if (!isClientIdAllowed(clientId)) {
-            throw new UnauthorizedClientException("The following client ID is not authorized: " + clientId);
         }
 
         // Case 1: JWT needs to be retrieved via "request_uri"
@@ -150,19 +138,6 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         }
 
     }
-
-
-
-    private boolean isClientIdAllowed(String clientId) {
-        try {
-            Path path = Paths.get(CLIENT_ID_FILE_PATH).toAbsolutePath();
-            List<String> allowedClientIds = Files.readAllLines(path);
-            return allowedClientIds.contains(clientId);
-        } catch (IOException e) {
-            throw new RuntimeException("Error reading client ID list.", e);
-        }
-    }
-
 
     private boolean validateOAuth2Parameters(HttpServletRequest request, JWSObject jwsObject) {
         try {

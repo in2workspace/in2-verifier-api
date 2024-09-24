@@ -3,6 +3,7 @@ package es.in2.vcverifier.config;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.vcverifier.model.ClientData;
+import es.in2.vcverifier.service.TrustFrameworkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +15,6 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -24,6 +24,7 @@ import java.util.UUID;
 public class ClientLoaderConfig {
 
     private final ObjectMapper objectMapper;
+    private final TrustFrameworkService trustFrameworkService;
 
     @Bean
     public RegisteredClientRepository registeredClientRepository() {
@@ -34,8 +35,8 @@ public class ClientLoaderConfig {
     private List<RegisteredClient> loadClients() {
         try {
             // Leer el archivo JSON
-            InputStream inputStream = getClass().getClassLoader().getResourceAsStream("clients.json");
-            List<ClientData> clientsData = objectMapper.readValue(inputStream, new TypeReference<>() {
+            String clientsJson = trustFrameworkService.fetchAllowedClient();
+            List<ClientData> clientsData = objectMapper.readValue(clientsJson, new TypeReference<>() {
             });
 
             List<RegisteredClient> registeredClients = new ArrayList<>();
@@ -83,7 +84,6 @@ public class ClientLoaderConfig {
             throw new RuntimeException("Error loading clients from JSON", e);
         }
     }
-
 }
 
 
