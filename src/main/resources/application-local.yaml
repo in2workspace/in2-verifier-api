@@ -1,0 +1,30 @@
+server:
+  port: 9000
+
+logging:
+  level:
+    org.springframework.security: TRACE
+    org.springframework.security.oauth2: TRACE
+    org.springframework.web.filter: TRACE
+    es.in2: info
+
+spring:
+  application:
+    name: VC Verifier
+  web:
+    resources:
+      static-locations:
+        - classpath:/static/
+
+security:
+  authorizationServer: "http://localhost:9000"
+  token:
+    accessToken:
+      cronUnit: "DAYS"
+      expiration: 30
+    refreshToken:
+      cronUnit: "DAYS"
+      expiration: 10
+
+crypto:
+  privateKey: "73e509a7681d4a395b1ced75681c4dc4020dbab02da868512276dd766733d5b5" # for test purposes
