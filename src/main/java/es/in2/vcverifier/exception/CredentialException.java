@@ -5,7 +5,4 @@ public class CredentialException extends RuntimeException {
         super(message);
     }
 
-    public CredentialException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

@@ -16,6 +16,7 @@ import java.util.Base64;
 @Controller
 public class LoginQrController {
 
+
     @GetMapping("/login")
     @ResponseStatus(HttpStatus.OK)
     public String showQrLogin(@RequestParam("authRequest") String authRequest, Model model) {
