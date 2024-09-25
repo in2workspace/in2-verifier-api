@@ -256,7 +256,7 @@ public class VpServiceImpl implements VpService {
         }
 
         // If the loop finishes without finding a match, throw an exception
-        throw new Exception("Organization Identifier not found in certificates.");
+        throw new OrganizationIdentifierNotFoundException("Organization Identifier not found in certificates.");
     }
 
 
