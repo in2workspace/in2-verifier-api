@@ -27,6 +27,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
 
                 )
+                //TODO Config with Sonar
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable);
         return http.build();

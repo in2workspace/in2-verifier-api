@@ -23,14 +23,14 @@ public class Oid4vpController {
     // Este método manejará las solicitudes GET al endpoint
     @GetMapping("/auth-request/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<String> getAuthorizationRequest(@PathVariable String id) {
+    public String getAuthorizationRequest(@PathVariable String id) {
         // Intentamos recuperar el JWT de la caché usando el ID proporcionado
         AuthorizationRequestJWT authorizationRequestJWT = cacheStoreForAuthorizationRequestJWT.get(id);
         cacheStoreForAuthorizationRequestJWT.delete(id);
         String jwt = authorizationRequestJWT.authRequest();
 
         if (jwt != null) {
-            return ResponseEntity.ok(jwt);
+            return jwt;
         } else {
             throw new ResourceNotFoundException("JWT not found for id: " + id);
         }
@@ -38,15 +38,13 @@ public class Oid4vpController {
 
     @PostMapping("/auth-response")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<Void> processAuthResponse(
+    public void processAuthResponse(
             @RequestParam("state") String state,
             @RequestParam("vp_token") String vpToken,
             @RequestParam(value = "presentation_submission", required = false) String presentationSubmission,
             HttpServletResponse response) {
-
+        //TODO We need use presentationSubmission in the future
         authorizationResponseProcessorService.processAuthResponse(state, vpToken, response);
-
-        return ResponseEntity.ok().build();
     }
 }
 
