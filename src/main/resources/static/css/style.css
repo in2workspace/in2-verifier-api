@@ -25,6 +25,11 @@ body {
     padding: 0;
 }
 
+.qr-image {
+    background-color: white;
+    padding: 20px;
+}
+
 .header img {
     max-width: 300px;
     height: auto;

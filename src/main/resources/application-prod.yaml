@@ -3,8 +3,31 @@ server:
 
 logging:
   level:
-    org.springframework.security: trace
+    es.in2: info
 
 spring:
   application:
     name: VC Verifier
+  web:
+    resources:
+      static-locations:
+        - classpath:/static/
+        - classpath:/resources/
+
+security:
+  authorizationServer:
+  token:
+    accessToken:
+      cronUnit:
+      expiration:
+    refreshToken:
+      cronUnit:
+      expiration:
+
+trust-framework:
+  issuersListUri:
+  participantsListUri:
+  clientsListUri:
+
+crypto:
+  privateKey:

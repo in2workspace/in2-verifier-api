@@ -11,10 +11,9 @@ import java.io.ByteArrayOutputStream;
 import java.util.Base64;
 
 @Controller
-@RequestMapping("/login")
 public class LoginQrController {
 
-    @GetMapping("/qr")
+    @GetMapping("/login")
     public String showQrLogin(@RequestParam("authRequest") String authRequest, Model model) {
         try {
             // Generar la imagen QR en base64
@@ -28,7 +27,7 @@ public class LoginQrController {
             throw new RuntimeException();
         }
 
-        return "qr-page";
+        return "login";
     }
 
     private String generateQRCodeImageBase64(String barcodeText){

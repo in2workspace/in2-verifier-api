@@ -3,8 +3,34 @@ server:
 
 logging:
   level:
-    org.springframework.security: trace
+    org.springframework.security: TRACE
+    org.springframework.security.oauth2: TRACE
+    org.springframework.web.filter: TRACE
+    es.in2: info
 
 spring:
   application:
     name: VC Verifier
+  web:
+    resources:
+      static-locations:
+        - classpath:/static/
+        - classpath:/resources/
+
+security:
+  authorizationServer: "http://localhost:9000"
+  token:
+    accessToken:
+      cronUnit: "DAYS"
+      expiration: 30
+    refreshToken:
+      cronUnit: "DAYS"
+      expiration: 10
+
+trust-framework:
+  issuersListUri: https://raw.githubusercontent.com/in2workspace/in2-verifier-api/refs/heads/feature/h2m_authn_authz_flow/mockTrustFramework/issuer_id_list.txt
+  participantsListUri: https://raw.githubusercontent.com/in2workspace/in2-verifier-api/refs/heads/feature/h2m_authn_authz_flow/mockTrustFramework/participants_id_list.txt
+  clientsListUri: https://raw.githubusercontent.com/in2workspace/in2-verifier-api/refs/heads/feature/h2m_authn_authz_flow/mockTrustFramework/clients.json
+
+crypto:
+  privateKey: "73e509a7681d4a395b1ced75681c4dc4020dbab02da868512276dd766733d5b5" # for test purposes

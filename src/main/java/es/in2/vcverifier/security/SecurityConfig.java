@@ -22,7 +22,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/oid4vp/auth-request/*").permitAll()
                         .requestMatchers("/oid4vp/auth-response").permitAll()
-                        .requestMatchers("/login/qr").permitAll()
+                        .requestMatchers("/login").permitAll()
                         .requestMatchers("/oidc/did/*").permitAll()
                         .anyRequest().authenticated()
 

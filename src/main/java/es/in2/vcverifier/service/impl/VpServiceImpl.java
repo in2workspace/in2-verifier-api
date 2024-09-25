@@ -10,6 +10,7 @@ import es.in2.vcverifier.model.LEARCredentialEmployee;
 import es.in2.vcverifier.model.LEARCredentialMachine;
 import es.in2.vcverifier.model.LEARCredentialType;
 import es.in2.vcverifier.service.JWTService;
+import es.in2.vcverifier.service.TrustFrameworkService;
 import es.in2.vcverifier.service.VpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,9 +22,6 @@ import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
@@ -50,8 +48,7 @@ public class VpServiceImpl implements VpService {
 
     private final JWTService jwtService;
     private final ObjectMapper objectMapper;
-    private static final String ISSUER_ID_FILE_PATH = "src/main/resources/static/issuer_id_list.txt";
-    private static final String PARTICIPANTS_ID_FILE_PATH = "src/main/resources/static/participants_id_list.txt";
+    private final TrustFrameworkService trustFrameworkService;
 
 
     @Override
@@ -64,7 +61,7 @@ public class VpServiceImpl implements VpService {
             // Step 2: Validate the issuer
             String credentialIssuerDid = jwtService.getClaimFromPayload(payload,"iss");
 
-            if (!isIssuerIdAllowed(credentialIssuerDid)) {
+            if (!trustFrameworkService.isIssuerIdAllowed(credentialIssuerDid)) {
                 log.error("Issuer DID {} is not a trusted participant", credentialIssuerDid);
                 return false;
             }
@@ -94,7 +91,7 @@ public class VpServiceImpl implements VpService {
                 throw new InvalidCredentialTypeException("Invalid Credential Type. LEARCredentialEmployee or LEARCredentialMachine required.");
             }
 
-            if (!isParticipantIdAllowed(mandateeId)) {
+            if (!trustFrameworkService.isParticipantIdAllowed(mandateeId)) {
                 log.error("Mandatee ID {} is not in the allowed list", mandateeId);
                 return false;
             }
@@ -219,26 +216,6 @@ public class VpServiceImpl implements VpService {
         }
         return firstCredential;
     }
-
-    private boolean isIssuerIdAllowed(String issuerId) {
-        try {
-            Path path = Paths.get(ISSUER_ID_FILE_PATH).toAbsolutePath();
-            List<String> allowedIssuerIds = Files.readAllLines(path);
-            return allowedIssuerIds.contains(issuerId);
-        } catch (IOException e) {
-            throw new RuntimeException("Error reading issuer ID list.", e);
-        }
-    }
-    private boolean isParticipantIdAllowed(String participantId) {
-        try {
-            Path path = Paths.get(PARTICIPANTS_ID_FILE_PATH).toAbsolutePath();
-            List<String> allowedParticipantIds = Files.readAllLines(path);
-            return allowedParticipantIds.contains(participantId);
-        } catch (IOException e) {
-            throw new RuntimeException("Error reading participant ID list.", e);
-        }
-    }
-
 
     private boolean extractAndVerifyCertificate(Map<String, Object> vcHeader, String expectedOrgId) throws Exception {
         // Retrieve the x5c claim (certificate chain)

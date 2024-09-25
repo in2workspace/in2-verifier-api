@@ -104,7 +104,7 @@ public class AuthorizationServerConfig {
     @Bean
     public AuthorizationServerSettings authorizationServerSettings() {
         return AuthorizationServerSettings.builder()
-                .issuer("http://localhost:9000")
+                .issuer(securityProperties.authorizationServer())
                 .authorizationEndpoint("/oidc/authorize")
                 .deviceAuthorizationEndpoint("/oidc/device_authorization")
                 .deviceVerificationEndpoint("/oidc/device_verification")
