@@ -24,5 +24,10 @@ security:
       cronUnit:
       expiration:
 
+trust-framework:
+  issuersListUri:
+  participantsListUri:
+  clientsListUri:
+
 crypto:
   privateKey:

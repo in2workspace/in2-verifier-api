@@ -1,6 +1,8 @@
 package es.in2.vcverifier.service.impl;
 
+import es.in2.vcverifier.config.properties.TrustFrameworkProperties;
 import es.in2.vcverifier.service.TrustFrameworkService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -14,11 +16,9 @@ import java.util.List;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class TrustFrameworkServiceImpl implements TrustFrameworkService {
-
-    private static final String ISSUER_ID_FILE_URL = "https://raw.githubusercontent.com/in2workspace/in2-verifier-api/refs/heads/feature/h2m_authn_authz_flow/mockTrustFramework/issuer_id_list.txt";
-    private static final String PARTICIPANTS_ID_FILE_URL = "https://raw.githubusercontent.com/in2workspace/in2-verifier-api/refs/heads/feature/h2m_authn_authz_flow/mockTrustFramework/participants_id_list.txt";
-    private static final String CLIENTS_JSON_URL = "https://raw.githubusercontent.com/in2workspace/in2-verifier-api/refs/heads/feature/h2m_authn_authz_flow/mockTrustFramework/clients.json";
+    private final TrustFrameworkProperties trustFrameworkProperties;
 
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.ALWAYS) // Habilitar seguimiento de redirecciones
@@ -27,7 +27,7 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
     @Override
     public String fetchAllowedClient() {
         try {
-            return fetchRemoteFile(CLIENTS_JSON_URL); // Reutiliza el método para obtener el JSON
+            return fetchRemoteFile(trustFrameworkProperties.clientsListUri()); // Reutiliza el método para obtener el JSON
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Error reading clients list from GitHub.", e);
         }
@@ -36,7 +36,7 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
     @Override
     public boolean isIssuerIdAllowed(String issuerId) {
         try {
-            List<String> allowedIssuerIds = readRemoteFileAsList(ISSUER_ID_FILE_URL); // Reutiliza el método para obtener la lista
+            List<String> allowedIssuerIds = readRemoteFileAsList(trustFrameworkProperties.issuersListUri()); // Reutiliza el método para obtener la lista
             return allowedIssuerIds.contains(issuerId);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Error reading issuer ID list from GitHub.", e);
@@ -46,7 +46,7 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
     @Override
     public boolean isParticipantIdAllowed(String participantId) {
         try {
-            List<String> allowedParticipantIds = readRemoteFileAsList(PARTICIPANTS_ID_FILE_URL); // Reutiliza el método para obtener la lista
+            List<String> allowedParticipantIds = readRemoteFileAsList(trustFrameworkProperties.participantsListUri()); // Reutiliza el método para obtener la lista
             return allowedParticipantIds.contains(participantId);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Error reading participant ID list from GitHub.", e);
