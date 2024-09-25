@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.ByteArrayOutputStream;
 import java.util.Base64;
 
-@RestController
+@Controller
 public class LoginQrController {
 
 
