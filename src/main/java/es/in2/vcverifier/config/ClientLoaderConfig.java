@@ -44,34 +44,34 @@ public class ClientLoaderConfig {
             // Convertir cada ClientData a RegisteredClient y agregarlo a la lista
             for (ClientData clientData : clientsData) {
                 RegisteredClient.Builder registeredClientBuilder = RegisteredClient.withId(UUID.randomUUID().toString())
-                        .clientId(clientData.getClientId())
-                        .clientAuthenticationMethods(authMethods -> clientData.getClientAuthenticationMethods().forEach(method ->
+                        .clientId(clientData.clientId())
+                        .clientAuthenticationMethods(authMethods -> clientData.clientAuthenticationMethods().forEach(method ->
                                 authMethods.add(new ClientAuthenticationMethod(method))))
-                        .authorizationGrantTypes(grantTypes -> clientData.getAuthorizationGrantTypes().forEach(grantType ->
+                        .authorizationGrantTypes(grantTypes -> clientData.authorizationGrantTypes().forEach(grantType ->
                                 grantTypes.add(new AuthorizationGrantType(grantType))))
-                        .redirectUris(uris -> uris.addAll(clientData.getRedirectUris()))
-                        .postLogoutRedirectUris(uris -> uris.addAll(clientData.getPostLogoutRedirectUris()))
-                        .scopes(scopes -> scopes.addAll(clientData.getScopes()));
+                        .redirectUris(uris -> uris.addAll(clientData.redirectUris()))
+                        .postLogoutRedirectUris(uris -> uris.addAll(clientData.postLogoutRedirectUris()))
+                        .scopes(scopes -> scopes.addAll(clientData.scopes()));
 
-                if (clientData.getClientSecret() != null && !clientData.getClientSecret().isEmpty()) {
-                    registeredClientBuilder.clientSecret(clientData.getClientSecret());
+                if (clientData.clientSecret() != null && !clientData.clientSecret().isBlank()) {
+                    registeredClientBuilder.clientSecret(clientData.clientSecret());
                 }
                 // Configurar ClientSettings
                 ClientSettings.Builder clientSettingsBuilder = ClientSettings.builder()
-                        .requireAuthorizationConsent(clientData.getRequireAuthorizationConsent());
+                        .requireAuthorizationConsent(clientData.requireAuthorizationConsent());
 
                 // Configurar valores opcionales si están presentes en el JSON
-                if (clientData.getJwkSetUrl() != null) {
-                    clientSettingsBuilder.jwkSetUrl(clientData.getJwkSetUrl());
+                if (clientData.jwkSetUrl() != null) {
+                    clientSettingsBuilder.jwkSetUrl(clientData.jwkSetUrl());
                 }
 
-                if (clientData.getTokenEndpointAuthenticationSigningAlgorithm() != null) {
+                if (clientData.tokenEndpointAuthenticationSigningAlgorithm() != null) {
                     clientSettingsBuilder.tokenEndpointAuthenticationSigningAlgorithm(
-                            SignatureAlgorithm.from(clientData.getTokenEndpointAuthenticationSigningAlgorithm()));
+                            SignatureAlgorithm.from(clientData.tokenEndpointAuthenticationSigningAlgorithm()));
                 }
 
-                if (clientData.getRequireProofKey() != null) {
-                    clientSettingsBuilder.requireProofKey(clientData.getRequireProofKey());
+                if (clientData.requireProofKey() != null) {
+                    clientSettingsBuilder.requireProofKey(clientData.requireProofKey());
                 }
 
 

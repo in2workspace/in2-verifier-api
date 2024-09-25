@@ -2,7 +2,7 @@ package es.in2.vcverifier.service;
 
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.vcverifier.model.KeyType;
+import es.in2.vcverifier.model.enums.KeyType;
 
 import java.security.PublicKey;
 

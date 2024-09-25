@@ -9,7 +9,7 @@ import es.in2.vcverifier.exception.RequestMismatchException;
 import es.in2.vcverifier.exception.RequestObjectRetrievalException;
 import es.in2.vcverifier.exception.UnsupportedScopeException;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
-import es.in2.vcverifier.model.KeyType;
+import es.in2.vcverifier.model.enums.KeyType;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,5 +1,7 @@
 package es.in2.vcverifier.service.impl;
 
+import es.in2.vcverifier.exception.PublicKeyDecodingException;
+import es.in2.vcverifier.exception.UnsupportedDIDTypeException;
 import es.in2.vcverifier.service.DIDService;
 import io.github.novacrypto.base58.Base58;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +32,7 @@ public class DIDServiceImpl implements DIDService {
     @Override
     public PublicKey getPublicKeyFromDid(String did) {
         if (!did.startsWith("did:key:")) {
-            throw new IllegalArgumentException("Unsupported DID type. Only did:key is supported for the moment.");
+            throw new UnsupportedDIDTypeException("Unsupported DID type. Only did:key is supported for the moment.");
         }
 
         // Remove the "did:key:" prefix to get the actual encoded public key
@@ -44,7 +46,7 @@ public class DIDServiceImpl implements DIDService {
         try {
             // Remove the prefix "z" to get the multibase encoded string
             if (!encodePublicKey.startsWith("z")) {
-                throw new IllegalArgumentException("Invalid Public Key.");
+                throw new PublicKeyDecodingException("Invalid Public Key.");
             }
             String multibaseEncoded = encodePublicKey.substring(1);
 
@@ -77,7 +79,7 @@ public class DIDServiceImpl implements DIDService {
             return kf.generatePublic(pubKeySpec);
         }
         catch (Exception e) {
-            throw new RuntimeException("JWT signature verification failed.", e);
+            throw new PublicKeyDecodingException("JWT signature verification failed.", e);
         }
     }
 

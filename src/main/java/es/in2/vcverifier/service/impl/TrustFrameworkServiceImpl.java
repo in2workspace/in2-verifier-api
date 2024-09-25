@@ -1,6 +1,8 @@
 package es.in2.vcverifier.service.impl;
 
 import es.in2.vcverifier.config.properties.TrustFrameworkProperties;
+import es.in2.vcverifier.exception.RemoteFileFetchException;
+import es.in2.vcverifier.exception.IssuerOrParticipantIdException;
 import es.in2.vcverifier.service.TrustFrameworkService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +31,7 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
         try {
             return fetchRemoteFile(trustFrameworkProperties.clientsListUri()); // Reutiliza el método para obtener el JSON
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Error reading clients list from GitHub.", e);
+            throw new RemoteFileFetchException("Error reading clients list from GitHub.", e);
         }
     }
 
@@ -39,7 +41,7 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
             List<String> allowedIssuerIds = readRemoteFileAsList(trustFrameworkProperties.issuersListUri()); // Reutiliza el método para obtener la lista
             return allowedIssuerIds.contains(issuerId);
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Error reading issuer ID list from GitHub.", e);
+            throw new IssuerOrParticipantIdException("Error reading issuer ID list from GitHub.", e);
         }
     }
 
@@ -49,7 +51,7 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
             List<String> allowedParticipantIds = readRemoteFileAsList(trustFrameworkProperties.participantsListUri()); // Reutiliza el método para obtener la lista
             return allowedParticipantIds.contains(participantId);
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Error reading participant ID list from GitHub.", e);
+            throw new IssuerOrParticipantIdException("Error reading participant ID list from GitHub.", e);
         }
     }
 
@@ -66,8 +68,7 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
         if (response.statusCode() == 200) {
             return response.body(); // Devuelve el contenido del archivo
         } else {
-            throw new IOException("Failed to fetch file from GitHub. Status code: " + response.statusCode());
+            throw new RemoteFileFetchException("Failed to fetch file from GitHub. Status code: " + response.statusCode());
         }
     }
 }
-

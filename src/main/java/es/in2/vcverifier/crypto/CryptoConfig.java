@@ -11,7 +11,7 @@ public class CryptoConfig {
 
     public String getPrivateKey() {
         String privateKey = cryptoProperties.privateKey();
-        if (privateKey.contains("0x")) {
+        if (privateKey.startsWith("0x")) {
             privateKey = privateKey.substring(2);
         }
         return privateKey;

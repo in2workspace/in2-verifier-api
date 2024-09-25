@@ -6,8 +6,8 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.crypto.CryptoComponent;
 import es.in2.vcverifier.exception.InvalidCredentialTypeException;
-import es.in2.vcverifier.model.LEARCredentialEmployee;
-import es.in2.vcverifier.model.LEARCredentialMachine;
+import es.in2.vcverifier.model.credentials.employee.LEARCredentialEmployee;
+import es.in2.vcverifier.model.credentials.machine.LEARCredentialMachine;
 import es.in2.vcverifier.service.JWTService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -113,10 +113,10 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     private String getCredentialSubjectFromVerifiableCredential(Object verifiableCredential) {
         if (verifiableCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
             // Extrae y retorna el credentialSubject específico para `LEARCredentialEmployee`
-            return learCredentialEmployee.credentialSubject().mandate().mandatee().id();
+            return learCredentialEmployee.credentialSubjectLCEmployee().mandateLCEmployee().mandateeLCEmployee().id();
         } else if (verifiableCredential instanceof LEARCredentialMachine learCredentialMachine) {
             // Extrae y retorna el credentialSubject específico para `LEARCredentialMachine`
-            return learCredentialMachine.credentialSubject().mandate().mandatee().id();
+            return learCredentialMachine.credentialSubjectLCMachine().mandateLCMachine().mandateeLCMachine().id();
         }
 
         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);

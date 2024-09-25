@@ -12,9 +12,11 @@ import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.crypto.CryptoComponent;
+import es.in2.vcverifier.exception.JWTClaimMissingException;
 import es.in2.vcverifier.exception.JWTCreationException;
+import es.in2.vcverifier.exception.JWTParsingException;
 import es.in2.vcverifier.exception.JWTVerificationException;
-import es.in2.vcverifier.model.KeyType;
+import es.in2.vcverifier.model.enums.KeyType;
 import es.in2.vcverifier.service.JWTService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -88,7 +90,7 @@ public class JWTServiceImpl implements JWTService {
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("JWT signature verification failed.", e);
+            throw new JWTVerificationException("JWT signature verification failed.");
         }
     }
 
@@ -106,7 +108,6 @@ public class JWTServiceImpl implements JWTService {
                 }
                 yield new RSASSAVerifier((RSAPublicKey) publicKey);
             }
-            default -> throw new IllegalArgumentException("Unsupported key type");
         };
     }
 
@@ -115,8 +116,8 @@ public class JWTServiceImpl implements JWTService {
         try {
             return SignedJWT.parse(jwt);
         } catch (ParseException e) {
-            //TODO Create Custom Exception
-            throw new RuntimeException(e);
+            log.error("Error al parsear el JWTs: {}", e.getMessage());
+            throw new JWTParsingException("Error al parsear el JWTs");
         }
     }
 
@@ -129,7 +130,7 @@ public class JWTServiceImpl implements JWTService {
     public String getClaimFromPayload(Payload payload, String claimName) {
         String claimValue = (String) payload.toJSONObject().get(claimName);
         if (claimValue == null || claimValue.trim().isEmpty()) {
-            throw new IllegalArgumentException(String.format("The '%s' claim is missing or empty in the JWT payload.", claimName));
+            throw new JWTClaimMissingException(String.format("The '%s' claim is missing or empty in the JWT payload.", claimName));
         }
         return claimValue;
     }
@@ -138,7 +139,7 @@ public class JWTServiceImpl implements JWTService {
     public long getExpirationFromPayload(Payload payload) {
         Long exp = (Long) payload.toJSONObject().get("exp");
         if (exp == null || exp <= 0) {
-            throw new IllegalArgumentException("The 'exp' (expiration) claim is missing or invalid in the JWT payload.");
+            throw new JWTClaimMissingException("The 'exp' (expiration) claim is missing or invalid in the JWT payload.");
         }
         return exp;
     }

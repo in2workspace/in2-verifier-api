@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.shaded.gson.internal.LinkedTreeMap;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.vcverifier.exception.InvalidCredentialTypeException;
-import es.in2.vcverifier.model.LEARCredentialEmployee;
-import es.in2.vcverifier.model.LEARCredentialMachine;
-import es.in2.vcverifier.model.LEARCredentialType;
+import es.in2.vcverifier.exception.*;
+import es.in2.vcverifier.model.credentials.employee.LEARCredentialEmployee;
+import es.in2.vcverifier.model.credentials.machine.LEARCredentialMachine;
+import es.in2.vcverifier.model.enums.LEARCredentialType;
 import es.in2.vcverifier.service.JWTService;
 import es.in2.vcverifier.service.TrustFrameworkService;
 import es.in2.vcverifier.service.VpService;
@@ -83,10 +83,10 @@ public class VpServiceImpl implements VpService {
 
             if (types.contains(LEARCredentialType.LEARCredentialEmployee.getValue())) {
                 LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(vcObject);
-                mandateeId = learCredentialEmployee.credentialSubject().mandate().mandatee().id();
+                mandateeId = learCredentialEmployee.credentialSubjectLCEmployee().mandateLCEmployee().mandateeLCEmployee().id();
             } else if (types.contains(LEARCredentialType.LEARCredentialMachine.getValue())) {
                 LEARCredentialMachine learCredentialMachine = mapCredentialToLEARCredentialMachine(vcObject);
-                mandateeId = learCredentialMachine.credentialSubject().mandate().mandatee().id();
+                mandateeId = learCredentialMachine.credentialSubjectLCMachine().mandateLCMachine().mandateeLCMachine().id();
             } else {
                 throw new InvalidCredentialTypeException("Invalid Credential Type. LEARCredentialEmployee or LEARCredentialMachine required.");
             }
@@ -121,8 +121,8 @@ public class VpServiceImpl implements VpService {
         return convertObjectToJSONNode(getCredentialFromTheVerifiablePresentation(verifiablePresentation));
     }
 
-    private JsonNode convertObjectToJSONNode(Object vcObject) {
-        JsonNode jsonNode = null;
+    private JsonNode convertObjectToJSONNode(Object vcObject) throws JsonConversionException {
+        JsonNode jsonNode;
 
         try {
             if (vcObject instanceof Map) {
@@ -132,20 +132,20 @@ public class VpServiceImpl implements VpService {
                 // Si el objeto es un JSONObject, lo convertimos a String y luego a JsonNode
                 jsonNode = objectMapper.readTree(vcObject.toString());
             } else {
-                throw new IllegalArgumentException("El tipo del objeto no es compatible para la conversión a JsonNode.");
+                throw new JsonConversionException("El tipo del objeto no es compatible para la conversión a JsonNode.");
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            // Manejar la excepción adecuadamente
+            throw new JsonConversionException("Error durante la conversión a JsonNode.");
         }
         return jsonNode;
     }
+
 
     private LEARCredentialMachine mapCredentialToLEARCredentialMachine(Object vcObject) {
         try {
             return objectMapper.convertValue(vcObject, LEARCredentialMachine.class);
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Error converting VC to LEARCredentialMachine", e);
+            throw new CredentialMappingException("Error converting VC to LEARCredentialMachine");
         }
     }
 
@@ -154,7 +154,7 @@ public class VpServiceImpl implements VpService {
             // Convert the Object to a Map or directly to the LEARCredentialEmployee class
             return objectMapper.convertValue(vcObject, LEARCredentialEmployee.class);
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Error converting VC to LEARCredentialEmployee", e);
+            throw new CredentialMappingException("Error converting VC to LEARCredentialEmployee");
         }
     }
 
@@ -175,25 +175,25 @@ public class VpServiceImpl implements VpService {
             return SignedJWT.parse((String) firstCredential);
 
         } catch (ParseException e) {
-            throw new RuntimeException("Error parsing the Verifiable Presentation or Verifiable Credential", e);
+            throw new JWTParsingException("Error parsing the Verifiable Presentation or Verifiable Credential");
         }
     }
 
     private static Object getVcClaim(Object vpClaim) {
         if (vpClaim == null) {
-            throw new RuntimeException("The 'vp' claim was not found in the Verifiable Presentation");
+            throw new JWTClaimMissingException("The 'vp' claim was not found in the Verifiable Presentation");
         }
 
         // Ensure that vpClaim is an instance of Map (JSON object)
         if (!(vpClaim instanceof Map<?, ?> vpMap)) {
-            throw new RuntimeException("The 'vp' claim is not a valid object");
+            throw new JWTClaimMissingException("The 'vp' claim is not a valid object");
         }
 
         // Extract the "verifiableCredential" claim inside "vp"
         Object vcClaim = vpMap.get("verifiableCredential");
 
         if (vcClaim == null) {
-            throw new RuntimeException("The 'verifiableCredential' claim was not found within 'vp'");
+            throw new JWTClaimMissingException("The 'verifiableCredential' claim was not found within 'vp'");
         }
 
         return vcClaim;
@@ -202,20 +202,21 @@ public class VpServiceImpl implements VpService {
 
     private static Object getFirstCredential(Object vcClaim) {
         if (!(vcClaim instanceof List<?> verifiableCredentials)) {
-            throw new IllegalStateException("The verifiableCredential claim is not an array");
+            throw new CredentialException("The verifiableCredential claim is not an array");
         }
 
         if (verifiableCredentials.isEmpty()) {
-            throw new IllegalStateException("No Verifiable Credential found in Verifiable Presentation");
+            throw new CredentialException("No Verifiable Credential found in Verifiable Presentation");
         }
 
         // Ensure the first item is a String (JWT in string form)
         Object firstCredential = verifiableCredentials.get(0);
         if (!(firstCredential instanceof String)) {
-            throw new IllegalStateException("The first Verifiable Credential is not a valid JWT string");
+            throw new CredentialException("The first Verifiable Credential is not a valid JWT string");
         }
         return firstCredential;
     }
+
 
     private boolean extractAndVerifyCertificate(Map<String, Object> vcHeader, String expectedOrgId) throws Exception {
         // Retrieve the x5c claim (certificate chain)

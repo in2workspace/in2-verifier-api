@@ -1,4 +1,4 @@
-package es.in2.vcverifier.model;
+package es.in2.vcverifier.model.enums;
 
 import lombok.Getter;
 

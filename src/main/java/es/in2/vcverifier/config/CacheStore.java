@@ -19,7 +19,6 @@ public class CacheStore<T> {
                 .build();
     }
 
-    // Obtener el valor directamente sin Mono
     public T get(String key) {
         T value = cache.getIfPresent(key);
         if (value != null) {
@@ -29,14 +28,12 @@ public class CacheStore<T> {
         }
     }
 
-    // Eliminar un valor de la caché sin Mono
     public void delete(String key) {
         cache.invalidate(key);
     }
 
-    // Añadir un valor a la caché sin Mono
     public String add(String key, T value) {
-        if (key != null && !key.trim().isEmpty() && value != null) {
+        if (key != null && !key.isBlank() && value != null) {
             cache.put(key, value);
             return key;
         }

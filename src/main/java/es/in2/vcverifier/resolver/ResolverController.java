@@ -4,10 +4,8 @@ import es.in2.vcverifier.service.DIDService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigInteger;
 import java.security.PublicKey;
@@ -26,6 +24,7 @@ public class ResolverController {
     private final DIDService didService;
 
     @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
     public CustomJWKS resolveDid(@PathVariable String id) {
         PublicKey publicKey = didService.getPublicKeyFromDid(id);
 
@@ -33,7 +32,7 @@ public class ResolverController {
         ECPoint point = ecPublicKey.getW();
 
         CustomJWKS customJWKS = CustomJWKS.builder()
-                .keys(List.of(CustomJWKS.CustomJWK.builder()
+                .keys(List.of(CustomJWK.builder()
                         .kty("EC")
                         .crv("P-256")
                         .kid(id)

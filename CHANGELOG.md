@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project scaffolding and setup
 
 ### Added
-- Spring Security with Authorization Server configuration, supporting OIDC flows.
+- Spring Security with Authorization Server configuration, supporting OIDC flows (OID4VP flow).
 - Custom authentication filters to handle token requests and authorization code flows.
 - Custom token filters for OIDC token validation and processing.
 - Cryptographic components for ECKey generation (P-256) and managing cryptographic properties
