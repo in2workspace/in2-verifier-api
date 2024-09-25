@@ -1,6 +1,7 @@
 package es.in2.vcverifier.oid4vp.controller;
 
 import es.in2.vcverifier.config.CacheStore;
+import es.in2.vcverifier.exception.ResourceNotFoundException;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import es.in2.vcverifier.oid4vp.service.AuthorizationResponseProcessorService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,12 +30,9 @@ public class Oid4vpController {
         String jwt = authorizationRequestJWT.authRequest();
 
         if (jwt != null) {
-            // Si el JWT existe en la caché, lo devolvemos en la respuesta
             return ResponseEntity.ok(jwt);
         } else {
-            // Si no se encuentra el JWT, devolvemos un error 404
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("JWT not found for id: " + id);
+            throw new ResourceNotFoundException("JWT not found for id: " + id);
         }
     }
 
