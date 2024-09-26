@@ -1,9 +1,13 @@
 package es.in2.vcverifier.service.impl;
 
+import es.in2.vcverifier.config.ApiConfig;
 import es.in2.vcverifier.config.properties.TrustFrameworkProperties;
+import es.in2.vcverifier.exception.InvalidSpringProfile;
 import es.in2.vcverifier.exception.RemoteFileFetchException;
 import es.in2.vcverifier.exception.IssuerOrParticipantIdException;
+import es.in2.vcverifier.model.enums.Profile;
 import es.in2.vcverifier.service.TrustFrameworkService;
+import es.in2.vcverifier.util.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,6 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TrustFrameworkServiceImpl implements TrustFrameworkService {
     private final TrustFrameworkProperties trustFrameworkProperties;
+    private final ApiConfig apiConfig;
 
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.ALWAYS) // Habilitar seguimiento de redirecciones
@@ -29,10 +34,20 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
     @Override
     public String fetchAllowedClient() {
         try {
-            return fetchRemoteFile(trustFrameworkProperties.clientsListUri()); // Reutiliza el método para obtener el JSON
+            return fetchRemoteFile(trustFrameworkProperties.clientsListUri() + getExternalYamlProfile() + Constants.YAML_FILE_SUFFIX);
         } catch (IOException | InterruptedException e) {
             throw new RemoteFileFetchException("Error reading clients list from GitHub.", e);
         }
+    }
+
+    private String getExternalYamlProfile() {
+        String profile = apiConfig.getCurrentEnvironment();
+
+        if (profile == null) {
+            throw new InvalidSpringProfile("Environment variable SPRING_PROFILES_ACTIVE is not set");
+        }
+        Profile resolvedProfile = Profile.fromString(profile);
+        return resolvedProfile.getAbbreviation();
     }
 
     @Override

@@ -2,7 +2,10 @@ package es.in2.vcverifier.config;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import es.in2.vcverifier.exception.ClientLoadingException;
 import es.in2.vcverifier.model.ClientData;
+import es.in2.vcverifier.model.ExternalTrustedListYamlData;
 import es.in2.vcverifier.service.TrustFrameworkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -23,7 +26,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ClientLoaderConfig {
 
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
     private final TrustFrameworkService trustFrameworkService;
 
     @Bean
@@ -34,15 +37,14 @@ public class ClientLoaderConfig {
 
     private List<RegisteredClient> loadClients() {
         try {
-            // Leer el archivo JSON
-            String clientsJson = trustFrameworkService.fetchAllowedClient();
-            List<ClientData> clientsData = objectMapper.readValue(clientsJson, new TypeReference<>() {
-            });
+            // Leer el archivo YAML
+            String clientsYaml = trustFrameworkService.fetchAllowedClient();
+            ExternalTrustedListYamlData clientsYamlData = yamlMapper.readValue(clientsYaml,ExternalTrustedListYamlData.class);
 
             List<RegisteredClient> registeredClients = new ArrayList<>();
 
             // Convertir cada ClientData a RegisteredClient y agregarlo a la lista
-            for (ClientData clientData : clientsData) {
+            for (ClientData clientData : clientsYamlData.clients()) {
                 RegisteredClient.Builder registeredClientBuilder = RegisteredClient.withId(UUID.randomUUID().toString())
                         .clientId(clientData.clientId())
                         .clientAuthenticationMethods(authMethods -> clientData.clientAuthenticationMethods().forEach(method ->
@@ -74,14 +76,13 @@ public class ClientLoaderConfig {
                     clientSettingsBuilder.requireProofKey(clientData.requireProofKey());
                 }
 
-
                 registeredClientBuilder.clientSettings(clientSettingsBuilder.build());
 
                 registeredClients.add(registeredClientBuilder.build());
             }
             return registeredClients;
         } catch (Exception e) {
-            throw new RuntimeException("Error loading clients from JSON", e);
+            throw new ClientLoadingException("Error loading clients from Yaml", e);
         }
     }
 }

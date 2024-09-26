@@ -18,11 +18,8 @@ security:
   authorizationServer:
   token:
     accessToken:
-      cronUnit: "DAYS"
-      expiration: 30
-    refreshToken:
-      cronUnit: "DAYS"
-      expiration: 10
+      cronUnit:
+      expiration:
 
 trust-framework:
   issuersListUri:

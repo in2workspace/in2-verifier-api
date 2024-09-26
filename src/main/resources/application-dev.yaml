@@ -20,9 +20,6 @@ security:
     accessToken:
       cronUnit:
       expiration:
-    refreshToken:
-      cronUnit:
-      expiration:
 
 trust-framework:
   issuersListUri:

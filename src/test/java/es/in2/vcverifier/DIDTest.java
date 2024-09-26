@@ -15,11 +15,7 @@ import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.*;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
-import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
