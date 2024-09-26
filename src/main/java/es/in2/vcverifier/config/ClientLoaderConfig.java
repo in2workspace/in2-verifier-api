@@ -1,12 +1,11 @@
 package es.in2.vcverifier.config;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import es.in2.vcverifier.exception.ClientLoadingException;
 import es.in2.vcverifier.model.ClientData;
 import es.in2.vcverifier.model.ExternalTrustedListYamlData;
-import es.in2.vcverifier.service.TrustFrameworkService;
+import es.in2.vcverifier.service.AllowedClientsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,7 +26,7 @@ import java.util.UUID;
 public class ClientLoaderConfig {
 
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
-    private final TrustFrameworkService trustFrameworkService;
+    private final AllowedClientsService allowedClientsService;
 
     @Bean
     public RegisteredClientRepository registeredClientRepository() {
@@ -38,7 +37,7 @@ public class ClientLoaderConfig {
     private List<RegisteredClient> loadClients() {
         try {
             // Leer el archivo YAML
-            String clientsYaml = trustFrameworkService.fetchAllowedClient();
+            String clientsYaml = allowedClientsService.fetchAllowedClient();
             ExternalTrustedListYamlData clientsYamlData = yamlMapper.readValue(clientsYaml,ExternalTrustedListYamlData.class);
 
             List<RegisteredClient> registeredClients = new ArrayList<>();

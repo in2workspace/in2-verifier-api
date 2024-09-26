@@ -21,10 +21,11 @@ security:
       cronUnit:
       expiration:
 
-trust-framework:
-  issuersListUri:
-  participantsListUri:
-  clientsListUri:
+clientsRepository:
+  uri:
+
+trustedIssuerList:
+  uri: "http://localhost:8080/v4/issuers/"
 
 crypto:
   privateKey:
