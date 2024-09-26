@@ -1,12 +1,11 @@
 package es.in2.vcverifier.service.impl;
 
 import es.in2.vcverifier.config.ApiConfig;
-import es.in2.vcverifier.config.properties.TrustFrameworkProperties;
+import es.in2.vcverifier.config.properties.ClientRepositoryProperties;
 import es.in2.vcverifier.exception.InvalidSpringProfile;
 import es.in2.vcverifier.exception.RemoteFileFetchException;
-import es.in2.vcverifier.exception.IssuerOrParticipantIdException;
 import es.in2.vcverifier.model.enums.Profile;
-import es.in2.vcverifier.service.TrustFrameworkService;
+import es.in2.vcverifier.service.AllowedClientsService;
 import es.in2.vcverifier.util.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,14 +16,12 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Arrays;
-import java.util.List;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class TrustFrameworkServiceImpl implements TrustFrameworkService {
-    private final TrustFrameworkProperties trustFrameworkProperties;
+public class AllowedClientsServiceImpl implements AllowedClientsService {
+    private final ClientRepositoryProperties clientRepositoryProperties;
     private final ApiConfig apiConfig;
 
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
@@ -34,8 +31,9 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
     @Override
     public String fetchAllowedClient() {
         try {
-            return fetchRemoteFile(trustFrameworkProperties.clientsListUri() + getExternalYamlProfile() + Constants.YAML_FILE_SUFFIX);
+            return fetchRemoteFile(clientRepositoryProperties.uri() + getExternalYamlProfile() + Constants.YAML_FILE_SUFFIX);
         } catch (IOException | InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new RemoteFileFetchException("Error reading clients list from GitHub.", e);
         }
     }
@@ -48,31 +46,6 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
         }
         Profile resolvedProfile = Profile.fromString(profile);
         return resolvedProfile.getAbbreviation();
-    }
-
-    @Override
-    public boolean isIssuerIdAllowed(String issuerId) {
-        try {
-            List<String> allowedIssuerIds = readRemoteFileAsList(trustFrameworkProperties.issuersListUri()); // Reutiliza el método para obtener la lista
-            return allowedIssuerIds.contains(issuerId);
-        } catch (IOException | InterruptedException e) {
-            throw new IssuerOrParticipantIdException("Error reading issuer ID list from GitHub.", e);
-        }
-    }
-
-    @Override
-    public boolean isParticipantIdAllowed(String participantId) {
-        try {
-            List<String> allowedParticipantIds = readRemoteFileAsList(trustFrameworkProperties.participantsListUri()); // Reutiliza el método para obtener la lista
-            return allowedParticipantIds.contains(participantId);
-        } catch (IOException | InterruptedException e) {
-            throw new IssuerOrParticipantIdException("Error reading participant ID list from GitHub.", e);
-        }
-    }
-
-    private List<String> readRemoteFileAsList(String fileUrl) throws IOException, InterruptedException {
-        String content = fetchRemoteFile(fileUrl);
-        return Arrays.asList(content.split("\n")); // Convierte el contenido en lista de líneas
     }
 
     private String fetchRemoteFile(String fileUrl) throws IOException, InterruptedException {
