@@ -68,23 +68,22 @@ public class VpServiceImpl implements VpService {
 
             // Step 3: Extract and validate credential types
             List<String> credentialTypes = getCredentialTypes(payload);
-            IssuerCredentialsCapabilities issuerCredentialsCapabilities = trustedIssuerListService.getTrustedIssuerListData(credentialIssuerDid);
 
-            // Step 4: Validate credential type against issuer capabilities
-            if (!validateCredentialTypeWithIssuerCapabilities(issuerCredentialsCapabilities.credentialsType(), credentialTypes)) {
-                log.error("Credential type {} is not supported by issuer {}", credentialTypes, credentialIssuerDid);
-                return false;
-            }
+            // Step 4: Retrieve the list of issuer capabilities
+            List<IssuerCredentialsCapabilities> issuerCapabilitiesList = trustedIssuerListService.getTrustedIssuerListData(credentialIssuerDid);
+
+            // Step 5: Validate credential type against issuer capabilities
+            validateCredentialTypeWithIssuerCapabilities(issuerCapabilitiesList, credentialTypes);
             log.info("Issuer DID {} is a trusted participant", credentialIssuerDid);
 
             // Step 5: Extract the mandateeId from the Verifiable Credential
             String mandateeId = extractMandateeId(credentialTypes, payload);
 
-            // Validate the mandatee ID with trusted issuer service
-            if (trustedIssuerListService.getTrustedIssuerListData(mandateeId) != null) {
-                log.error("Mandatee ID {} is not in the allowed list", mandateeId);
-                return false;
-            }
+            //TODO this must be validated against the participants list, not the issuer list
+
+            // Validate the mandatee ID with trusted issuer service, if is not present the trustedIssuerListService throws an exception
+            trustedIssuerListService.getTrustedIssuerListData(mandateeId);
+
             log.info("Mandatee ID {} is valid and allowed", mandateeId);
 
             // Step 6: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
@@ -152,9 +151,20 @@ public class VpServiceImpl implements VpService {
         }
     }
 
-    private boolean validateCredentialTypeWithIssuerCapabilities(String credentialType, List<String> credentialTypes) {
-        // Check if the credential type of the issuer is in the list of supported credential types
-        return !credentialTypes.contains(credentialType);
+    private void validateCredentialTypeWithIssuerCapabilities(List<IssuerCredentialsCapabilities> issuerCapabilitiesList, List<String> credentialTypes) {
+        // Iterate over each credential type in the verifiable credential
+        for (String credentialType : credentialTypes) {
+            // Check if any of the issuer capabilities support this credential type
+            boolean isSupported = issuerCapabilitiesList.stream()
+                    .anyMatch(capability -> capability.credentialsType().equals(credentialType));
+
+            // If we find a matching capability, return from the method
+            if (isSupported) {
+                return;
+            }
+        }
+        // If none of the credential types are supported, throw an exception
+        throw new InvalidCredentialTypeException("Credential types " + credentialTypes + " are not supported by the issuer.");
     }
 
     private JsonNode convertObjectToJSONNode(Object vcObject) throws JsonConversionException {

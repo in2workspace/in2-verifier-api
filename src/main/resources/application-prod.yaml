@@ -25,7 +25,7 @@ clientsRepository:
   uri:
 
 trustedIssuerList:
-  uri: "http://localhost:8080/v4/issuers/"
+  uri:
 
 crypto:
   privateKey:
