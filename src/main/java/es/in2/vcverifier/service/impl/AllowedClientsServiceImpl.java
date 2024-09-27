@@ -41,7 +41,7 @@ public class AllowedClientsServiceImpl implements AllowedClientsService {
     private String getExternalYamlProfile() {
         String profile = apiConfig.getCurrentEnvironment();
 
-        if (profile == null) {
+        if (profile == null || profile.isBlank()) {
             throw new InvalidSpringProfile("Environment variable SPRING_PROFILES_ACTIVE is not set");
         }
         Profile resolvedProfile = Profile.fromString(profile);

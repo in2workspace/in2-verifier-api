@@ -1,5 +1,6 @@
 package es.in2.vcverifier.config;
 
+import es.in2.vcverifier.exception.InvalidSpringProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
@@ -18,10 +19,16 @@ public class ApiConfig {
         List<String> profiles = List.of(environment.getActiveProfiles());
         if (profiles.isEmpty()) {
             log.debug(environment.getDefaultProfiles()[0]);
-            return environment.getDefaultProfiles()[0];
+            if (environment.getDefaultProfiles()[0] != null && !environment.getDefaultProfiles()[0].isBlank()){
+                return environment.getDefaultProfiles()[0];
+            }
         } else {
             log.debug(environment.getActiveProfiles()[0]);
-            return profiles.get(0);
+            if (profiles.get(0) != null && !profiles.get(0).isBlank()){
+                return profiles.get(0);
+            }
         }
+        throw new InvalidSpringProfile("An error occurred while trying to retrieve the current Spring Profile");
     }
+
 }
