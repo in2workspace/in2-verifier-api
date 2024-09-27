@@ -25,7 +25,7 @@ security:
       expiration: 30
 
 clientsRepository:
-  uri: "https://raw.githubusercontent.com/DOME-Marketplace/dome-services-directory/refs/heads/main/trusted-service-list-lcl.yaml"
+  uri: "https://raw.githubusercontent.com/DOME-Marketplace/dome-services-directory/refs/heads/main/trusted-service-list-"
 
 trustedIssuerList:
   uri: "http://localhost:8080/v4/issuers/"

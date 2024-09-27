@@ -5,6 +5,7 @@ import lombok.Getter;
 
 @Getter
 public enum Profile {
+    DEFAULT("lcl"), // Currently mapped to the local environment
     LOCAL("lcl"),
     DEV("sbx"),
     TEST("dev"),
