@@ -20,6 +20,7 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/health").permitAll()
                         .requestMatchers("/oid4vp/auth-request/*").permitAll()
                         .requestMatchers("/oid4vp/auth-response").permitAll()
                         .requestMatchers("/login").permitAll()
