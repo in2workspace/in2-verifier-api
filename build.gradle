@@ -58,6 +58,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-authorization-server'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	// Cryptography
 	implementation 'com.nimbusds:nimbus-jose-jwt:9.40'
 	implementation 'org.bitcoinj:bitcoinj-core:0.17-alpha5'
