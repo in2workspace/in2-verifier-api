@@ -15,5 +15,5 @@ public record LEARCredentialMachine(
         @JsonProperty("issuanceDate") String issuanceDate,
         @JsonProperty("validFrom") String validFrom,
         @JsonProperty("expirationDate") String expirationDate,
-        @JsonProperty("credentialSubject") CredentialSubjectLCMachine credentialSubjectLCMachine
+        @JsonProperty("credentialSubject") CredentialSubjectLCMachine credentialSubject
 ) {}
