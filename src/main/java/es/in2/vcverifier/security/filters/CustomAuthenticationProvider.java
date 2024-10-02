@@ -116,7 +116,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             return learCredentialEmployee.credentialSubjectLCEmployee().mandateLCEmployee().mandateeLCEmployee().id();
         } else if (verifiableCredential instanceof LEARCredentialMachine learCredentialMachine) {
             // Extrae y retorna el credentialSubject específico para `LEARCredentialMachine`
-            return learCredentialMachine.credentialSubjectLCMachine().mandateLCMachine().mandateeLCMachine().id();
+            return learCredentialMachine.credentialSubject().mandate().mandatee().id();
         }
 
         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
