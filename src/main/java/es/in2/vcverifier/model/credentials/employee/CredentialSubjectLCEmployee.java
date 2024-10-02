@@ -5,5 +5,5 @@ import lombok.Builder;
 
 @Builder
 public record CredentialSubjectLCEmployee(
-        @JsonProperty("mandate") MandateLCEmployee mandateLCEmployee
+        @JsonProperty("mandate") MandateLCEmployee mandate
 ) {}

@@ -113,7 +113,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     private String getCredentialSubjectFromVerifiableCredential(Object verifiableCredential) {
         if (verifiableCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
             // Extrae y retorna el credentialSubject específico para `LEARCredentialEmployee`
-            return learCredentialEmployee.credentialSubjectLCEmployee().mandateLCEmployee().mandateeLCEmployee().id();
+            return learCredentialEmployee.credentialSubject().mandate().mandatee().id();
         } else if (verifiableCredential instanceof LEARCredentialMachine learCredentialMachine) {
             // Extrae y retorna el credentialSubject específico para `LEARCredentialMachine`
             return learCredentialMachine.credentialSubject().mandate().mandatee().id();

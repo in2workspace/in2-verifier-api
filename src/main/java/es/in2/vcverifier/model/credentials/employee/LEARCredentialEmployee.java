@@ -10,7 +10,7 @@ public record LEARCredentialEmployee(
         @JsonProperty("@context") List<String> context,
         @JsonProperty("id") String id,
         @JsonProperty("type") List<String> type,
-        @JsonProperty("credentialSubject") CredentialSubjectLCEmployee credentialSubjectLCEmployee,
+        @JsonProperty("credentialSubject") CredentialSubjectLCEmployee credentialSubject,
         @JsonProperty("expirationDate") String expirationDate,
         @JsonProperty("issuanceDate") String issuanceDate,
         @JsonProperty("issuer") String issuer,

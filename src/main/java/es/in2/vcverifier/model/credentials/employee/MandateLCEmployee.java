@@ -12,8 +12,8 @@ import java.util.List;
 public record MandateLCEmployee(
         @JsonProperty("id") String id,
         @JsonProperty("life_span") LifeSpan lifeSpan,
-        @JsonProperty("mandatee") MandateeLCEmployee mandateeLCEmployee,
+        @JsonProperty("mandatee") MandateeLCEmployee mandatee,
         @JsonProperty("mandator") Mandator mandator,
-        @JsonProperty("power") List<PowerLCEmployee> powerLCEmployee,
+        @JsonProperty("power") List<PowerLCEmployee> power,
         @JsonProperty("signer") Signer signer
 ) {}

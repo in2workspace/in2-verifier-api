@@ -142,7 +142,7 @@ public class VpServiceImpl implements VpService {
 
         if (credentialTypes.contains(LEARCredentialType.LEARCredentialEmployee.getValue())) {
             LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(vcObject);
-            return learCredentialEmployee.credentialSubjectLCEmployee().mandateLCEmployee().mandateeLCEmployee().id();
+            return learCredentialEmployee.credentialSubject().mandate().mandatee().id();
         } else if (credentialTypes.contains(LEARCredentialType.LEARCredentialMachine.getValue())) {
             LEARCredentialMachine learCredentialMachine = mapCredentialToLEARCredentialMachine(vcObject);
             return learCredentialMachine.credentialSubject().mandate().mandatee().id();
