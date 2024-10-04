@@ -75,7 +75,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
         }
         Instant issueTime = Instant.now();
-        Instant expirationTime = issueTime.plus(securityProperties.token().accessToken().expiration(), ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit()));
+        Instant expirationTime = issueTime.plus(Long.parseLong(securityProperties.token().accessToken().expiration()), ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit()));
 
         // Register the Oauth2Authorization because is needed for verifications
         OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(registeredClient)

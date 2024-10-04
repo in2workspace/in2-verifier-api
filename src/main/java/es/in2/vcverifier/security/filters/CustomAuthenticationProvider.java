@@ -54,7 +54,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(
-                securityProperties.token().accessToken().expiration(),
+                Long.parseLong(securityProperties.token().accessToken().expiration()),
                 ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit())
         );
         Object credential = getVerifiableCredential(authentication);

@@ -46,11 +46,11 @@ management:
       application: ${spring.application.name}
 
 security:
-  authorizationServer: "http://localhost:9000"
+  authorizationServer: "https://verifier.dome-marketplace-lcl.org"
   token:
     accessToken:
-      cronUnit: "DAYS"
-      expiration: 30
+      expiration: "5"
+      cronUnit: "MINUTES"
 
 clientsRepository:
   uri: "https://raw.githubusercontent.com/DOME-Marketplace/dome-services-directory/refs/heads/main/trusted-service-list-"

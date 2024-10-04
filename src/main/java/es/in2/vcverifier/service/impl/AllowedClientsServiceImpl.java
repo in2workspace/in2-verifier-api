@@ -30,8 +30,6 @@ public class AllowedClientsServiceImpl implements AllowedClientsService {
 
     @Override
     public String fetchAllowedClient() {
-        System.out.println("AllowedClientsServiceImpl --> fetchAllowedClient() --> ENV PROFILE" + apiConfig.getCurrentEnvironment());
-        System.out.println("AllowedClientsServiceImpl --> fetchAllowedClient() --> CLIENT REPOSITORY URI: " + clientRepositoryProperties.uri());
         try {
             return fetchRemoteFile(clientRepositoryProperties.uri() + getExternalYamlProfile() + Constants.YAML_FILE_SUFFIX);
         } catch (IOException | InterruptedException e) {
@@ -54,7 +52,6 @@ public class AllowedClientsServiceImpl implements AllowedClientsService {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(fileUrl))
                 .build();
-        System.out.println("AllowedClientsServiceImpl --> fetchRemoteFile() --> HttpRequest URI: " + request.uri());
         HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() == 200) {
             return response.body(); // Devuelve el contenido del archivo

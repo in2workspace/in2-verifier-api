@@ -14,22 +14,19 @@ public record SecurityProperties(
     @ConstructorBinding
     public SecurityProperties (String authorizationServer, TokenProperties token){
         this.authorizationServer = authorizationServer;
-        this.token = Optional.ofNullable(token).orElse(new TokenProperties(null, null));
+        this.token = Optional.ofNullable(token).orElse(new TokenProperties(null));
     }
 
     public record TokenProperties(
-            @NestedConfigurationProperty AccessTokenProperties accessToken,
-            @NestedConfigurationProperty RefreshTokenProperties refreshToken) {
+            @NestedConfigurationProperty AccessTokenProperties accessToken) {
 
         @ConstructorBinding
-        public TokenProperties(AccessTokenProperties accessToken, RefreshTokenProperties refreshToken) {
+        public TokenProperties(AccessTokenProperties accessToken) {
             this.accessToken = Optional.ofNullable(accessToken).orElse(new AccessTokenProperties(null,null));
-            this.refreshToken = Optional.ofNullable(refreshToken).orElse(new RefreshTokenProperties(null,null));
         }
 
-        public record AccessTokenProperties(Integer expiration, String cronUnit) { }
+        public record AccessTokenProperties(String expiration, String cronUnit) { }
 
-        public record RefreshTokenProperties(Integer expiration, String cronUnit) { }
 
     }
 

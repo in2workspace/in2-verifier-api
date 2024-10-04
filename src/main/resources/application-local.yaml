@@ -49,8 +49,8 @@ security:
   authorizationServer: "https://verifier.dome-marketplace-lcl.org"
   token:
     accessToken:
+      expiration: "1"
       cronUnit: "DAYS"
-      expiration: 30
 
 clientsRepository:
   uri: "https://raw.githubusercontent.com/DOME-Marketplace/dome-services-directory/refs/heads/main/trusted-service-list-"
