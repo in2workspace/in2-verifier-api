@@ -72,10 +72,11 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         if (clientId == null) {
             throw new IllegalArgumentException("Client ID is required.");
         }
-
+        System.out.println("Hola: jwt uri: " + requestUri);
         // Case 1: JWT needs to be retrieved via "request_uri"
         if (requestUri != null) {
             log.info("Retrieving JWT from request_uri: " + requestUri);
+
 
             // Retrieve the JWT from the request_uri via HTTP GET
             HttpClient client = HttpClient.newHttpClient();
@@ -87,7 +88,9 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
             try {
                 httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
                 jwt = httpResponse.body(); // Set the JWT from the HTTP response body
+                System.out.println("Hola: jwt body: " + jwt);
             } catch (IOException | InterruptedException e) {
+                System.out.println("Hola: error retrieving jwt: " + e.getMessage());
                 Thread.currentThread().interrupt();
                 throw new RequestObjectRetrievalException(e.getMessage());
             }
