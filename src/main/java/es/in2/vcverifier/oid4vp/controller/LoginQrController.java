@@ -16,7 +16,7 @@ public class LoginQrController {
 
     @GetMapping("/login")
     @ResponseStatus(HttpStatus.OK)
-    public String showQrLogin(@RequestParam("authRequest") String authRequest, Model model) {
+    public String showQrLogin(@RequestParam("authRequest") String authRequest, @RequestParam("state") String state, Model model) {
         try {
             // Generar la imagen QR en base64
             String qrImageBase64 = generateQRCodeImageBase64(authRequest);
@@ -24,6 +24,8 @@ public class LoginQrController {
             // Pasar el QR en base64 y el authRequest en texto al modelo
             model.addAttribute("qrImage", "data:image/png;base64," + qrImageBase64);
             model.addAttribute("authRequest", authRequest);
+            // Pasar el sessionId al modelo
+            model.addAttribute("state", state);
 
         } catch (Exception e) {
             throw new QRCodeGenerationException(e.getMessage());
