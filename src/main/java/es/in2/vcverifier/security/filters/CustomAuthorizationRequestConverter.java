@@ -68,6 +68,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         String clientId = request.getParameter(CLIENT_ID);     // client_id parameter
         String state = request.getParameter("state");
         String scope = request.getParameter(SCOPE);
+        System.out.println("Hola: " + scope);
 
         if (clientId == null) {
             throw new IllegalArgumentException("Client ID is required.");
