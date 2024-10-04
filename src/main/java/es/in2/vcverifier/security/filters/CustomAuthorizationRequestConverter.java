@@ -62,7 +62,6 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     @Override
     public Authentication convert(HttpServletRequest request) {
         log.info("CustomAuthorizationRequestConverter.convert");
-
         String requestUri = request.getParameter(REQUEST_URI); // request_uri parameter
         String jwt;     // request parameter (JWT directly)
         String clientId = request.getParameter(CLIENT_ID);     // client_id parameter
@@ -134,7 +133,10 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
 
             String authRequest = generateOpenId4VpUrl(nonce);
 
-            String redirectUrl = "/login?authRequest=" + URLEncoder.encode(authRequest, StandardCharsets.UTF_8);
+            String redirectUrl = String.format("/login?authRequest=%s&state=%s",
+                    URLEncoder.encode(authRequest, StandardCharsets.UTF_8),
+                    URLEncoder.encode(state, StandardCharsets.UTF_8));
+
             OAuth2Error error = new OAuth2Error("custom_error", "Redirection required", redirectUrl);
             throw new OAuth2AuthorizationCodeRequestAuthenticationException(error,null);
         } catch (ParseException e) {
@@ -168,7 +170,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
 
     private String buildAuthorizationRequestJwtPayload(String scope, String state) {
         // TODO this should be mapped with his presentation definition and return the presentation definition
-        if (scope.equals("openid learcredential")){
+        if (scope.equals("openid_learcredential")){
             scope = "dome.credentials.presentation.LEARCredentialEmployee";
         }
         else {

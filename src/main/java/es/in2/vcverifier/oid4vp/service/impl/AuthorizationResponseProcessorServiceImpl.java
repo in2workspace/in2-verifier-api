@@ -5,9 +5,9 @@ import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.oid4vp.service.AuthorizationResponseProcessorService;
 import es.in2.vcverifier.service.VpService;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
@@ -20,7 +20,6 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -38,10 +37,11 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
     private final SecurityProperties securityProperties;
     private final RegisteredClientRepository registeredClientRepository;
     private final OAuth2AuthorizationService oAuth2AuthorizationService;
+    private final SimpMessagingTemplate messagingTemplate;
 
 
     @Override
-    public void processAuthResponse(String state, String vpToken, HttpServletResponse response){
+    public void processAuthResponse(String state, String vpToken){
         // Validate if the state exists in the cache
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = cacheStoreForOAuth2AuthorizationRequest.get(state);
         // Remove the state from cache after retrieving the Object
@@ -105,11 +105,10 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
 
         //Perform the redirection using HttpServletResponse
         log.info("Redirecting to URL: {}", redirectUrl);
-        try {
-            response.sendRedirect(redirectUrl);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
+        // Enviar la URL de redirección al cliente a través del WebSocket
+        messagingTemplate.convertAndSend("/oidc/redirection/" + state, redirectUrl);
+
     }
 }
 

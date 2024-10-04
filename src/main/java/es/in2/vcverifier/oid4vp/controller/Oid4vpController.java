@@ -40,10 +40,9 @@ public class Oid4vpController {
     public void processAuthResponse(
             @RequestParam("state") String state,
             @RequestParam("vp_token") String vpToken,
-            @RequestParam(value = "presentation_submission", required = false) String presentationSubmission,
-            HttpServletResponse response) {
+            @RequestParam(value = "presentation_submission", required = false) String presentationSubmission) {
         //TODO We need use presentationSubmission in the future
-        authorizationResponseProcessorService.processAuthResponse(state, vpToken, response);
+        authorizationResponseProcessorService.processAuthResponse(state, vpToken);
     }
 }
 
