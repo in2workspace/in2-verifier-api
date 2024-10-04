@@ -168,7 +168,8 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
 
     private String buildAuthorizationRequestJwtPayload(String scope, String state) {
         // TODO this should be mapped with his presentation definition and return the presentation definition
-        if (scope.equals("openid learcredential")){
+        // FIXME use openid learcredential  instead openid learcred
+        if (scope.equals("openid learcred")){
             scope = "dome.credentials.presentation.LEARCredentialEmployee";
         }
         else {
