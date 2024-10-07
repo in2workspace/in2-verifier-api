@@ -61,7 +61,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
 
     private Authentication handleH2MGrant(MultiValueMap<String, String> parameters) {
         String code = parameters.getFirst(OAuth2ParameterNames.CODE);
-//        String state = parameters.getFirst(OAuth2ParameterNames.STATE);
+        String state = parameters.getFirst(OAuth2ParameterNames.STATE);
         String clientId = parameters.getFirst(OAuth2ParameterNames.CLIENT_ID);
 
         AuthorizationCodeData authorizationCodeData = cacheStoreForAuthorizationCodeData.get(code);
@@ -71,10 +71,12 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         // Remove the authorization from the initial request
         oAuth2AuthorizationService.remove(authorizationCodeData.oAuth2Authorization());
 
-//        if (!authorizationCodeData.state().equals(state)) {
-//            log.error("State mismatch. Expected: {}, Actual: {}", authorizationCodeData.state(), state);
-//            throw new IllegalArgumentException("Invalid state parameter");
-//        }
+        // Check state only if it is not null and not blank
+        if (state != null && !state.isBlank() && (!authorizationCodeData.state().equals(state))) {
+                log.error("State mismatch. Expected: {}, Actual: {}", authorizationCodeData.state(), state);
+                throw new IllegalArgumentException("Invalid state parameter");
+
+        }
 
         Authentication clientPrincipal = SecurityContextHolder.getContext().getAuthentication();
 
