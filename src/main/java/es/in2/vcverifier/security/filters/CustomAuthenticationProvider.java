@@ -68,7 +68,6 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 issueTime,
                 expirationTime
         );
-        System.out.println("Hola, este es el token" + oAuth2AccessToken.getTokenValue());
 
         return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken);
     }
@@ -157,9 +156,9 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     private String getScope(Object verifiableCredential){
         if (verifiableCredential instanceof LEARCredentialEmployee) {
-            return "openid learcred";
+            return "openid learcredential";
         } else if (verifiableCredential instanceof LEARCredentialMachine) {
-            return "machine learcred";
+            return "machine learcredential";
         } else {
             throw new InvalidCredentialTypeException("Credential Type not supported: " + verifiableCredential.getClass().getName());
         }
