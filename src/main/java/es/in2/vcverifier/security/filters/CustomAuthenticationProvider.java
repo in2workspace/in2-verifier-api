@@ -68,6 +68,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 issueTime,
                 expirationTime
         );
+        System.out.println("Hola, este es el token" + oAuth2AccessToken.getTokenValue());
 
         return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken);
     }
