@@ -68,7 +68,6 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 issueTime,
                 expirationTime
         );
-
         return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken);
     }
 
