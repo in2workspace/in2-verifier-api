@@ -19,9 +19,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientCredentialsAuthenticationToken;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -31,8 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -59,6 +60,37 @@ public class CustomTokenRequestConverterTest {
 
     @InjectMocks
     private CustomTokenRequestConverter customTokenRequestConverter;
+
+    @Test
+    void convert_authorizationCodeGrant_shouldReturnOAuth2ClientCredentialsAuthenticationToken() {
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        Authentication clientPrincipal = mock(Authentication.class);
+        SecurityContextHolder.getContext().setAuthentication(clientPrincipal);
+
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "authorization_code");
+        parameters.add(OAuth2ParameterNames.CODE, "code");
+        parameters.add(OAuth2ParameterNames.CLIENT_ID, "client-id");
+        parameters.add(OAuth2ParameterNames.STATE, "state");
+
+        when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
+
+        AuthorizationCodeData authorizationCodeData = mock(AuthorizationCodeData.class);
+        when(cacheStoreForAuthorizationCodeData.get("code")).thenReturn(authorizationCodeData);
+        when(authorizationCodeData.state()).thenReturn("state");
+
+        JsonNode jsonNodeMock = mock(JsonNode.class);
+        when(authorizationCodeData.verifiableCredential()).thenReturn(jsonNodeMock);
+
+        Authentication result = customTokenRequestConverter.convert(mockRequest);
+
+        assertNotNull(result);
+        assertInstanceOf(OAuth2AuthorizationCodeAuthenticationToken.class, result);
+
+        verify(cacheStoreForAuthorizationCodeData).delete("code");
+        verify(oAuth2AuthorizationService).remove(authorizationCodeData.oAuth2Authorization());
+    }
+
 
     @Test
     void convert_clientCredentialsGrant_shouldReturnOAuth2ClientCredentialsAuthenticationToken() {

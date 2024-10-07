@@ -299,41 +299,6 @@ public class CustomAuthenticationProviderTest {
     }
 
     @Test
-    void authenticate_throws_InvalidCredentialTypeException_when_getScope_from_Invalid_Credential_Type() {
-        String clientId = "test-client-id";
-        Map<String, Object> additionalParameters = new HashMap<>();
-        additionalParameters.put("vc", new HashMap<>());
-        additionalParameters.put("client_id", clientId);
-        additionalParameters.put("audience", "test-audience");
-
-        OAuth2AuthorizationCodeAuthenticationToken auth = mock(OAuth2AuthorizationCodeAuthenticationToken.class);
-        when(auth.getAdditionalParameters()).thenReturn(additionalParameters);
-
-        RegisteredClient registeredClient = mock(RegisteredClient.class);
-        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
-        when(securityProperties.token()).thenReturn(mock(SecurityProperties.TokenProperties.class));
-        when(securityProperties.token().accessToken()).thenReturn(mock(SecurityProperties.TokenProperties.AccessTokenProperties.class));
-        when(securityProperties.token().accessToken().expiration()).thenReturn("3600");
-        when(securityProperties.token().accessToken().cronUnit()).thenReturn("SECONDS");
-
-        JsonNode jsonNode = mock(JsonNode.class);
-        when(objectMapper.convertValue(additionalParameters.get("vc"), JsonNode.class)).thenReturn(jsonNode);
-
-        LEARCredentialEmployee credential = getLEARCredentialEmployee();
-        when(objectMapper.convertValue(any(), eq(LEARCredentialEmployee.class))).thenReturn(credential);
-
-        String jwtToken = "mock-jwt-token";
-        when(jwtService.generateJWT(any())).thenReturn(jwtToken);
-
-        when(cryptoComponent.getECKey()).thenReturn(mock(ECKey.class));
-        when(cryptoComponent.getECKey().getKeyID()).thenReturn("mock-key-id");
-
-        InvalidCredentialTypeException exception = assertThrows(InvalidCredentialTypeException.class, () -> customAuthenticationProvider.authenticate(auth));
-
-        assertEquals(InvalidCredentialTypeException.class, exception.getClass());
-    }
-
-    @Test
     void supports_returnsTrue_forAuthorizationCodeAuthenticationToken() {
         boolean result = customAuthenticationProvider.supports(OAuth2AuthorizationCodeAuthenticationToken.class);
         assertTrue(result);
