@@ -3,8 +3,57 @@ server:
 
 logging:
   level:
-    org.springframework.security: trace
+    es.in2: info
 
 spring:
   application:
     name: VC Verifier
+  web:
+    resources:
+      static-locations:
+        - classpath:/static/
+        - classpath:/resources/
+
+# Spring Management Configuration - Actuator
+management:
+  endpoints:
+    enabled-by-default: false
+    web:
+      exposure:
+        include: health, info, loggers, metrics, prometheus
+      base-path: /
+      path-mapping:
+        health: health
+        info: info
+        loggers: loggers
+        metrics: metrics
+        prometheus: prometheus
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+    loggers:
+      enabled: true
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+security:
+  authorizationServer:
+  token:
+    accessToken:
+      cronUnit:
+      expiration:
+
+clientsRepository:
+  uri:
+
+trustedIssuerList:
+  uri:
+
+crypto:
+  privateKey:
