@@ -25,10 +25,6 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class DIDServiceImpl implements DIDService {
 
-    public String createDidKey() {
-        return null;
-    }
-
     @Override
     public PublicKey getPublicKeyFromDid(String did) {
         if (!did.startsWith("did:key:")) {
