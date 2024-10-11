@@ -1,5 +1,6 @@
 package es.in2.vcverifier.exception.handler;
 
+import es.in2.vcverifier.exception.QRCodeGenerationException;
 import es.in2.vcverifier.exception.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public GlobalErrorMessage handleNoSuchElementException(NoSuchElementException ex) {
         log.error("Element not found", ex);
         return new GlobalErrorMessage("","","");
+    }
+
+    @ExceptionHandler(QRCodeGenerationException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public GlobalErrorMessage handleQRCodeGenerationException(QRCodeGenerationException ex) {
+        log.error("QR Code Generation Failed", ex);
+        return new GlobalErrorMessage("QR Code Generation Failed","","");
     }
 
     @ExceptionHandler(Exception.class)
