@@ -75,6 +75,7 @@ public class JWTServiceImpl implements JWTService {
         }
 
     }
+
     @Override
     public void verifyJWTSignature(String jwt, PublicKey publicKey, KeyType keyType) {
         try {
