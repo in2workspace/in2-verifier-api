@@ -254,14 +254,14 @@
     <div class="left-column">
         <div class="registration-card">
             <h3>Your organization must be registered in the marketplace before you log in.</h3>
-            <button th:attr="onclick='window.location.href=' + '${onboardingUrl}'">
+            <button th:attr="onclick='window.location.href=' + '${onboardingUri}'">
                 <i class="fa-solid fa-laptop"></i>
                 Registration
             </button>
         </div>
         <div class="card">
             <h3>Having trouble logging in?</h3>
-            <p>Get help from <a th:href="${supportUrl}">Customer Support</a></p>
+            <p>Get help from <a th:href="${supportUri}">Customer Support</a></p>
         </div>
     </div>
     <div class="right-column">
@@ -284,7 +284,7 @@
                 <div class="instructions">
                     <h3>Login instructions</h3>
                     <h4>1. You must register or log in to a Wallet using your phone. You may use the <a
-                            th:href="${walletUrl}">DOME Wallet</a>.</h4>
+                            th:href="${walletUri}">DOME Wallet</a>.</h4>
                     <h4>2. Scan the QR code.</h4>
                     <h4>3. Select the credential.</h4>
                 </div>

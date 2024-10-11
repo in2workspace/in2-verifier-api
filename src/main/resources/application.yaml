@@ -61,8 +61,10 @@ trustedIssuerList:
 crypto:
   privateKey: "73e509a7681d4a395b1ced75681c4dc4020dbab02da868512276dd766733d5b5" # for test purposes
 
-ui:
-  urls:
-    onboardingUrl:
-    supportUrl:
-    walletUrl:
+verifier:
+  ui:
+    login:
+      uris:
+        onboardingUri:
+        supportUri:
+        walletUri:

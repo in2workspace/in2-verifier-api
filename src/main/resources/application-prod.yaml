@@ -58,8 +58,10 @@ trustedIssuerList:
 crypto:
   privateKey:
 
-ui:
-  urls:
-    onboardingUrl:
-    supportUrl:
-    walletUrl:
+verifier:
+  ui:
+    login:
+      uris:
+        onboardingUri:
+        supportUri:
+        walletUri:

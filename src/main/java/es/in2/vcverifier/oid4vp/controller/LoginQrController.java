@@ -1,6 +1,6 @@
 package es.in2.vcverifier.oid4vp.controller;
 
-import es.in2.vcverifier.config.properties.UiUrlsProperties;
+import es.in2.vcverifier.config.properties.VerifierUiLoginUrisProperties;
 import es.in2.vcverifier.exception.QRCodeGenerationException;
 import lombok.RequiredArgsConstructor;
 import net.glxn.qrgen.javase.QRCode;
@@ -16,7 +16,7 @@ import java.util.Base64;
 @RequiredArgsConstructor
 public class LoginQrController {
 
-    private final UiUrlsProperties uiUrlsProperties;
+    private final VerifierUiLoginUrisProperties verifierUiLoginUrisProperties;
 
 
     @GetMapping("/login")
@@ -32,9 +32,9 @@ public class LoginQrController {
             // Pasar el sessionId al modelo
             model.addAttribute("state", state);
 
-            model.addAttribute("onboardingUrl", uiUrlsProperties.onboardingUrl());
-            model.addAttribute("supportUrl", uiUrlsProperties.supportUrl());
-            model.addAttribute("walletUrl", uiUrlsProperties.walletUrl());
+            model.addAttribute("onboardingUri", verifierUiLoginUrisProperties.onboardingUri());
+            model.addAttribute("supportUri", verifierUiLoginUrisProperties.supportUri());
+            model.addAttribute("walletUri", verifierUiLoginUrisProperties.walletUri());
 
         } catch (Exception e) {
             throw new QRCodeGenerationException(e.getMessage());
