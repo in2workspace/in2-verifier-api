@@ -39,7 +39,7 @@ public class AllowedClientsServiceImplTest {
         when(clientRepositoryProperties.uri()).thenReturn("https://example.com/");
 
         RemoteFileFetchException thrown = assertThrows(RemoteFileFetchException.class, () -> allowedClientsService.fetchAllowedClient());
-        assertEquals("Failed to fetch file from GitHub. Status code: 500", thrown.getMessage());
+        assertEquals("Error reading clients list from GitHub.", thrown.getMessage());
     }
 
     @Test

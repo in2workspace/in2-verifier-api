@@ -264,105 +264,105 @@ public class VpServiceImpl implements VpService {
     }
 
 
-    private boolean extractAndVerifyCertificate(Map<String, Object> vcHeader, String expectedOrgId) throws Exception {
-        // Retrieve the x5c claim (certificate chain)
-        Object x5cObj = vcHeader.get("x5c");
-
-        if (!(x5cObj instanceof List<?> x5c)) {
-            throw new IllegalArgumentException("The x5c claim is not a valid list");
-        }
-
-        if (x5c.isEmpty()) {
-            throw new IllegalArgumentException("No certificate (x5c) found in JWT header");
-        }
-
-        CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-
-        for (Object certBase64Obj : x5c) {
-            if (!(certBase64Obj instanceof String)) {
-                log.error("Invalid certificate format in x5c");
-                continue; // Skip invalid entries and continue with the next one
-            }
-
-            // Decode each certificate
-            byte[] certBytes = Base64.getDecoder().decode((String) certBase64Obj);
-            X509Certificate certificate = (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certBytes));
-
-            // Extract the DN (Distinguished Name)
-            X500Principal subject = certificate.getSubjectX500Principal();
-            String distinguishedName = subject.getName();
-            log.info("Extracted DN: {}", distinguishedName);
-
-            // Try to extract the organizationIdentifier from the DN
-            String orgIdentifierFromDN = extractOrganizationIdentifierFromDN(distinguishedName);
-            if (orgIdentifierFromDN != null && orgIdentifierFromDN.equals(expectedOrgId)) {
-                log.info("Found matching organization identifier in DN: {}", orgIdentifierFromDN);
-                return true; // Organization identifier matches, return true
-            }
-        }
-
-        // If the loop finishes without finding a match, throw an exception
-        throw new OrganizationIdentifierNotFoundException("Organization Identifier not found in certificates.");
-    }
-
-
-    // Helper method to extract and decode the organizationIdentifier from the DN
-    private String extractOrganizationIdentifierFromDN(String distinguishedName) {
-        log.info("Extracting organizationIdentifier from DN: {}", distinguishedName);
-
-        // Use a regular expression to find the 2.5.4.97 OID in the DN
-        Pattern pattern = Pattern.compile("2\\.5\\.4\\.97=#([0-9A-F]+)", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(distinguishedName);
-
-        if (matcher.find()) {
-            String hexValue = matcher.group(1);
-            log.info("Extracted hex value for organizationIdentifier: {}", hexValue);
-
-            // Decode the hex string properly as ASN.1 encoded value
-            return decodeHexToReadableString(hexValue);
-        } else {
-            log.warn("OID 2.5.4.97 not found in DN: {}", distinguishedName);
-        }
-        return null; // Return null if organizationIdentifier is not found
-    }
+//    private boolean extractAndVerifyCertificate(Map<String, Object> vcHeader, String expectedOrgId) throws Exception {
+//        // Retrieve the x5c claim (certificate chain)
+//        Object x5cObj = vcHeader.get("x5c");
+//
+//        if (!(x5cObj instanceof List<?> x5c)) {
+//            throw new IllegalArgumentException("The x5c claim is not a valid list");
+//        }
+//
+//        if (x5c.isEmpty()) {
+//            throw new IllegalArgumentException("No certificate (x5c) found in JWT header");
+//        }
+//
+//        CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+//
+//        for (Object certBase64Obj : x5c) {
+//            if (!(certBase64Obj instanceof String)) {
+//                log.error("Invalid certificate format in x5c");
+//                continue; // Skip invalid entries and continue with the next one
+//            }
+//
+//            // Decode each certificate
+//            byte[] certBytes = Base64.getDecoder().decode((String) certBase64Obj);
+//            X509Certificate certificate = (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certBytes));
+//
+//            // Extract the DN (Distinguished Name)
+//            X500Principal subject = certificate.getSubjectX500Principal();
+//            String distinguishedName = subject.getName();
+//            log.info("Extracted DN: {}", distinguishedName);
+//
+//            // Try to extract the organizationIdentifier from the DN
+//            String orgIdentifierFromDN = extractOrganizationIdentifierFromDN(distinguishedName);
+//            if (orgIdentifierFromDN != null && orgIdentifierFromDN.equals(expectedOrgId)) {
+//                log.info("Found matching organization identifier in DN: {}", orgIdentifierFromDN);
+//                return true; // Organization identifier matches, return true
+//            }
+//        }
+//
+//        // If the loop finishes without finding a match, throw an exception
+//        throw new OrganizationIdentifierNotFoundException("Organization Identifier not found in certificates.");
+//    }
 
 
-    // Method to properly decode the hex value as an ASN.1 structure
-    private String decodeHexToReadableString(String hexValue) {
-        try {
-            byte[] octets = hexStringToByteArray(hexValue);
-            try (ASN1InputStream asn1InputStream = new ASN1InputStream(new ByteArrayInputStream(octets))) {
-                ASN1Primitive asn1Primitive = asn1InputStream.readObject();
-
-                if (asn1Primitive instanceof ASN1OctetString octetString) {
-                    return new String(octetString.getOctets(), StandardCharsets.UTF_8); // Try to decode as UTF-8
-                } else if (asn1Primitive instanceof ASN1PrintableString asn1PrintableString) {
-                    return ( asn1PrintableString.getString());
-                } else if (asn1Primitive instanceof ASN1UTF8String asn1UTF8String) {
-                    return (asn1UTF8String.getString());
-                } else if (asn1Primitive instanceof ASN1IA5String asn1IA5String) {
-                    return (asn1IA5String.getString());
-                } else {
-                    log.warn("Unrecognized ASN.1 type: {}", asn1Primitive.getClass().getSimpleName());
-                }
-            }
-        } catch (IOException e) {
-            log.error("Error decoding hex value to readable string", e);
-        }
-        return null;
-    }
+//    // Helper method to extract and decode the organizationIdentifier from the DN
+//    private String extractOrganizationIdentifierFromDN(String distinguishedName) {
+//        log.info("Extracting organizationIdentifier from DN: {}", distinguishedName);
+//
+//        // Use a regular expression to find the 2.5.4.97 OID in the DN
+//        Pattern pattern = Pattern.compile("2\\.5\\.4\\.97=#([0-9A-F]+)", Pattern.CASE_INSENSITIVE);
+//        Matcher matcher = pattern.matcher(distinguishedName);
+//
+//        if (matcher.find()) {
+//            String hexValue = matcher.group(1);
+//            log.info("Extracted hex value for organizationIdentifier: {}", hexValue);
+//
+//            // Decode the hex string properly as ASN.1 encoded value
+//            return decodeHexToReadableString(hexValue);
+//        } else {
+//            log.warn("OID 2.5.4.97 not found in DN: {}", distinguishedName);
+//        }
+//        return null; // Return null if organizationIdentifier is not found
+//    }
 
 
-    // Convert hex string to byte array
-    private byte[] hexStringToByteArray(String hex) {
-        int len = hex.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-                    + Character.digit(hex.charAt(i+1), 16));
-        }
-        return data;
-    }
+//    // Method to properly decode the hex value as an ASN.1 structure
+//    private String decodeHexToReadableString(String hexValue) {
+//        try {
+//            byte[] octets = hexStringToByteArray(hexValue);
+//            try (ASN1InputStream asn1InputStream = new ASN1InputStream(new ByteArrayInputStream(octets))) {
+//                ASN1Primitive asn1Primitive = asn1InputStream.readObject();
+//
+//                if (asn1Primitive instanceof ASN1OctetString octetString) {
+//                    return new String(octetString.getOctets(), StandardCharsets.UTF_8); // Try to decode as UTF-8
+//                } else if (asn1Primitive instanceof ASN1PrintableString asn1PrintableString) {
+//                    return ( asn1PrintableString.getString());
+//                } else if (asn1Primitive instanceof ASN1UTF8String asn1UTF8String) {
+//                    return (asn1UTF8String.getString());
+//                } else if (asn1Primitive instanceof ASN1IA5String asn1IA5String) {
+//                    return (asn1IA5String.getString());
+//                } else {
+//                    log.warn("Unrecognized ASN.1 type: {}", asn1Primitive.getClass().getSimpleName());
+//                }
+//            }
+//        } catch (IOException e) {
+//            log.error("Error decoding hex value to readable string", e);
+//        }
+//        return null;
+//    }
+
+
+//    // Convert hex string to byte array
+//    private byte[] hexStringToByteArray(String hex) {
+//        int len = hex.length();
+//        byte[] data = new byte[len / 2];
+//        for (int i = 0; i < len; i += 2) {
+//            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
+//                    + Character.digit(hex.charAt(i+1), 16));
+//        }
+//        return data;
+//    }
 }
 
 

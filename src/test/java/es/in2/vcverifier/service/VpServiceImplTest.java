@@ -1,5 +1,7 @@
 package es.in2.vcverifier.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
@@ -7,6 +9,7 @@ import com.nimbusds.jose.shaded.gson.internal.LinkedTreeMap;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.exception.CredentialMappingException;
 import es.in2.vcverifier.exception.JWTParsingException;
+import es.in2.vcverifier.exception.JsonConversionException;
 import es.in2.vcverifier.exception.UnsupportedDIDTypeException;
 import es.in2.vcverifier.model.credentials.employee.CredentialSubjectLCEmployee;
 import es.in2.vcverifier.model.credentials.employee.LEARCredentialEmployee;
@@ -21,6 +24,7 @@ import es.in2.vcverifier.model.issuer.IssuerCredentialsCapabilities;
 import es.in2.vcverifier.model.issuer.TimeRange;
 import es.in2.vcverifier.service.impl.VpServiceImpl;
 import org.assertj.core.api.Assertions;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,10 +32,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -75,7 +76,53 @@ public class VpServiceImplTest {
     }
 
     @Test
-    void getCredentialFromTheVerifiablePresentationAsJsonNode_success(){
+    void getCredentialFromTheVerifiablePresentationAsJsonNode_with_VC_JSONObject_success() throws JsonProcessingException {
+        String verifiablePresentation = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
+
+        Payload payload = mock(Payload.class);
+        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
+
+        JSONObject mockVC = new JSONObject();
+        when(jwtService.getVCFromPayload(payload)).thenReturn(mockVC);
+
+        JsonNode jsonNode = mock(JsonNode.class);
+        when(objectMapper.readTree(mockVC.toString())).thenReturn(jsonNode);
+
+        Object result = vpServiceImpl.getCredentialFromTheVerifiablePresentationAsJsonNode(verifiablePresentation);
+
+        Assertions.assertThat(mockVC).isNotNull();
+        Assertions.assertThat(jsonNode).isEqualTo(result);
+
+        verify(jwtService, times(1)).getPayloadFromSignedJWT(any(SignedJWT.class));
+        verify(jwtService, times(1)).getVCFromPayload(any(Payload.class));
+        verify(objectMapper, times(1)).readTree(any(String.class));
+    }
+
+    @Test
+    void getCredentialFromTheVerifiablePresentationAsJsonNode_with_VC_Map_success() throws JsonProcessingException {
+        String verifiablePresentation = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
+
+        Payload payload = mock(Payload.class);
+        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
+
+        Map<String, String> mockVC = new HashMap<>();
+        when(jwtService.getVCFromPayload(payload)).thenReturn(mockVC);
+
+        JsonNode jsonNode = mock(JsonNode.class);
+        when(objectMapper.convertValue(mockVC, JsonNode.class)).thenReturn(jsonNode);
+
+        Object result = vpServiceImpl.getCredentialFromTheVerifiablePresentationAsJsonNode(verifiablePresentation);
+
+        Assertions.assertThat(mockVC).isNotNull();
+        Assertions.assertThat(jsonNode).isEqualTo(result);
+
+        verify(jwtService, times(1)).getPayloadFromSignedJWT(any(SignedJWT.class));
+        verify(jwtService, times(1)).getVCFromPayload(any(Payload.class));
+        verify(objectMapper, times(1)).convertValue(mockVC,JsonNode.class);
+    }
+
+    @Test
+    void getCredentialFromTheVerifiablePresentationAsJsonNode_with_VC_unsupported_instance_throw_JsonConversionException(){
         String verifiablePresentation = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
 
         Payload payload = mock(Payload.class);
@@ -84,15 +131,54 @@ public class VpServiceImplTest {
         Object mockVC = new Object();
         when(jwtService.getVCFromPayload(payload)).thenReturn(mockVC);
 
-        // TODO In progress
-        JsonNode result = vpServiceImpl.getCredentialFromTheVerifiablePresentationAsJsonNode(verifiablePresentation);
+        JsonConversionException thrown = assertThrows(JsonConversionException.class, () -> vpServiceImpl.getCredentialFromTheVerifiablePresentationAsJsonNode(verifiablePresentation));
 
-        Assertions.assertThat(mockVC).isNotNull();
-        Assertions.assertThat(mockVC).isEqualTo(result);
+        Assertions.assertThat(thrown.getMessage()).isEqualTo("Error durante la conversión a JsonNode.");
 
         verify(jwtService, times(1)).getPayloadFromSignedJWT(any(SignedJWT.class));
-        verify(jwtService, times(1)).getVCFromPayload(any(Payload.class));
+
     }
+
+    @Test
+    void getCredentialFromTheVerifiablePresentationAsJsonNode_with_VC_Map_throw_JsonConversionException_when_mapping(){
+        String verifiablePresentation = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
+
+        Payload payload = mock(Payload.class);
+        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
+
+        Map<String, Object> mockVC = new HashMap<>();
+
+        when(jwtService.getVCFromPayload(payload)).thenReturn(mockVC);
+
+        when(objectMapper.convertValue(mockVC, JsonNode.class)).thenThrow(new IllegalArgumentException(new JsonConversionException("Error durante la conversión a JsonNode.")));
+
+
+        JsonConversionException thrown = assertThrows(JsonConversionException.class, () -> vpServiceImpl.getCredentialFromTheVerifiablePresentationAsJsonNode(verifiablePresentation));
+
+        Assertions.assertThat(thrown.getMessage()).isEqualTo("Error durante la conversión a JsonNode.");
+
+    }
+
+    @Test
+    void getCredentialFromTheVerifiablePresentationAsJsonNode_with_VC_JSONObject_throw_JsonConversionException_when_mapping() throws JsonProcessingException {
+        String verifiablePresentation = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
+
+        Payload payload = mock(Payload.class);
+        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
+
+        JSONObject mockVC = new JSONObject();
+
+        when(jwtService.getVCFromPayload(payload)).thenReturn(mockVC);
+
+        when(objectMapper.readTree(mockVC.toString())).thenThrow(new JsonConversionException("Error durante la conversión a JsonNode."));
+
+
+        JsonConversionException thrown = assertThrows(JsonConversionException.class, () -> vpServiceImpl.getCredentialFromTheVerifiablePresentationAsJsonNode(verifiablePresentation));
+
+        Assertions.assertThat(thrown.getMessage()).isEqualTo("Error durante la conversión a JsonNode.");
+
+    }
+
 
     @Test
     void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_LEARCredentialMachine_return_true() {
