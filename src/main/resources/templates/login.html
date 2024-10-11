@@ -329,6 +329,11 @@
     // Función para configurar el enlace del botón con el authRequest
     function configureAuthRequest() {
         const walletButton = document.getElementById('dome-wallet-button');
+
+        if (walletBaseUri && !walletBaseUri.endsWith("/")) {
+                walletBaseUri += "/";
+            }
+
         if (authRequest) {
             let walletUri = authRequest.replace("openid4vp://", walletBaseUri);
             walletButton.onclick = () => window.location.href = walletUri;
