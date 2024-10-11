@@ -1,6 +1,8 @@
 package es.in2.vcverifier.oid4vp.controller;
 
+import es.in2.vcverifier.config.properties.UiUrlsProperties;
 import es.in2.vcverifier.exception.QRCodeGenerationException;
+import lombok.RequiredArgsConstructor;
 import net.glxn.qrgen.javase.QRCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -11,7 +13,10 @@ import java.io.ByteArrayOutputStream;
 import java.util.Base64;
 
 @Controller
+@RequiredArgsConstructor
 public class LoginQrController {
+
+    private final UiUrlsProperties uiUrlsProperties;
 
 
     @GetMapping("/login")
@@ -27,6 +32,10 @@ public class LoginQrController {
             // Pasar el sessionId al modelo
             model.addAttribute("state", state);
 
+            model.addAttribute("onboardingUrl", uiUrlsProperties.onboardingUrl());
+            model.addAttribute("supportUrl", uiUrlsProperties.supportUrl());
+            model.addAttribute("walletUrl", uiUrlsProperties.walletUrl());
+
         } catch (Exception e) {
             throw new QRCodeGenerationException(e.getMessage());
         }
@@ -34,7 +43,7 @@ public class LoginQrController {
         return "login";
     }
 
-    private String generateQRCodeImageBase64(String barcodeText){
+    private String generateQRCodeImageBase64(String barcodeText) {
         ByteArrayOutputStream stream = QRCode
                 .from(barcodeText)
                 .withSize(250, 250)
