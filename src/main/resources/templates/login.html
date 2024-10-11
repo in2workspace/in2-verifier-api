@@ -300,6 +300,7 @@
     /*<![CDATA[*/
     let authRequest = /*[[${authRequest}]]*/ "";
     let state = /*[[${state}]]*/ "";  // Si 'state' es un identificador único, está bien usarlo
+    let walletBaseUri = /*[[${walletUri}]]*/ "";
     /*]]>*/
 </script>
 <script src="https://cdn.jsdelivr.net/sockjs/latest/sockjs.min.js"></script>
@@ -329,7 +330,7 @@
     function configureAuthRequest() {
         const walletButton = document.getElementById('dome-wallet-button');
         if (authRequest) {
-            let walletUri = authRequest.replace("openid4vp://", "https://wallet.dome-marketplace.org");
+            let walletUri = authRequest.replace("openid4vp://", walletBaseUri);
             walletButton.onclick = () => window.location.href = walletUri;
         }
     }
