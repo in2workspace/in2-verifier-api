@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
@@ -15,6 +16,9 @@ class CustomAuthorizationRequestConverterTest {
 
     @Mock
     private HttpServletRequest httpServletRequest;
+
+    @Mock
+    private RegisteredClientRepository registeredClientRepository;
 
     @InjectMocks
     private CustomAuthorizationRequestConverter customAuthorizationRequestConverter;
@@ -29,6 +33,8 @@ class CustomAuthorizationRequestConverterTest {
         when(httpServletRequest.getParameter("request_uri")).thenReturn(null);
         when(httpServletRequest.getParameter("scope")).thenReturn(unsupportedScope);
         when(httpServletRequest.getParameter("state")).thenReturn(state);
+
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(null);
 
         assertThrows(IllegalArgumentException.class, () -> customAuthorizationRequestConverter.convert(httpServletRequest));
     }

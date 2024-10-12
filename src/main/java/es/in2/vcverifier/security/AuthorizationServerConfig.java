@@ -13,10 +13,7 @@ import es.in2.vcverifier.security.filters.CustomAuthenticationProvider;
 import es.in2.vcverifier.security.filters.CustomAuthorizationRequestConverter;
 import es.in2.vcverifier.security.filters.CustomErrorResponseHandler;
 import es.in2.vcverifier.security.filters.CustomTokenRequestConverter;
-import es.in2.vcverifier.service.ClientAssertionValidationService;
-import es.in2.vcverifier.service.DIDService;
-import es.in2.vcverifier.service.JWTService;
-import es.in2.vcverifier.service.VpService;
+import es.in2.vcverifier.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -54,6 +51,7 @@ public class AuthorizationServerConfig {
     private final RegisteredClientRepository registeredClientRepository;
     private final CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
     private final ObjectMapper objectMapper;
+    private final HttpClientService httpClientService;
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -67,7 +65,7 @@ public class AuthorizationServerConfig {
                                 // Adds an AuthenticationConverter (pre-processor) used when attempting to extract
                                 // an OAuth2 authorization request (or consent) from HttpServletRequest to an instance
                                 // of OAuth2AuthorizationCodeRequestAuthenticationToken or OAuth2AuthorizationConsentAuthenticationToken.
-                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStoreForAuthorizationRequestJWT,cacheStoreForOAuth2AuthorizationRequest,securityProperties))
+                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStoreForAuthorizationRequestJWT,cacheStoreForOAuth2AuthorizationRequest,securityProperties,httpClientService,registeredClientRepository))
                                 .errorResponseHandler(new CustomErrorResponseHandler())
                 )
                 .tokenEndpoint(tokenEndpoint ->

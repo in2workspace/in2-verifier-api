@@ -46,7 +46,7 @@ management:
       application: ${spring.application.name}
 
 security:
-  authorizationServer: "https://verifier.dome-marketplace-lcl.org"
+  authorizationServer: "http://localhost:9000"
   token:
     accessToken:
       expiration: "1"
@@ -56,7 +56,7 @@ clientsRepository:
   uri: "https://raw.githubusercontent.com/DOME-Marketplace/dome-services-directory/refs/heads/main/trusted-service-list-"
 
 trustedIssuerList:
-  uri: "http://localhost:8080/v4/issuers/"
+  uri: "http://localhost:8082/v4/issuers/"
 
 crypto:
   privateKey: "73e509a7681d4a395b1ced75681c4dc4020dbab02da868512276dd766733d5b5" # for test purposes
