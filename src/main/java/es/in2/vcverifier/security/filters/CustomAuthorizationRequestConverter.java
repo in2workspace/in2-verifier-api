@@ -1,12 +1,12 @@
 package es.in2.vcverifier.security.filters;
 
-import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.crypto.CryptoComponent;
 import es.in2.vcverifier.exception.RequestMismatchException;
-import es.in2.vcverifier.exception.RequestObjectRetrievalException;
 import es.in2.vcverifier.exception.UnsupportedScopeException;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import es.in2.vcverifier.model.enums.KeyType;
@@ -16,7 +16,6 @@ import es.in2.vcverifier.service.JWTService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONObject;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
@@ -30,7 +29,6 @@ import java.net.URLEncoder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
-import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -74,20 +72,18 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         // Case 2: JWT present via either 'request_uri' or 'request' parameters
         jwt = retrieveJwtFromRequestUriOrRequest(requestUri, request);
 
-        try {
-            JWSObject jwsObject = JWSObject.parse(jwt);
+        // Parse the JWT using the JWTService
+        SignedJWT signedJwt = jwtService.parseJWT(jwt);
 
-            // Step 3: Validate the OAuth 2.0 parameters against JWT claims
-            validateOAuth2Parameters(request, jwsObject);
+        // Step 3: Validate the OAuth 2.0 parameters against JWT claims
+        validateOAuth2Parameters(request, signedJwt);
 
-            // Step 4: Validate the redirect_uri with the client repository
-            validateRedirectUri(clientId, redirectUri, jwsObject);
+        // Step 4: Validate the redirect_uri with the client repository
+        validateRedirectUri(clientId, redirectUri, signedJwt);
 
-            // Step 5: Process the authorization flow
-            return processAuthorizationFlow(clientId, scope, state, jwsObject);
-        } catch (ParseException e) {
-            throw new RequestObjectRetrievalException("Error parsing the JWT: " + e.getMessage());
-        }
+        // Step 5: Process the authorization flow
+        return processAuthorizationFlow(clientId, scope, state, signedJwt);
+
     }
 
     /**
@@ -124,44 +120,48 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         return request.getParameter("request");
     }
 
-    private void validateOAuth2Parameters(HttpServletRequest request, JWSObject jwsObject) {
+    /**
+     * Validate OAuth2 parameters and compare them with JWT claims.
+     */
+    private void validateOAuth2Parameters(HttpServletRequest request, SignedJWT signedJwt) {
         String requestClientId = request.getParameter(CLIENT_ID);
         String requestScope = request.getParameter(SCOPE);
-        String jwtPayload = jwsObject.getPayload().toString();
-        JSONObject jwtClaims = new JSONObject(jwtPayload);
+        Payload payload = signedJwt.getPayload();
 
-        String jwtClientId = jwtClaims.optString(CLIENT_ID);
-        String jwtScope = jwtClaims.optString(SCOPE);
+        String jwtClientId = jwtService.getClaimFromPayload(payload, CLIENT_ID);
+        String jwtScope = jwtService.getClaimFromPayload(payload, SCOPE);
 
         if (!requestClientId.equals(jwtClientId) || !requestScope.equals(jwtScope)) {
             throw new RequestMismatchException("OAuth 2.0 parameters do not match the JWT claims.");
         }
     }
 
-    private void validateRedirectUri(String clientId, String redirectUri, JWSObject jwsObject) {
+    /**
+     * Validate the redirect_uri with the registered client repository.
+     */
+    private void validateRedirectUri(String clientId, String redirectUri, SignedJWT signedJwt) {
         RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
         if (registeredClient == null) {
             throw new IllegalArgumentException("Client not found for client_id: " + clientId);
         }
 
-        // Validate redirect_uri from JWT if available, else use the provided parameter
-        String jwtRedirectUri = jwsObject != null ? jwsObject.getPayload().toJSONObject().get(OAuth2ParameterNames.REDIRECT_URI).toString() : redirectUri;
+        String jwtRedirectUri = signedJwt != null ? jwtService.getClaimFromPayload(signedJwt.getPayload(), OAuth2ParameterNames.REDIRECT_URI) : redirectUri;
 
         if (!registeredClient.getRedirectUris().contains(jwtRedirectUri)) {
             throw new IllegalArgumentException("Invalid redirect_uri: " + jwtRedirectUri);
         }
     }
 
-    private Authentication processAuthorizationFlow(String clientId, String scope, String state, JWSObject jwsObject){
+    private Authentication processAuthorizationFlow(String clientId, String scope, String state, SignedJWT signedJwt) {
         PublicKey publicKey = didService.getPublicKeyFromDid(clientId);
-        jwtService.verifyJWTSignature(jwsObject.serialize(), publicKey, KeyType.EC);
+        jwtService.verifyJWTSignature(signedJwt.serialize(), publicKey, KeyType.EC);
 
         String signedAuthRequest = jwtService.generateJWT(buildAuthorizationRequestJwtPayload(scope, state));
 
         cacheStoreForOAuth2AuthorizationRequest.add(state, OAuth2AuthorizationRequest.authorizationCode()
                 .state(state)
                 .clientId(clientId)
-                .redirectUri(jwsObject.getPayload().toJSONObject().get(OAuth2ParameterNames.REDIRECT_URI).toString())
+                .redirectUri(jwtService.getClaimFromPayload(signedJwt.getPayload(), OAuth2ParameterNames.REDIRECT_URI))
                 .scope(scope)
                 .authorizationUri(securityProperties.authorizationServer())
                 .build());
@@ -185,36 +185,33 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private String buildAuthorizationRequestJwtPayload(String scope, String state) {
         // TODO this should be mapped with his presentation definition and return the presentation definition
         // Check and map the scope based on the specific requirement
-        if (scope.equals("openid learcredential")) {
-            // Map to the specific scope needed for LEAR credentials
+        if ("openid learcredential".equals(scope)) {
             scope = "dome.credentials.presentation.LEARCredentialEmployee";
         } else {
-            // If the scope is not supported, throw an exception
             throw new UnsupportedScopeException("Unsupported scope: " + scope);
         }
 
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
 
-        // Create the JWT claims set with necessary claims
         JWTClaimsSet payload = new JWTClaimsSet.Builder()
                 .issuer(cryptoComponent.getECKey().getKeyID())
                 .audience(cryptoComponent.getECKey().getKeyID())
                 .issueTime(Date.from(issueTime))
                 .expirationTime(Date.from(expirationTime))
-                .claim("client_id", cryptoComponent.getECKey().getKeyID())
+                .claim(OAuth2ParameterNames.CLIENT_ID, cryptoComponent.getECKey().getKeyID())
                 .claim("client_id_scheme", "did")
                 .claim("nonce", generateNonce())
                 .claim("response_uri", securityProperties.authorizationServer() + AUTHORIZATION_RESPONSE_ENDPOINT)
-                .claim("scope", scope)
-                .claim("state", state)
-                .claim("response_type", "vp_token")
+                .claim(OAuth2ParameterNames.SCOPE, scope)
+                .claim(OAuth2ParameterNames.STATE, state)
+                .claim(OAuth2ParameterNames.RESPONSE_TYPE, "vp_token")
                 .claim("response_mode", "direct_post")
+                .jwtID(UUID.randomUUID().toString())
                 .build();
 
         return payload.toString();
     }
-
 
     private String generateOpenId4VpUrl(String nonce) {
         String requestUri = String.format("%s/oid4vp/auth-request/%s", securityProperties.authorizationServer(), nonce);

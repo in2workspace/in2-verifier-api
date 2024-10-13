@@ -28,6 +28,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -68,7 +69,14 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 issueTime,
                 expirationTime
         );
-        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken);
+
+        // Keycloak requires the id_token to be in the additional parameters in order to be able to validate it and bound to the user session
+        String idToken = generateIdToken(subject, audience, issueTime, expirationTime);
+
+        Map<String, Object> additionalParameters = new HashMap<>();
+        additionalParameters.put("id_token", idToken);
+
+        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken, null,additionalParameters);
     }
 
     private String getClientId(OAuth2AuthorizationGrantAuthenticationToken authentication) {
@@ -141,7 +149,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     private String generateAccessTokenWithVc(Object verifiableCredential, Instant issueTime, Instant expirationTime, String subject, String audience) {
         JWTClaimsSet payload = new JWTClaimsSet.Builder()
                 .issuer(cryptoComponent.getECKey().getKeyID())
-                .audience(audience) // Utiliza el valor de "audience" calculado
+                .audience(audience)
                 .subject(subject)
                 .jwtID(UUID.randomUUID().toString())
                 .issueTime(Date.from(issueTime))
@@ -152,6 +160,22 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .build();
         return jwtService.generateJWT(payload.toString());
     }
+
+    private String generateIdToken(String subject, String audience, Instant issueTime, Instant expirationTime) {
+        // Create the JWT payload (claims) for the ID token
+        JWTClaimsSet idTokenClaims = new JWTClaimsSet.Builder()
+                .subject(subject)
+                .issuer(cryptoComponent.getECKey().getKeyID())
+                .audience(audience)
+                .issueTime(Date.from(issueTime))
+                .expirationTime(Date.from(expirationTime))
+                .jwtID(UUID.randomUUID().toString())
+                .build();
+
+        // Use JWTService to generate the ID Token (JWT)
+        return jwtService.generateJWT(idTokenClaims.toString());
+    }
+
 
     private String getScope(Object verifiableCredential){
         if (verifiableCredential instanceof LEARCredentialEmployee) {

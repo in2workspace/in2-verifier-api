@@ -1,14 +1,26 @@
 package es.in2.vcverifier.security.filters;
 
+import es.in2.vcverifier.exception.RequestMismatchException;
+import es.in2.vcverifier.exception.RequestObjectRetrievalException;
+import es.in2.vcverifier.service.HttpClientService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
+import java.net.http.HttpResponse;
+import java.util.Set;
+
+import static es.in2.vcverifier.util.Constants.REQUEST_URI;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CustomAuthorizationRequestConverterTest {
@@ -19,19 +31,25 @@ class CustomAuthorizationRequestConverterTest {
     @Mock
     private RegisteredClientRepository registeredClientRepository;
 
+    @Mock
+    private HttpClientService httpClientService;
+
+    @Mock
+    private HttpResponse<String> httpResponse; // Uso este Mock a nivel de clase
+
     @InjectMocks
     private CustomAuthorizationRequestConverter customAuthorizationRequestConverter;
 
     @Test
-    void convert_With_null_requestUri__ShouldThrowUnsupportedScopeException() {
+    void convert_WithNullRequestUri_ShouldThrowUnsupportedScopeException() {
         String clientId = "valid-client-id";
         String state = "valid-state";
         String unsupportedScope = "invalid-scope";
 
-        when(httpServletRequest.getParameter("client_id")).thenReturn(clientId);
-        when(httpServletRequest.getParameter("request_uri")).thenReturn(null);
-        when(httpServletRequest.getParameter("scope")).thenReturn(unsupportedScope);
-        when(httpServletRequest.getParameter("state")).thenReturn(state);
+        when(httpServletRequest.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
+        when(httpServletRequest.getParameter(REQUEST_URI)).thenReturn(null);
+        when(httpServletRequest.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(unsupportedScope);
+        when(httpServletRequest.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
 
         when(registeredClientRepository.findByClientId(clientId)).thenReturn(null);
 
@@ -45,31 +63,120 @@ class CustomAuthorizationRequestConverterTest {
 
 //    @Test
 //    void convert_WhenRequestUriIsProvided_ShouldRetrieveAndVerifyJwt() throws Exception {
-//        // Setup
-//        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-//        when(mockRequest.getParameter(REQUEST_URI)).thenReturn("https://example.com/jwt/1234");
-//        when(mockRequest.getParameter(OAuth2ParameterNames.RESPONSE_TYPE)).thenReturn("code");
-//        when(mockRequest.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn("openid learcredential");
-//        when(mockRequest.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn("did:key:zDnaeUcW7pAV2xfcEMRsi3tsgYSYkLEf8mbSCZ7YFhKDu6XcR");
-//        when(mockRequest.getParameter(OAuth2ParameterNames.STATE)).thenReturn("state");
+//        // Setup: Simulación de HttpServletRequest
+//        String requestUri = "https://example.com/jwt/1234";
+//        String clientId = "did:key:zDnaeUcW7pAV2xfcEMRsi3tsgYSYkLEf8mbSCZ7YFhKDu6XcR";
+//        String state = "valid-state";
+//        String scope = "openid learcredential";
+//        String redirectUri = "https://redirect.com";
 //
-//        String jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDprZXk6ekRuYWVVY1c3cEFWMnhmY0VNUnNpM3RzZ1lTWWtMRWY4bWJTQ1o3WUZoS0R1NlhjUiJ9.eyJzY29wZSI6Im9wZW5pZF9sZWFyY3JlZGVudGlhbCIsImlzcyI6ImRpZDprZXk6ekRuYWVVY1c3cEFWMnhmY0VNUnNpM3RzZ1lTWWtMRWY4bWJTQ1o3WUZoS0R1NlhjUiIsInJlc3BvbnNlX3R5cGUiOiJjb2RlIiwicmVkaXJlY3RfdXJpIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgxL2NiIiwiZXhwIjoxNzU4MTkzNjEyLCJpYXQiOjE3MjcwODk2MTIsImNsaWVudF9pZCI6ImRpZDprZXk6ekRuYWVVY1c3cEFWMnhmY0VNUnNpM3RzZ1lTWWtMRWY4bWJTQ1o3WUZoS0R1NlhjUiJ9.9QoanrjKyIOLQpQ3rj2ucUzwJa6XH1T5-pabnAjYmJmyl5lNSG1v0y5vEvTLlYugrrwUjxnv9tsbqXfirz6kMQ";
-//        // Simulación de la respuesta HTTP con código 200 y el JWT en el cuerpo
-//        // Simulamos el comportamiento del HttpClient cuando se hace la llamada
-//        // Simulación de una respuesta con código 200 y el JWT en el body
-//        HttpResponse<String> mockHttpResponse = mock(HttpResponse.class);
-//        when(mockHttpResponse.statusCode()).thenReturn(200);  // Simulamos código 200
-//        when(mockHttpResponse.body()).thenReturn(jwt);  // El cuerpo contiene el JWT
+//        // Mockear los parámetros del request
+//        when(httpServletRequest.getParameter(REQUEST_URI)).thenReturn(requestUri);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
 //
-//        // Simulamos el comportamiento del HttpClient cuando se hace la llamada
-//        HttpClient mockHttpClient = mock(HttpClient.class);
-//        when(mockHttpClient.send(any(HttpRequest.class), eq(HttpResponse.BodyHandlers.ofString())))
-//                .thenReturn(mockHttpResponse);  // Mockeamos que retorne el mockHttpResponse con el JWT
+//        // Simulación de un JWT válido en la respuesta HTTP
+//        String jwt = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQiLCJjbGllbnRfaWQiOiJkaWQ6a2V5OmZvb2JhciJ9.9xFGQjZHOdsJIOQa1234";
 //
-//        // Action
-//        Exception exception = assertThrows(OAuth2AuthorizationCodeRequestAuthenticationException.class, () ->
-//                customAuthorizationRequestConverter.convert(mockRequest));
+//        // Aquí estamos utilizando el mock global para la respuesta HTTP
+//        when(httpResponse.body()).thenReturn(jwt);
+//        when(httpClientService.performGetRequest(requestUri)).thenReturn(httpResponse); // Llamada a la URL mockeada
 //
+//        // Mockear el repositorio de RegisteredClient
+//        RegisteredClient registeredClient = mock(RegisteredClient.class);
+//        when(registeredClient.getRedirectUris()).thenReturn(Set.of(redirectUri));
+//        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+//
+//        // Acción: Llamar al convert
+//        Authentication authentication = customAuthorizationRequestConverter.convert(httpServletRequest);
+//
+//        // Verificación: Asegurar que se obtuvo autenticación y que tiene el cliente correcto
+//        assertNotNull(authentication);
+//        assertEquals(clientId, authentication.getPrincipal());
+//    }
+//
+//    @Test
+//    void convert_WhenRequestUriReturnsError_ShouldThrowRequestObjectRetrievalException() {
+//        // Setup: Simulación de HttpServletRequest
+//        String requestUri = "https://example.com/jwt/invalid";
+//        String clientId = "did:key:zDnaeUcW7pAV2xfcEMRsi3tsgYSYkLEf8mbSCZ7YFhKDu6XcR";
+//        String state = "valid-state";
+//        String scope = "openid learcredential";
+//        String redirectUri = "https://redirect.com";
+//
+//        when(httpServletRequest.getParameter(REQUEST_URI)).thenReturn(requestUri);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+//
+//        // Simulación de una respuesta de error (404 Not Found)
+//        when(httpResponse.statusCode()).thenReturn(404); // Simular código de estado 404
+//        when(httpClientService.performGetRequest(requestUri)).thenReturn(httpResponse);
+//
+//        // Mockear el repositorio de RegisteredClient
+//        RegisteredClient registeredClient = mock(RegisteredClient.class);
+//        when(registeredClient.getRedirectUris()).thenReturn(Set.of(redirectUri));
+//        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+//
+//        // Acción y verificación: Llamar al método y verificar que lanza una excepción de RequestObjectRetrievalException
+//        assertThrows(RequestObjectRetrievalException.class, () -> customAuthorizationRequestConverter.convert(httpServletRequest));
+//    }
+//
+//    @Test
+//    void convert_WhenOAuth2ParametersDoNotMatch_ShouldThrowRequestMismatchException() throws Exception {
+//        // Setup: Simulación de HttpServletRequest
+//        String requestUri = "https://example.com/jwt/1234";
+//        String clientId = "did:key:zDnaeUcW7pAV2xfcEMRsi3tsgYSYkLEf8mbSCZ7YFhKDu6XcR";
+//        String state = "valid-state";
+//        String scope = "openid learcredential";
+//        String redirectUri = "https://redirect.com";
+//
+//        when(httpServletRequest.getParameter(REQUEST_URI)).thenReturn(requestUri);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+//
+//        // Simulación de un JWT con parámetros diferentes
+//        String jwt = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQiLCJjbGllbnRfaWQiOiJkaWQ6a2V5OmZvb2JhciIsInNjb3BlIjoiYmFkX3Njb3BlIn0.9xFGQjZHOdsJIOQa1234";
+//        when(httpResponse.body()).thenReturn(jwt);
+//        when(httpClientService.performGetRequest(requestUri)).thenReturn(httpResponse);
+//
+//        // Mockear el repositorio de RegisteredClient
+//        RegisteredClient registeredClient = mock(RegisteredClient.class);
+//        when(registeredClient.getRedirectUris()).thenReturn(Set.of(redirectUri));
+//        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+//
+//        // Acción y verificación: Llamar al método y verificar que lanza una RequestMismatchException
+//        assertThrows(RequestMismatchException.class, () -> customAuthorizationRequestConverter.convert(httpServletRequest));
 //    }
 
+    @Test
+    void convert_WhenRedirectUriIsInvalid_ShouldThrowIllegalArgumentException() {
+        // Setup: Simulación de HttpServletRequest
+        String requestUri = "https://example.com/jwt/1234";
+        String clientId = "did:key:zDnaeUcW7pAV2xfcEMRsi3tsgYSYkLEf8mbSCZ7YFhKDu6XcR";
+        String state = "valid-state";
+        String scope = "openid learcredential";
+        String redirectUri = "https://invalid-redirect.com";
+
+        when(httpServletRequest.getParameter(REQUEST_URI)).thenReturn(requestUri);
+        when(httpServletRequest.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
+        when(httpServletRequest.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
+        when(httpServletRequest.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
+        when(httpServletRequest.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+
+        // Mockear el repositorio de RegisteredClient con un redirect_uri diferente
+        RegisteredClient registeredClient = mock(RegisteredClient.class);
+        when(registeredClient.getRedirectUris()).thenReturn(Set.of("https://valid-redirect.com"));
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+
+        // Acción y verificación: Llamar al método y verificar que lanza una excepción de IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> customAuthorizationRequestConverter.convert(httpServletRequest));
+    }
+
 }
+

@@ -104,15 +104,8 @@ public class AuthorizationServerConfig {
         return AuthorizationServerSettings.builder()
                 .issuer(securityProperties.authorizationServer())
                 .authorizationEndpoint("/oidc/authorize")
-                .deviceAuthorizationEndpoint("/oidc/device_authorization")
-                .deviceVerificationEndpoint("/oidc/device_verification")
                 .tokenEndpoint("/oidc/token")
-                .tokenIntrospectionEndpoint("/oidc/introspect")
-                .tokenRevocationEndpoint("/oidc/revoke")
                 .jwkSetEndpoint("/oidc/jwks")
-                .oidcLogoutEndpoint("/oidc/logout")
-                .oidcUserInfoEndpoint("/oidc/userinfo")
-                .oidcClientRegistrationEndpoint("/oidc/register")
                 .build();
     }
 
