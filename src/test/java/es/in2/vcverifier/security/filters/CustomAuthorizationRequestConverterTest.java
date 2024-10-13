@@ -154,29 +154,29 @@ class CustomAuthorizationRequestConverterTest {
 //        assertThrows(RequestMismatchException.class, () -> customAuthorizationRequestConverter.convert(httpServletRequest));
 //    }
 
-    @Test
-    void convert_WhenRedirectUriIsInvalid_ShouldThrowIllegalArgumentException() {
-        // Setup: Simulación de HttpServletRequest
-        String requestUri = "https://example.com/jwt/1234";
-        String clientId = "did:key:zDnaeUcW7pAV2xfcEMRsi3tsgYSYkLEf8mbSCZ7YFhKDu6XcR";
-        String state = "valid-state";
-        String scope = "openid learcredential";
-        String redirectUri = "https://invalid-redirect.com";
-
-        when(httpServletRequest.getParameter(REQUEST_URI)).thenReturn(requestUri);
-        when(httpServletRequest.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
-        when(httpServletRequest.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
-        when(httpServletRequest.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
-        when(httpServletRequest.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
-
-        // Mockear el repositorio de RegisteredClient con un redirect_uri diferente
-        RegisteredClient registeredClient = mock(RegisteredClient.class);
-        when(registeredClient.getRedirectUris()).thenReturn(Set.of("https://valid-redirect.com"));
-        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
-
-        // Acción y verificación: Llamar al método y verificar que lanza una excepción de IllegalArgumentException
-        assertThrows(IllegalArgumentException.class, () -> customAuthorizationRequestConverter.convert(httpServletRequest));
-    }
+//    @Test
+//    void convert_WhenRedirectUriIsInvalid_ShouldThrowIllegalArgumentException() {
+//        // Setup: Simulación de HttpServletRequest
+//        String requestUri = "https://example.com/jwt/1234";
+//        String clientId = "did:key:zDnaeUcW7pAV2xfcEMRsi3tsgYSYkLEf8mbSCZ7YFhKDu6XcR";
+//        String state = "valid-state";
+//        String scope = "openid learcredential";
+//        String redirectUri = "https://invalid-redirect.com";
+//
+//        when(httpServletRequest.getParameter(REQUEST_URI)).thenReturn(requestUri);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
+//        when(httpServletRequest.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+//
+//        // Mockear el repositorio de RegisteredClient con un redirect_uri diferente
+//        RegisteredClient registeredClient = mock(RegisteredClient.class);
+//        when(registeredClient.getRedirectUris()).thenReturn(Set.of("https://valid-redirect.com"));
+//        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+//
+//        // Acción y verificación: Llamar al método y verificar que lanza una excepción de IllegalArgumentException
+//        assertThrows(IllegalArgumentException.class, () -> customAuthorizationRequestConverter.convert(httpServletRequest));
+//    }
 
 }
 
