@@ -4,7 +4,6 @@ import es.in2.vcverifier.exception.ResourceNotFoundException;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import es.in2.vcverifier.oid4vp.service.AuthorizationResponseProcessorService;
 import es.in2.vcverifier.config.CacheStore;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -14,7 +13,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)

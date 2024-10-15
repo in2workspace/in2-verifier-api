@@ -282,29 +282,6 @@ class JWTServiceImplTest {
 
     }
 
-    //TODO not working
-
-//    @Test
-//    void verifyJWTSignature_RSA_Success() throws Exception {
-//
-//
-//        // Prepare data
-//        String privateKeyJson = "{\"kty\":\"EC\",\"d\":\"WyM7H0IaIeDDoJ4WKjohkwkmrBmQ3rYrFNBrGsSzKtM\",\"use\":\"sig\",\"crv\":\"P-256\",\"kid\":\"75bb28ac9f4247248c73348f890e050c\",\"x\":\"RqEzut-nsajrrT4_UphUuaiseuSCdO5SqUd6LkaYW9c\",\"y\":\"vJ-OQ9EUBXmLOJW1zCuT24NzUEbm0WjUsF2wdedpUY8\",\"alg\":\"ES256\"}";
-//        String jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjE4MDNhNTgyMWY0MTA0OGRiMDY0MGQ0OGIyNTI0YzU5In0.e30.HGKZ8u1Sd2pQ_rDHMNYkOSFwfQ-0rZs6nE5wBMKRrgaN3K_kHluogJ_u42fOJ47AtU8TkbbjcQ7XTmUZyojsAl4d_eLsE-pmT6KHhqw4p3I8lisSXfGQkspHpJ38-gwkqle9ZmtvrnksWHN9ufnEdBPI4lc2O1y017_V0GM0vJ6zFVbCFK7tSh1KPt5zQ6yvApgLlcSczCAW40zUagKJjuPfayIRPkjelJW4VoeI4BtqfmonUPie13dloKcIAkzImMDQRjOIBJXdl_ipXfzsyvcSF8Lfj-vBVCXyCxBj5Y1_4l8fFee8Pg4ZMKGyYpW8n7VFUnfiex6CUFw19lEsNf4iIPuk0gNN98xRNMCbYJU15NFunPvEOmhKm8b6nDWLnj4HN9_FHahZ2iQRhCd53UiwaVrYWOCEzv4xFfzcrECl5VdcAOE4QK9OaktSPCj_901V6DJryMRXjHoSbY6PALOCK_X0D4eGCWXLmEgzYYqNt2oq_qgr4QDEndOeeud6";
-//        KeyType keyType = KeyType.RSA; // Specify EC as key type
-//        RSAPublicKey publicKey = mock(RSAPublicKey.class);
-//
-//        SignedJWT signedJWT = mock(SignedJWT.class);
-//
-//        try (var mockStaticSignedJWT = mockStatic(SignedJWT.class)) {
-//            mockStaticSignedJWT.when(() -> SignedJWT.parse(jwt))
-//                    .thenReturn(signedJWT);
-//        }
-//
-//        jwtService.verifyJWTSignature(jwt, publicKey, keyType);
-//
-//    }
-
     @Test
     void verifyJWTSignature_RSA_with_invalid_publicKey_throws_IllegalArgumentException_and_then_JWTVerificationException() throws Exception {
         // Prepare data
