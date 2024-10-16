@@ -53,7 +53,7 @@ security:
       cronUnit: "MINUTES"
 
 clientsRepository:
-  uri: "https://raw.githubusercontent.com/DOME-Marketplace/dome-services-directory/refs/heads/main/trusted-service-list-"
+  uri: "https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml"
 
 trustedIssuerList:
   uri: "http://localhost:8080/v4/issuers/"

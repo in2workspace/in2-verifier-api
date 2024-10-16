@@ -12,6 +12,5 @@ public class Constants {
     public static final String AUTHORIZATION_RESPONSE_ENDPOINT= "/oid4vp/auth-response";
     public static final long MSB = 0x80L;
     public static final long MSBALL = 0xFFFFFF80L;
-    public static final String YAML_FILE_SUFFIX = ".yaml";
 
 }
