@@ -47,7 +47,7 @@ sonar {
 		property "sonar.host.url", "https://sonarcloud.io"
 		property 'sonar.coverage.exclusions',
 				"src/main/java/es/in2/vcverifier/VcVerifierApplication.java" +
-						"src/main/java/es/in2/vcverifier/service/impl/AuthorizationResponseProcessorServiceImpl.java" +
+						"**/AuthorizationResponseProcessorServiceImpl.java" +
 						"src/main/java/es/in2/vcverifier/security/filters/CustomAuthorizationRequestConverter.java" +
 						"src/main/java/es/in2/vcverifier/service/impl/TrustFrameworkServiceImpl.java"
 	}
