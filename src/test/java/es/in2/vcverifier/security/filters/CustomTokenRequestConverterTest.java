@@ -115,7 +115,7 @@ class CustomTokenRequestConverterTest {
 
         LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
         when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
-        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEARCredentialMachine.getValue()));
+        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
 
         when(clientAssertionValidationService.validateClientAssertionJWTClaims(anyString(), any())).thenReturn(true);
         when(vpService.validateVerifiablePresentation(anyString())).thenReturn(true);
@@ -155,7 +155,7 @@ class CustomTokenRequestConverterTest {
 
         LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
         when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
-        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEARCredentialMachine.getValue()));
+        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
 
         when(clientAssertionValidationService.validateClientAssertionJWTClaims(anyString(), any())).thenReturn(false);
 
@@ -187,7 +187,7 @@ class CustomTokenRequestConverterTest {
 
         LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
         when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
-        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEARCredentialMachine.getValue()));
+        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
 
         when(clientAssertionValidationService.validateClientAssertionJWTClaims(anyString(), any())).thenReturn(true);
         when(vpService.validateVerifiablePresentation(anyString())).thenReturn(false);
