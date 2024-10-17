@@ -1,4 +1,4 @@
-package es.in2.vcverifier.exception.handler;
+package es.in2.vcverifier.model;
 
 import lombok.Builder;
 

@@ -12,7 +12,8 @@ import es.in2.vcverifier.util.UVarInt;
 import org.bitcoinj.base.Base58;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 import org.bouncycastle.jce.ECNamedCurveTable;
-import org.bouncycastle.jce.spec.*;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.util.AssertionErrors.assertTrue;
 
 class DIDTest {
@@ -39,7 +39,7 @@ class DIDTest {
     // https://www.scottbrady91.com/tools/jwt
 
     @Test
-    void getPrivateKeyToHex(){
+    void getPrivateKeyToHex() {
         // Claves en formato Base64 URL-safe
 
         String privateKeyBase64 = "YkV0K8F8AvI6Cy90j1jJ2f99UO2HuLClMrB9savkfRg";

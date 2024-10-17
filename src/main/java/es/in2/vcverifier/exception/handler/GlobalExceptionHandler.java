@@ -2,10 +2,9 @@ package es.in2.vcverifier.exception.handler;
 
 import es.in2.vcverifier.exception.QRCodeGenerationException;
 import es.in2.vcverifier.exception.ResourceNotFoundException;
+import es.in2.vcverifier.model.GlobalErrorMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;

@@ -1,10 +1,9 @@
-package es.in2.vcverifier.oid4vp.controller;
+package es.in2.vcverifier.controller;
 
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.ResourceNotFoundException;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
-import es.in2.vcverifier.oid4vp.service.AuthorizationResponseProcessorService;
-import jakarta.servlet.http.HttpServletResponse;
+import es.in2.vcverifier.service.AuthorizationResponseProcessorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,7 +26,6 @@ public class Oid4vpController {
         AuthorizationRequestJWT authorizationRequestJWT = cacheStoreForAuthorizationRequestJWT.get(id);
         cacheStoreForAuthorizationRequestJWT.delete(id);
         String jwt = authorizationRequestJWT.authRequest();
-
         if (jwt != null) {
             return jwt;
         } else {
@@ -44,5 +42,5 @@ public class Oid4vpController {
         //TODO We need use presentationSubmission in the future
         authorizationResponseProcessorService.processAuthResponse(state, vpToken);
     }
-}
 
+}

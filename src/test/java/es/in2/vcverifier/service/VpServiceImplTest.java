@@ -1,16 +1,13 @@
 package es.in2.vcverifier.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.shaded.gson.internal.LinkedTreeMap;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.exception.CredentialMappingException;
-import es.in2.vcverifier.exception.JWTParsingException;
 import es.in2.vcverifier.exception.JsonConversionException;
-import es.in2.vcverifier.exception.UnsupportedDIDTypeException;
 import es.in2.vcverifier.model.credentials.employee.CredentialSubjectLCEmployee;
 import es.in2.vcverifier.model.credentials.employee.LEARCredentialEmployee;
 import es.in2.vcverifier.model.credentials.employee.MandateLCEmployee;
@@ -21,7 +18,6 @@ import es.in2.vcverifier.model.credentials.machine.MandateLCMachine;
 import es.in2.vcverifier.model.credentials.machine.MandateeLCMachine;
 import es.in2.vcverifier.model.enums.KeyType;
 import es.in2.vcverifier.model.issuer.IssuerCredentialsCapabilities;
-import es.in2.vcverifier.model.issuer.TimeRange;
 import es.in2.vcverifier.service.impl.VpServiceImpl;
 import org.assertj.core.api.Assertions;
 import org.json.JSONObject;
@@ -46,7 +42,7 @@ public class VpServiceImplTest {
     private JWTService jwtService;
 
     @Mock
-    private TrustedIssuerListService trustedIssuerListService;
+    private TrustFrameworkService trustFrameworkService;
 
     @Mock
     private DIDService didService;
@@ -196,7 +192,7 @@ public class VpServiceImplTest {
         when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
 
         IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
-        when(trustedIssuerListService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
+        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
 
         when(objectMapper.convertValue(vcMap, LEARCredentialMachine.class)).thenReturn(
                 LEARCredentialMachine.builder()
@@ -235,7 +231,7 @@ public class VpServiceImplTest {
         when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
 
         IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
-        when(trustedIssuerListService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
+        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
 
         when(objectMapper.convertValue(vcMap, LEARCredentialEmployee.class)).thenReturn(
                 LEARCredentialEmployee.builder()
@@ -273,7 +269,7 @@ public class VpServiceImplTest {
         when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
 
         IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
-        when(trustedIssuerListService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
+        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
 
         when(objectMapper.convertValue(vcMap, LEARCredentialMachine.class))
                 .thenThrow(new IllegalArgumentException(new CredentialMappingException("Error converting VC to LEARCredentialMachine")));
@@ -298,7 +294,7 @@ public class VpServiceImplTest {
         when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
 
         IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
-        when(trustedIssuerListService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
+        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
 
         when(objectMapper.convertValue(vcMap, LEARCredentialEmployee.class))
                 .thenThrow(new IllegalArgumentException(new CredentialMappingException("Error converting VC to LEARCredentialEmployee")));
@@ -323,7 +319,7 @@ public class VpServiceImplTest {
         when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
 
         IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
-        when(trustedIssuerListService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
+        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
 
         boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
 
@@ -345,7 +341,7 @@ public class VpServiceImplTest {
         when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
 
         IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("UnsupportedCredentialType").build();
-        when(trustedIssuerListService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
+        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
 
         boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
 

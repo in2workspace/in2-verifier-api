@@ -4,7 +4,7 @@
 //import es.in2.vcverifier.config.CacheStore;
 //import es.in2.vcverifier.config.properties.SecurityProperties;
 //import es.in2.vcverifier.model.AuthorizationCodeData;
-//import es.in2.vcverifier.oid4vp.service.impl.AuthorizationResponseProcessorServiceImpl;
+//import es.in2.vcverifier.service.impl.AuthorizationResponseProcessorServiceImpl;
 //import org.junit.jupiter.api.BeforeEach;
 //import org.junit.jupiter.api.Test;
 //import org.junit.jupiter.api.extension.ExtendWith;

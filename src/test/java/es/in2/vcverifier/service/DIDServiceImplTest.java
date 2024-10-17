@@ -13,7 +13,7 @@ import java.security.PublicKey;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-public class DIDServiceImplTest {
+class DIDServiceImplTest {
 
     @InjectMocks
     private DIDServiceImpl didService;

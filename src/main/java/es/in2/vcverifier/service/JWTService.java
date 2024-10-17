@@ -11,6 +11,7 @@ public interface JWTService {
     String generateJWT(String payload);
 
     void verifyJWTSignature(String jwt, PublicKey publicKey, KeyType keyType);
+
     SignedJWT parseJWT(String jwt);
 
     Payload getPayloadFromSignedJWT(SignedJWT signedJWT);

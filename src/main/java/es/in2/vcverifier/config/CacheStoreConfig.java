@@ -14,14 +14,17 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @RequiredArgsConstructor
 public class CacheStoreConfig {
+
     @Bean
     public CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT() {
         return new CacheStore<>(10, TimeUnit.MINUTES);
     }
+
     @Bean
     public CacheStore<OAuth2AuthorizationRequest> cacheStoreForOAuth2AuthorizationRequest() {
         return new CacheStore<>(10, TimeUnit.MINUTES);
     }
+
     @Bean
     public CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData() {
         return new CacheStore<>(10, TimeUnit.MINUTES);
@@ -31,4 +34,5 @@ public class CacheStoreConfig {
     public Set<String> jtiCache() {
         return new HashSet<>();
     }
+
 }

@@ -11,7 +11,7 @@ import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.vcverifier.crypto.CryptoComponent;
+import es.in2.vcverifier.component.CryptoComponent;
 import es.in2.vcverifier.exception.JWTClaimMissingException;
 import es.in2.vcverifier.exception.JWTCreationException;
 import es.in2.vcverifier.exception.JWTParsingException;

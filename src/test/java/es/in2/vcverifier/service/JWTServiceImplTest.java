@@ -4,19 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSSigner;
-import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.Payload;
-import com.nimbusds.jose.crypto.ECDSASigner;
-import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jose.util.JSONObjectUtils;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.vcverifier.crypto.CryptoComponent;
+import es.in2.vcverifier.component.CryptoComponent;
 import es.in2.vcverifier.exception.JWTClaimMissingException;
 import es.in2.vcverifier.exception.JWTCreationException;
 import es.in2.vcverifier.exception.JWTParsingException;
@@ -33,8 +28,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigInteger;
 import java.security.*;
-import java.security.interfaces.DSAPublicKey;
-import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.*;
@@ -55,7 +48,6 @@ class JWTServiceImplTest {
     @Mock
     private CryptoComponent cryptoComponent;
 
-
     @InjectMocks
     private JWTServiceImpl jwtService;
 
@@ -75,7 +67,7 @@ class JWTServiceImplTest {
         JsonNode mockJsonNode = mock(JsonNode.class);
         when(objectMapper.readTree(anyString())).thenReturn(mockJsonNode);
 
-        Map<String, Object> claimsMap  = new HashMap<>();
+        Map<String, Object> claimsMap = new HashMap<>();
         claimsMap.put("someKey", "someValue");
 
         when(objectMapper.convertValue(any(JsonNode.class), any(TypeReference.class))).thenReturn(claimsMap);
@@ -90,7 +82,7 @@ class JWTServiceImplTest {
         String result = jwtService.generateJWT(payload.toString());
 
         assertNotNull(result);
-        verify(cryptoComponent,times(2)).getECKey();
+        verify(cryptoComponent, times(2)).getECKey();
 
     }
 
@@ -113,7 +105,6 @@ class JWTServiceImplTest {
     }
 
 
-
     @Test
     void generateJWT_throws_JWTCreationException() throws JsonProcessingException {
         String payload = "{\"sub\":\"1234567890\",\"name\":\"John Doe\",\"iat\":1516239022}";
@@ -126,10 +117,10 @@ class JWTServiceImplTest {
         JsonNode mockJsonNode = mock(JsonNode.class);
         when(objectMapper.readTree(payload)).thenReturn(mockJsonNode);
 
-        Map<String, Object> claimsMap  = new HashMap<>();
-        claimsMap .put("sub", "1234567890");
-        claimsMap .put("name", "John Doe");
-        claimsMap .put("iat", 1516239022);
+        Map<String, Object> claimsMap = new HashMap<>();
+        claimsMap.put("sub", "1234567890");
+        claimsMap.put("name", "John Doe");
+        claimsMap.put("iat", 1516239022);
         when(objectMapper.convertValue(any(JsonNode.class), any(TypeReference.class))).thenReturn(claimsMap);
 
         assertThrows(JWTCreationException.class, () -> jwtService.generateJWT(payload));
@@ -265,7 +256,7 @@ class JWTServiceImplTest {
     }
 
     @Test
-    void verifyJWTSignature_EC_with_invalid_publicKey_throws_IllegalArgumentException_and_then_JWTVerificationException() throws Exception {
+    void verifyJWTSignature_EC_with_invalid_publicKey_throws_IllegalArgumentException_and_then_JWTVerificationException() {
         // Prepare data
         String jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0.BMv-_OkIT0H1KHeWm2FYZnUwc8mJfZGTA9B6HwYhdeX5THcLchQ2P6xDbIXH6WpBOlDAcwSy3BUv2ZqyCa6inA\n";
         KeyType keyType = KeyType.EC; // Specify EC as key type
@@ -283,7 +274,7 @@ class JWTServiceImplTest {
     }
 
     @Test
-    void verifyJWTSignature_RSA_with_invalid_publicKey_throws_IllegalArgumentException_and_then_JWTVerificationException() throws Exception {
+    void verifyJWTSignature_RSA_with_invalid_publicKey_throws_IllegalArgumentException_and_then_JWTVerificationException() {
         // Prepare data
         String jwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0.BMv-_OkIT0H1KHeWm2FYZnUwc8mJfZGTA9B6HwYhdeX5THcLchQ2P6xDbIXH6WpBOlDAcwSy3BUv2ZqyCa6inA\n";
         KeyType keyType = KeyType.RSA; // Specify EC as key type

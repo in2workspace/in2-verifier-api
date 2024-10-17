@@ -13,11 +13,8 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-
     @Bean
-    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
-            throws Exception {
-
+    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/health").permitAll()
@@ -34,4 +31,5 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable);
         return http.build();
     }
+
 }

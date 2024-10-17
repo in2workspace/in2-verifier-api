@@ -1,8 +1,9 @@
 package es.in2.vcverifier.oid4vp.controller;
 
+import es.in2.vcverifier.controller.Oid4vpController;
 import es.in2.vcverifier.exception.ResourceNotFoundException;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
-import es.in2.vcverifier.oid4vp.service.AuthorizationResponseProcessorService;
+import es.in2.vcverifier.service.AuthorizationResponseProcessorService;
 import es.in2.vcverifier.config.CacheStore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class Oid4vpControllerTest {
+class Oid4vpControllerTest {
 
     @InjectMocks
     private Oid4vpController oid4vpController;

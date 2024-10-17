@@ -1,6 +1,5 @@
 package es.in2.vcverifier.service.impl;
 
-import es.in2.vcverifier.config.ApiConfig;
 import es.in2.vcverifier.config.properties.ClientRepositoryProperties;
 import es.in2.vcverifier.exception.RemoteFileFetchException;
 import es.in2.vcverifier.service.AllowedClientsService;
