@@ -19,7 +19,7 @@ jobs:
       run: npm audit --audit-level=high || echo "Vulnerabilities found"
 
     - name: Send Email if vulnerabilities are found
-      if: failure()
+      if: success()
       uses: dawidd6/action-send-mail@v3
       with:
         server_address: smtp.office365.com
