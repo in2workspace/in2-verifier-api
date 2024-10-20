@@ -22,10 +22,10 @@ jobs:
       if: success()
       uses: dawidd6/action-send-mail@v3
       with:
-        server_address: smtp.office365.com
+        server_address: smtp.gmail.com
         server_port: 587
-        username: ${{ secrets.OUTLOOK_USERNAME }}
-        password: ${{ secrets.OUTLOOK_PASSWORD }}
+        username: ${{ secrets.SMTP_USERNAME }}
+        password: ${{ secrets.SMTP_PASSWORD }}
         subject: "Security Alert: Vulnerabilities Detected"
         body: "Dependabot found vulnerabilities in your project dependencies. Please review the logs."
         to: "dome@in2.es"
