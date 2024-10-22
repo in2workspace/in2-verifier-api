@@ -25,6 +25,8 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 
+import static es.in2.vcverifier.util.Constants.DID_ELSI_PREFIX;
+
 /**
  * This class contains basic validation steps for the scope of validating a Verifiable Presentation (VP)
  * that includes a LEARCredential, following the technical guidelines described in the DOME document.
@@ -66,17 +68,18 @@ public class VpServiceImpl implements VpService {
             validateCredentialTypeWithIssuerCapabilities(issuerCapabilitiesList, credentialTypes);
             log.info("Issuer DID {} is a trusted participant", credentialIssuerDid);
 
-            // Step 5: Extract the mandateeId from the Verifiable Credential
-            String mandateeId = extractMandateeId(credentialTypes, payload);
+            // Step 5: Extract the mandateId from the Verifiable Credential
+            String mandatorOrganizationIdentifier = extractMandatorOrganizationIdentifier(credentialTypes, payload);
 
             //TODO this must be validated against the participants list, not the issuer list
 
             // Validate the mandatee ID with trusted issuer service, if is not present the trustedIssuerListService throws an exception
-            trustFrameworkService.getTrustedIssuerListData(mandateeId);
+            trustFrameworkService.getTrustedIssuerListData(DID_ELSI_PREFIX + mandatorOrganizationIdentifier);
 
-            log.info("Mandatee ID {} is valid and allowed", mandateeId);
+            log.info("Mandator OrganizationIdentifier {} is valid and allowed", mandatorOrganizationIdentifier);
 
             // Step 6: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
+            String mandateeId = extractMandateeId(credentialTypes, payload);
             PublicKey holderPublicKey = didService.getPublicKeyFromDid(mandateeId); // Get the holder's public key in bytes
             jwtService.verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC); // Validate the VP was signed by the holder DID
 
@@ -124,16 +127,30 @@ public class VpServiceImpl implements VpService {
         }
     }
 
-
     private String extractMandateeId(List<String> credentialTypes, Payload payload) {
         Object vcObject = jwtService.getVCFromPayload(payload);
 
         if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
             LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(vcObject);
-            return learCredentialEmployee.credentialSubject().mandate().id();
+            return learCredentialEmployee.credentialSubject().mandate().mandatee().id();
         } else if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())) {
             LEARCredentialMachine learCredentialMachine = mapCredentialToLEARCredentialMachine(vcObject);
-            return learCredentialMachine.credentialSubject().mandate().id();
+            return learCredentialMachine.credentialSubject().mandate().mandatee().id();
+        } else {
+            throw new InvalidCredentialTypeException("Invalid Credential Type. LEARCredentialEmployee or LEARCredentialMachine required.");
+        }
+    }
+
+
+    private String extractMandatorOrganizationIdentifier(List<String> credentialTypes, Payload payload) {
+        Object vcObject = jwtService.getVCFromPayload(payload);
+
+        if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
+            LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(vcObject);
+            return learCredentialEmployee.credentialSubject().mandate().mandator().organizationIdentifier();
+        } else if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())) {
+            LEARCredentialMachine learCredentialMachine = mapCredentialToLEARCredentialMachine(vcObject);
+            return learCredentialMachine.credentialSubject().mandate().mandator().organizationIdentifier();
         } else {
             throw new InvalidCredentialTypeException("Invalid Credential Type. LEARCredentialEmployee or LEARCredentialMachine required.");
         }

@@ -8,6 +8,7 @@ import com.nimbusds.jose.shaded.gson.internal.LinkedTreeMap;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.exception.CredentialMappingException;
 import es.in2.vcverifier.exception.JsonConversionException;
+import es.in2.vcverifier.model.credentials.Mandator;
 import es.in2.vcverifier.model.credentials.employee.CredentialSubjectLCEmployee;
 import es.in2.vcverifier.model.credentials.employee.LEARCredentialEmployee;
 import es.in2.vcverifier.model.credentials.employee.MandateLCEmployee;
@@ -95,7 +96,7 @@ public class VpServiceImplTest {
     }
 
     @Test
-    void getCredentialFromTheVerifiablePresentationAsJsonNode_with_VC_Map_success() throws JsonProcessingException {
+    void getCredentialFromTheVerifiablePresentationAsJsonNode_with_VC_Map_success() {
         String verifiablePresentation = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
 
         Payload payload = mock(Payload.class);
@@ -198,7 +199,9 @@ public class VpServiceImplTest {
                 LEARCredentialMachine.builder()
                         .credentialSubject(CredentialSubjectLCMachine
                                 .builder().mandate(MandateLCMachine
-                                        .builder().mandatee(MandateeLCMachine
+                                        .builder()
+                                        .mandator(Mandator.builder().organizationIdentifier("organizationIdentifier").build())
+                                        .mandatee(MandateeLCMachine
                                                 .builder().id("mandateeId")
                                                 .build())
                                         .build())
@@ -237,7 +240,9 @@ public class VpServiceImplTest {
                 LEARCredentialEmployee.builder()
                         .credentialSubject(CredentialSubjectLCEmployee
                                 .builder().mandate(MandateLCEmployee
-                                        .builder().mandatee(MandateeLCEmployee
+                                        .builder()
+                                        .mandator(Mandator.builder().organizationIdentifier("organizationIdentifier").build())
+                                        .mandatee(MandateeLCEmployee
                                                 .builder().id("mandateeId")
                                                 .build())
                                         .build())
