@@ -3,7 +3,6 @@ package es.in2.vcverifier.crypto;
 import com.nimbusds.jose.crypto.bc.BouncyCastleProviderSingleton;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
-import com.nimbusds.jose.jwk.KeyUse;
 import es.in2.vcverifier.exception.ECKeyCreationException;
 import es.in2.vcverifier.util.UVarInt;
 import lombok.RequiredArgsConstructor;
@@ -42,21 +41,16 @@ public class CryptoComponent {
         try {
             // Convert the private key from hexadecimal string to BigInteger
             BigInteger privateKeyInt = new BigInteger(cryptoConfig.getPrivateKey(), 16);
-
             // Get the curve parameters for secp256r1 (P-256)
             ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("secp256r1");
-
             // Initialize the key factory for EC algorithm
             KeyFactory keyFactory = KeyFactory.getInstance("EC", BouncyCastleProviderSingleton.getInstance());
-
             // Create the private key spec for secp256r1
             ECPrivateKeySpec privateKeySpec = new ECPrivateKeySpec(privateKeyInt, ecSpec);
             ECPrivateKey privateKey = (ECPrivateKey) keyFactory.generatePrivate(privateKeySpec);
-
             // Generate the public key spec from the private key and curve parameters
             ECPublicKeySpec publicKeySpec = new ECPublicKeySpec(ecSpec.getG().multiply(privateKeyInt), ecSpec);
             ECPublicKey publicKey = (ECPublicKey) keyFactory.generatePublic(publicKeySpec);
-
             // Build the ECKey using secp256r1 curve (P-256)
             return new ECKey.Builder(Curve.P_256, publicKey)
                     .privateKey(privateKey)
@@ -75,23 +69,18 @@ public class CryptoComponent {
             // Convert ECPublicKey (Java) to BCECPublicKey (Bouncy Castle)
             byte[] encodedKey = ecPublicKey.getEncoded();
             KeyFactory keyFactory = KeyFactory.getInstance("EC", BouncyCastleProviderSingleton.getInstance());
-
             // Decode the public key using Bouncy Castle
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encodedKey);
             BCECPublicKey bcPublicKey = (BCECPublicKey) keyFactory.generatePublic(keySpec);
-
             // Extract the bytes from BCECPublicKey
             byte[] pubKeyBytes = bcPublicKey.getQ().getEncoded(true);
-
             // Multicodec key code for secp256r1
             int multiCodecKeyCodeForSecp256r1 = 0x1200;
-
             // Convert the public key to multibase58 format
             String multiBase58Btc = convertRawKeyToMultiBase58Btc(pubKeyBytes, multiCodecKeyCodeForSecp256r1);
             return "did:key:z" + multiBase58Btc;
-
         } catch (Exception e) {
-            throw new RuntimeException("Error converting public key to did:key", e);
+            throw new DidKeyCreationException("Error converting public key to did:key", e);
         }
     }
 

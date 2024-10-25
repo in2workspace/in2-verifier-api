@@ -38,45 +38,28 @@ public class ClientLoaderConfig {
         try {
             // Leer el archivo YAML
             String clientsYaml = allowedClientsService.fetchAllowedClient();
-            ExternalTrustedListYamlData clientsYamlData = yamlMapper.readValue(clientsYaml,ExternalTrustedListYamlData.class);
-
+            ExternalTrustedListYamlData clientsYamlData = yamlMapper.readValue(clientsYaml, ExternalTrustedListYamlData.class);
             List<RegisteredClient> registeredClients = new ArrayList<>();
-
             // Convertir cada ClientData a RegisteredClient y agregarlo a la lista
             for (ClientData clientData : clientsYamlData.clients()) {
-                RegisteredClient.Builder registeredClientBuilder = RegisteredClient.withId(UUID.randomUUID().toString())
-                        .clientId(clientData.clientId())
-                        .clientAuthenticationMethods(authMethods -> clientData.clientAuthenticationMethods().forEach(method ->
-                                authMethods.add(new ClientAuthenticationMethod(method))))
-                        .authorizationGrantTypes(grantTypes -> clientData.authorizationGrantTypes().forEach(grantType ->
-                                grantTypes.add(new AuthorizationGrantType(grantType))))
-                        .redirectUris(uris -> uris.addAll(clientData.redirectUris()))
-                        .postLogoutRedirectUris(uris -> uris.addAll(clientData.postLogoutRedirectUris()))
-                        .scopes(scopes -> scopes.addAll(clientData.scopes()));
+                RegisteredClient.Builder registeredClientBuilder = RegisteredClient.withId(UUID.randomUUID().toString()).clientId(clientData.clientId()).clientAuthenticationMethods(authMethods -> clientData.clientAuthenticationMethods().forEach(method -> authMethods.add(new ClientAuthenticationMethod(method)))).authorizationGrantTypes(grantTypes -> clientData.authorizationGrantTypes().forEach(grantType -> grantTypes.add(new AuthorizationGrantType(grantType)))).redirectUris(uris -> uris.addAll(clientData.redirectUris())).postLogoutRedirectUris(uris -> uris.addAll(clientData.postLogoutRedirectUris())).scopes(scopes -> scopes.addAll(clientData.scopes()));
 
                 if (clientData.clientSecret() != null && !clientData.clientSecret().isBlank()) {
                     registeredClientBuilder.clientSecret(clientData.clientSecret());
                 }
                 // Configurar ClientSettings
-                ClientSettings.Builder clientSettingsBuilder = ClientSettings.builder()
-                        .requireAuthorizationConsent(clientData.requireAuthorizationConsent());
-
+                ClientSettings.Builder clientSettingsBuilder = ClientSettings.builder().requireAuthorizationConsent(clientData.requireAuthorizationConsent());
                 // Configurar valores opcionales si están presentes en el JSON
                 if (clientData.jwkSetUrl() != null) {
                     clientSettingsBuilder.jwkSetUrl(clientData.jwkSetUrl());
                 }
-
                 if (clientData.tokenEndpointAuthenticationSigningAlgorithm() != null) {
-                    clientSettingsBuilder.tokenEndpointAuthenticationSigningAlgorithm(
-                            SignatureAlgorithm.from(clientData.tokenEndpointAuthenticationSigningAlgorithm()));
+                    clientSettingsBuilder.tokenEndpointAuthenticationSigningAlgorithm(SignatureAlgorithm.from(clientData.tokenEndpointAuthenticationSigningAlgorithm()));
                 }
-
                 if (clientData.requireProofKey() != null) {
                     clientSettingsBuilder.requireProofKey(clientData.requireProofKey());
                 }
-
                 registeredClientBuilder.clientSettings(clientSettingsBuilder.build());
-
                 registeredClients.add(registeredClientBuilder.build());
             }
             return registeredClients;
@@ -84,6 +67,7 @@ public class ClientLoaderConfig {
             throw new ClientLoadingException("Error loading clients from Yaml", e);
         }
     }
+
 }
 
 

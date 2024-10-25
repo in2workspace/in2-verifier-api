@@ -1,4 +1,4 @@
-package es.in2.vcverifier.oid4vp.service;
+package es.in2.vcverifier.service;
 
 public interface AuthorizationResponseProcessorService {
     void processAuthResponse(String state, String vpToken);

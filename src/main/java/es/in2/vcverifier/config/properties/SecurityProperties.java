@@ -7,26 +7,23 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import java.util.Optional;
 
 @ConfigurationProperties(prefix = "security")
-public record SecurityProperties(
-        String authorizationServer,
-        @NestedConfigurationProperty TokenProperties token) {
+public record SecurityProperties(String authorizationServer, @NestedConfigurationProperty TokenProperties token) {
 
     @ConstructorBinding
-    public SecurityProperties (String authorizationServer, TokenProperties token){
+    public SecurityProperties(String authorizationServer, TokenProperties token) {
         this.authorizationServer = authorizationServer;
         this.token = Optional.ofNullable(token).orElse(new TokenProperties(null));
     }
 
-    public record TokenProperties(
-            @NestedConfigurationProperty AccessTokenProperties accessToken) {
+    public record TokenProperties(@NestedConfigurationProperty AccessTokenProperties accessToken) {
 
         @ConstructorBinding
         public TokenProperties(AccessTokenProperties accessToken) {
-            this.accessToken = Optional.ofNullable(accessToken).orElse(new AccessTokenProperties(null,null));
+            this.accessToken = Optional.ofNullable(accessToken).orElse(new AccessTokenProperties(null, null));
         }
 
-        public record AccessTokenProperties(String expiration, String cronUnit) { }
-
+        public record AccessTokenProperties(String expiration, String cronUnit) {
+        }
 
     }
 

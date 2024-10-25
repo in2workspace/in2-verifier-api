@@ -1,5 +1,6 @@
 package es.in2.vcverifier.resolver;
 
+import es.in2.vcverifier.controller.ResolverController;
 import es.in2.vcverifier.service.DIDService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -20,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ResolverController.class)
 @AutoConfigureMockMvc(addFilters = false)  // Disable security filters for the test
-public class ResolverControllerTest {
+class ResolverControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -29,7 +30,7 @@ public class ResolverControllerTest {
     private DIDService didService;
 
     @Test
-    public void testResolveDid() throws Exception {
+    void testResolveDid() throws Exception {
         // Mock a public EC key
         ECPublicKey mockPublicKey = mock(ECPublicKey.class);
         ECPoint mockECPoint = new ECPoint(new BigInteger("12345"), new BigInteger("67890"));
@@ -48,4 +49,5 @@ public class ResolverControllerTest {
         // Verify interactions with the service
         verify(didService, times(1)).getPublicKeyFromDid("test-id");
     }
+
 }

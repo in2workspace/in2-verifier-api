@@ -1,5 +1,7 @@
 package es.in2.vcverifier.oid4vp.controller;
 
+import es.in2.vcverifier.config.properties.VerifierUiLoginUrisProperties;
+import es.in2.vcverifier.controller.LoginQrController;
 import es.in2.vcverifier.exception.QRCodeGenerationException;
 import net.glxn.qrgen.javase.QRCode;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class LoginQrControllerTest {
@@ -26,26 +29,33 @@ class LoginQrControllerTest {
     @Mock
     private Model model;
 
+    @Mock
+    private VerifierUiLoginUrisProperties verifierUiLoginUrisProperties;
 
-//    @Test
-//    void showQrLogin_validAuthRequest_shouldReturnLoginView() {
-//        String authRequest = "validAuthRequest";
-//        String state = "validState";
-//
-//        try (MockedStatic<QRCode> qrCodeMock = Mockito.mockStatic(QRCode.class)) {
-//            qrCodeMock.when(() -> QRCode.from(authRequest)).thenReturn(Mockito.mock(QRCode.class));
-//            qrCodeMock.when(() -> QRCode.from(authRequest).withSize(250, 250)).thenReturn(Mockito.mock(QRCode.class));
-//            qrCodeMock.when(() -> QRCode.from(authRequest).withSize(250, 250).stream()).thenReturn(new ByteArrayOutputStream());
-//
-//            String viewName = loginQrController.showQrLogin(authRequest, state, model);
-//
-//            assertEquals("login", viewName);
-//
-//            Mockito.verify(model).addAttribute("qrImage", "data:image/png;base64," + Base64.getEncoder().encodeToString(new ByteArrayOutputStream().toByteArray()));
-//            Mockito.verify(model).addAttribute("authRequest", authRequest);
-//            Mockito.verify(model).addAttribute("state", state);
-//        }
-//    }
+
+    @Test
+    void showQrLogin_validAuthRequest_shouldReturnLoginView() {
+        String authRequest = "validAuthRequest";
+        String state = "validState";
+
+        when(verifierUiLoginUrisProperties.onboardingUri()).thenReturn("onboardingUri");
+        when(verifierUiLoginUrisProperties.supportUri()).thenReturn("supportUri");
+        when(verifierUiLoginUrisProperties.walletUri()).thenReturn("walletUri");
+
+        try (MockedStatic<QRCode> qrCodeMock = Mockito.mockStatic(QRCode.class)) {
+            qrCodeMock.when(() -> QRCode.from(authRequest)).thenReturn(Mockito.mock(QRCode.class));
+            qrCodeMock.when(() -> QRCode.from(authRequest).withSize(250, 250)).thenReturn(Mockito.mock(QRCode.class));
+            qrCodeMock.when(() -> QRCode.from(authRequest).withSize(250, 250).stream()).thenReturn(new ByteArrayOutputStream());
+
+            String viewName = loginQrController.showQrLogin(authRequest, state, model);
+
+            assertEquals("login", viewName);
+
+            Mockito.verify(model).addAttribute("qrImage", "data:image/png;base64," + Base64.getEncoder().encodeToString(new ByteArrayOutputStream().toByteArray()));
+            Mockito.verify(model).addAttribute("authRequest", authRequest);
+            Mockito.verify(model).addAttribute("state", state);
+        }
+    }
 
     @Test
     void showQrLogin_exceptionDuringQRCodeGeneration_shouldThrowQRCodeGenerationException() {

@@ -1,9 +1,9 @@
-package es.in2.vcverifier.oid4vp.service.impl;
+package es.in2.vcverifier.service.impl;
 
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.model.AuthorizationCodeData;
-import es.in2.vcverifier.oid4vp.service.AuthorizationResponseProcessorService;
+import es.in2.vcverifier.service.AuthorizationResponseProcessorService;
 import es.in2.vcverifier.service.VpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

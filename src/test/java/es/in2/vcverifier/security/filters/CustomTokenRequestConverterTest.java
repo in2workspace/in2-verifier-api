@@ -19,7 +19,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -38,7 +37,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class CustomTokenRequestConverterTest {
+class CustomTokenRequestConverterTest {
 
     @Mock
     private JWTService jwtService;
@@ -116,7 +115,7 @@ public class CustomTokenRequestConverterTest {
 
         LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
         when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
-        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEARCredentialMachine.getValue()));
+        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
 
         when(clientAssertionValidationService.validateClientAssertionJWTClaims(anyString(), any())).thenReturn(true);
         when(vpService.validateVerifiablePresentation(anyString())).thenReturn(true);
@@ -156,7 +155,7 @@ public class CustomTokenRequestConverterTest {
 
         LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
         when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
-        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEARCredentialMachine.getValue()));
+        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
 
         when(clientAssertionValidationService.validateClientAssertionJWTClaims(anyString(), any())).thenReturn(false);
 
@@ -188,7 +187,7 @@ public class CustomTokenRequestConverterTest {
 
         LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
         when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
-        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEARCredentialMachine.getValue()));
+        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
 
         when(clientAssertionValidationService.validateClientAssertionJWTClaims(anyString(), any())).thenReturn(true);
         when(vpService.validateVerifiablePresentation(anyString())).thenReturn(false);

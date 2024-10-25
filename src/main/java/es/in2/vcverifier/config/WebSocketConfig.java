@@ -21,5 +21,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // Registrar el endpoint de WebSocket para que los clientes se conecten
         registry.addEndpoint("/qr-socket").withSockJS();
     }
+    
 }
 

@@ -13,30 +13,22 @@ import es.in2.vcverifier.model.enums.LEARCredentialType;
 import es.in2.vcverifier.model.issuer.IssuerCredentialsCapabilities;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
-import es.in2.vcverifier.service.TrustedIssuerListService;
+import es.in2.vcverifier.service.TrustFrameworkService;
 import es.in2.vcverifier.service.VpService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.asn1.*;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
-import javax.security.auth.x500.X500Principal;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.text.ParseException;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import static es.in2.vcverifier.util.Constants.DID_ELSI_PREFIX;
 
 /**
- *This class contains basic validation steps for the scope of validating a Verifiable Presentation (VP)
+ * This class contains basic validation steps for the scope of validating a Verifiable Presentation (VP)
  * that includes a LEARCredential, following the technical guidelines described in the DOME document.
  * The current implementation includes:
  * - Validation of the Verifiable Credential (VC) issuer.
@@ -52,7 +44,7 @@ public class VpServiceImpl implements VpService {
 
     private final JWTService jwtService;
     private final ObjectMapper objectMapper;
-    private final TrustedIssuerListService trustedIssuerListService;
+    private final TrustFrameworkService trustFrameworkService;
     private final DIDService didService;
 
 
@@ -70,23 +62,24 @@ public class VpServiceImpl implements VpService {
             List<String> credentialTypes = getCredentialTypes(payload);
 
             // Step 4: Retrieve the list of issuer capabilities
-            List<IssuerCredentialsCapabilities> issuerCapabilitiesList = trustedIssuerListService.getTrustedIssuerListData(credentialIssuerDid);
+            List<IssuerCredentialsCapabilities> issuerCapabilitiesList = trustFrameworkService.getTrustedIssuerListData(credentialIssuerDid);
 
             // Step 5: Validate credential type against issuer capabilities
             validateCredentialTypeWithIssuerCapabilities(issuerCapabilitiesList, credentialTypes);
             log.info("Issuer DID {} is a trusted participant", credentialIssuerDid);
 
-            // Step 5: Extract the mandateeId from the Verifiable Credential
-            String mandateeId = extractMandateeId(credentialTypes, payload);
+            // Step 5: Extract the mandateId from the Verifiable Credential
+            String mandatorOrganizationIdentifier = extractMandatorOrganizationIdentifier(credentialTypes, payload);
 
             //TODO this must be validated against the participants list, not the issuer list
 
             // Validate the mandatee ID with trusted issuer service, if is not present the trustedIssuerListService throws an exception
-            trustedIssuerListService.getTrustedIssuerListData(mandateeId);
+            trustFrameworkService.getTrustedIssuerListData(DID_ELSI_PREFIX + mandatorOrganizationIdentifier);
 
-            log.info("Mandatee ID {} is valid and allowed", mandateeId);
+            log.info("Mandator OrganizationIdentifier {} is valid and allowed", mandatorOrganizationIdentifier);
 
             // Step 6: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
+            String mandateeId = extractMandateeId(credentialTypes, payload);
             PublicKey holderPublicKey = didService.getPublicKeyFromDid(mandateeId); // Get the holder's public key in bytes
             jwtService.verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC); // Validate the VP was signed by the holder DID
 
@@ -122,9 +115,7 @@ public class VpServiceImpl implements VpService {
                 // Check each element to ensure it's a String
                 if (typeList.stream().allMatch(String.class::isInstance)) {
                     // Safely cast the List<?> to List<String>
-                    return typeList.stream()
-                            .map(String.class::cast)
-                            .toList();
+                    return typeList.stream().map(String.class::cast).toList();
                 } else {
                     throw new InvalidCredentialTypeException("Type list elements are not all of type String.");
                 }
@@ -136,16 +127,30 @@ public class VpServiceImpl implements VpService {
         }
     }
 
-
     private String extractMandateeId(List<String> credentialTypes, Payload payload) {
         Object vcObject = jwtService.getVCFromPayload(payload);
 
-        if (credentialTypes.contains(LEARCredentialType.LEARCredentialEmployee.getValue())) {
+        if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
             LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(vcObject);
             return learCredentialEmployee.credentialSubject().mandate().mandatee().id();
-        } else if (credentialTypes.contains(LEARCredentialType.LEARCredentialMachine.getValue())) {
+        } else if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())) {
             LEARCredentialMachine learCredentialMachine = mapCredentialToLEARCredentialMachine(vcObject);
             return learCredentialMachine.credentialSubject().mandate().mandatee().id();
+        } else {
+            throw new InvalidCredentialTypeException("Invalid Credential Type. LEARCredentialEmployee or LEARCredentialMachine required.");
+        }
+    }
+
+
+    private String extractMandatorOrganizationIdentifier(List<String> credentialTypes, Payload payload) {
+        Object vcObject = jwtService.getVCFromPayload(payload);
+
+        if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
+            LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(vcObject);
+            return learCredentialEmployee.credentialSubject().mandate().mandator().organizationIdentifier();
+        } else if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())) {
+            LEARCredentialMachine learCredentialMachine = mapCredentialToLEARCredentialMachine(vcObject);
+            return learCredentialMachine.credentialSubject().mandate().mandator().organizationIdentifier();
         } else {
             throw new InvalidCredentialTypeException("Invalid Credential Type. LEARCredentialEmployee or LEARCredentialMachine required.");
         }
@@ -155,8 +160,7 @@ public class VpServiceImpl implements VpService {
         // Iterate over each credential type in the verifiable credential
         for (String credentialType : credentialTypes) {
             // Check if any of the issuer capabilities support this credential type
-            boolean isSupported = issuerCapabilitiesList.stream()
-                    .anyMatch(capability -> capability.credentialsType().equals(credentialType));
+            boolean isSupported = issuerCapabilitiesList.stream().anyMatch(capability -> capability.credentialsType().equals(credentialType));
 
             // If we find a matching capability, return from the method
             if (isSupported) {
@@ -229,19 +233,15 @@ public class VpServiceImpl implements VpService {
         if (vpClaim == null) {
             throw new JWTClaimMissingException("The 'vp' claim was not found in the Verifiable Presentation");
         }
-
         // Ensure that vpClaim is an instance of Map (JSON object)
         if (!(vpClaim instanceof Map<?, ?> vpMap)) {
             throw new JWTClaimMissingException("The 'vp' claim is not a valid object");
         }
-
         // Extract the "verifiableCredential" claim inside "vp"
         Object vcClaim = vpMap.get("verifiableCredential");
-
         if (vcClaim == null) {
             throw new JWTClaimMissingException("The 'verifiableCredential' claim was not found within 'vp'");
         }
-
         return vcClaim;
     }
 
@@ -250,11 +250,9 @@ public class VpServiceImpl implements VpService {
         if (!(vcClaim instanceof List<?> verifiableCredentials)) {
             throw new CredentialException("The verifiableCredential claim is not an array");
         }
-
         if (verifiableCredentials.isEmpty()) {
             throw new CredentialException("No Verifiable Credential found in Verifiable Presentation");
         }
-
         // Ensure the first item is a String (JWT in string form)
         Object firstCredential = verifiableCredentials.get(0);
         if (!(firstCredential instanceof String)) {
@@ -263,106 +261,6 @@ public class VpServiceImpl implements VpService {
         return firstCredential;
     }
 
-
-//    private boolean extractAndVerifyCertificate(Map<String, Object> vcHeader, String expectedOrgId) throws Exception {
-//        // Retrieve the x5c claim (certificate chain)
-//        Object x5cObj = vcHeader.get("x5c");
-//
-//        if (!(x5cObj instanceof List<?> x5c)) {
-//            throw new IllegalArgumentException("The x5c claim is not a valid list");
-//        }
-//
-//        if (x5c.isEmpty()) {
-//            throw new IllegalArgumentException("No certificate (x5c) found in JWT header");
-//        }
-//
-//        CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-//
-//        for (Object certBase64Obj : x5c) {
-//            if (!(certBase64Obj instanceof String)) {
-//                log.error("Invalid certificate format in x5c");
-//                continue; // Skip invalid entries and continue with the next one
-//            }
-//
-//            // Decode each certificate
-//            byte[] certBytes = Base64.getDecoder().decode((String) certBase64Obj);
-//            X509Certificate certificate = (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certBytes));
-//
-//            // Extract the DN (Distinguished Name)
-//            X500Principal subject = certificate.getSubjectX500Principal();
-//            String distinguishedName = subject.getName();
-//            log.info("Extracted DN: {}", distinguishedName);
-//
-//            // Try to extract the organizationIdentifier from the DN
-//            String orgIdentifierFromDN = extractOrganizationIdentifierFromDN(distinguishedName);
-//            if (orgIdentifierFromDN != null && orgIdentifierFromDN.equals(expectedOrgId)) {
-//                log.info("Found matching organization identifier in DN: {}", orgIdentifierFromDN);
-//                return true; // Organization identifier matches, return true
-//            }
-//        }
-//
-//        // If the loop finishes without finding a match, throw an exception
-//        throw new OrganizationIdentifierNotFoundException("Organization Identifier not found in certificates.");
-//    }
-
-
-//    // Helper method to extract and decode the organizationIdentifier from the DN
-//    private String extractOrganizationIdentifierFromDN(String distinguishedName) {
-//        log.info("Extracting organizationIdentifier from DN: {}", distinguishedName);
-//
-//        // Use a regular expression to find the 2.5.4.97 OID in the DN
-//        Pattern pattern = Pattern.compile("2\\.5\\.4\\.97=#([0-9A-F]+)", Pattern.CASE_INSENSITIVE);
-//        Matcher matcher = pattern.matcher(distinguishedName);
-//
-//        if (matcher.find()) {
-//            String hexValue = matcher.group(1);
-//            log.info("Extracted hex value for organizationIdentifier: {}", hexValue);
-//
-//            // Decode the hex string properly as ASN.1 encoded value
-//            return decodeHexToReadableString(hexValue);
-//        } else {
-//            log.warn("OID 2.5.4.97 not found in DN: {}", distinguishedName);
-//        }
-//        return null; // Return null if organizationIdentifier is not found
-//    }
-
-
-//    // Method to properly decode the hex value as an ASN.1 structure
-//    private String decodeHexToReadableString(String hexValue) {
-//        try {
-//            byte[] octets = hexStringToByteArray(hexValue);
-//            try (ASN1InputStream asn1InputStream = new ASN1InputStream(new ByteArrayInputStream(octets))) {
-//                ASN1Primitive asn1Primitive = asn1InputStream.readObject();
-//
-//                if (asn1Primitive instanceof ASN1OctetString octetString) {
-//                    return new String(octetString.getOctets(), StandardCharsets.UTF_8); // Try to decode as UTF-8
-//                } else if (asn1Primitive instanceof ASN1PrintableString asn1PrintableString) {
-//                    return ( asn1PrintableString.getString());
-//                } else if (asn1Primitive instanceof ASN1UTF8String asn1UTF8String) {
-//                    return (asn1UTF8String.getString());
-//                } else if (asn1Primitive instanceof ASN1IA5String asn1IA5String) {
-//                    return (asn1IA5String.getString());
-//                } else {
-//                    log.warn("Unrecognized ASN.1 type: {}", asn1Primitive.getClass().getSimpleName());
-//                }
-//            }
-//        } catch (IOException e) {
-//            log.error("Error decoding hex value to readable string", e);
-//        }
-//        return null;
-//    }
-
-
-//    // Convert hex string to byte array
-//    private byte[] hexStringToByteArray(String hex) {
-//        int len = hex.length();
-//        byte[] data = new byte[len / 2];
-//        for (int i = 0; i < len; i += 2) {
-//            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-//                    + Character.digit(hex.charAt(i+1), 16));
-//        }
-//        return data;
-//    }
 }
 
 

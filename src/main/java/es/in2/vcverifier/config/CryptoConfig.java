@@ -1,5 +1,6 @@
-package es.in2.vcverifier.crypto;
+package es.in2.vcverifier.config;
 
+import es.in2.vcverifier.config.properties.CryptoProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 

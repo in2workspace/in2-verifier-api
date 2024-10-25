@@ -1,26 +1,24 @@
 package es.in2.vcverifier.config;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
 
 @Getter
 @Component
+@RequiredArgsConstructor
 public class JtiTokenCache {
 
-    private final HashSet<String> jtiTokenCache;
+    private final HashSet<String> jtiTokenHashSet;
 
-    public JtiTokenCache(HashSet<String> jtiCache) {
-        this.jtiTokenCache = jtiCache;
-    }
-
-    public boolean addJti(String jti) {
-        return jtiTokenCache.add(jti);
+    public void addJti(String jti) {
+        jtiTokenHashSet.add(jti);
     }
 
     public boolean isJtiPresent(String jti) {
-        return jtiTokenCache.contains(jti);
+        return jtiTokenHashSet.contains(jti);
     }
 
 }

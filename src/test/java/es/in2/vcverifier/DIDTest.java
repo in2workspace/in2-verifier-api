@@ -12,7 +12,8 @@ import es.in2.vcverifier.util.UVarInt;
 import org.bitcoinj.base.Base58;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 import org.bouncycastle.jce.ECNamedCurveTable;
-import org.bouncycastle.jce.spec.*;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.util.AssertionErrors.assertTrue;
 
 class DIDTest {
@@ -39,12 +39,12 @@ class DIDTest {
     // https://www.scottbrady91.com/tools/jwt
 
     @Test
-    void getPrivateKeyToHex(){
+    void getPrivateKeyToHex() {
         // Claves en formato Base64 URL-safe
 
-        String privateKeyBase64 = "Gvnq0VU_MTFK9OEBHFgugCPrFds8ELcFFvhDuKUuGGI";
-        String publicKeyXBase64 = "5majjLNDNXMi0OWLii_j9M_WOECEy4t0CE0yVE5MR8g";
-        String publicKeyYBase64 = "UwEyQBEsDgDTi1y1_Vp8LMiPNyXwPaHsDOzvKTwfXGg";
+        String privateKeyBase64 = "YkV0K8F8AvI6Cy90j1jJ2f99UO2HuLClMrB9savkfRg";
+        String publicKeyXBase64 = "9SBwGwze-1G6v6vfR-2pEwxvGbXyo7w1rdSUb9IrTfk";
+        String publicKeyYBase64 = "UydbH61G-MAcl6AlEtBMo_kO4pS2fntNeqfXgi9bb2w";
 
         // Convertir las claves de Base64 URL-safe a bytes y luego a hexadecimal
         String privateKeyHex = base64UrlToHex(privateKeyBase64);
