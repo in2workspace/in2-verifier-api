@@ -1,8 +1,11 @@
-package es.in2.vcverifier.crypto;
+package es.in2.vcverifier.component;
 
 import com.nimbusds.jose.crypto.bc.BouncyCastleProviderSingleton;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jose.jwk.KeyUse;
+import es.in2.vcverifier.config.CryptoConfig;
+import es.in2.vcverifier.exception.DidKeyCreationException;
 import es.in2.vcverifier.exception.ECKeyCreationException;
 import es.in2.vcverifier.util.UVarInt;
 import lombok.RequiredArgsConstructor;

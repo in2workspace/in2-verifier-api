@@ -9,7 +9,7 @@ import es.in2.vcverifier.model.issuer.IssuerAttribute;
 import es.in2.vcverifier.model.issuer.IssuerCredentialsCapabilities;
 import es.in2.vcverifier.model.issuer.IssuerResponse;
 import es.in2.vcverifier.service.HttpClientService;
-import es.in2.vcverifier.service.TrustedIssuerListService;
+import es.in2.vcverifier.service.TrustFrameworkService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,7 +23,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class TrustedIssuerListServiceImpl implements TrustedIssuerListService {
+public class TrustFrameworkServiceImpl implements TrustFrameworkService {
 
     private final TrustedIssuerListProperties trustedIssuerListProperties;
     private final ObjectMapper objectMapper;
