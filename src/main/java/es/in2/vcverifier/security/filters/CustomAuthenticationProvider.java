@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static es.in2.vcverifier.util.Constants.NONCE;
+
 @Slf4j
 @RequiredArgsConstructor
 public class CustomAuthenticationProvider implements AuthenticationProvider {
@@ -61,6 +63,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         Object credential = getVerifiableCredential(authentication);
         String subject = getCredentialSubjectFromVerifiableCredential(credential);
         String audience = getAudience(authentication,credential);
+        String nonce = getNonce(authentication);
 
         String jwtToken = generateAccessTokenWithVc(credential, issueTime, expirationTime, subject, audience);
         OAuth2AccessToken oAuth2AccessToken = new OAuth2AccessToken(
@@ -71,7 +74,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         );
 
         // Keycloak requires the id_token to be in the additional parameters in order to be able to validate it and bound to the user session
-        String idToken = generateIdToken(subject, audience, issueTime, expirationTime);
+        String idToken = generateIdToken(subject, audience, issueTime, expirationTime, nonce);
 
         Map<String, Object> additionalParameters = new HashMap<>();
         additionalParameters.put("id_token", idToken);
@@ -79,8 +82,16 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken, null,additionalParameters);
     }
 
+    private String getNonce(OAuth2AuthorizationGrantAuthenticationToken authentication) {
+        Map<String, Object> additionalParameters = authentication.getAdditionalParameters();
+        if (additionalParameters != null && additionalParameters.containsKey(NONCE)) {
+            return additionalParameters.get(NONCE).toString();
+        }
+
+        throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
+    }
+
     private String getClientId(OAuth2AuthorizationGrantAuthenticationToken authentication) {
-        // Asumiendo que el clientId puede estar en los parámetros adicionales o como atributo
         Map<String, Object> additionalParameters = authentication.getAdditionalParameters();
         if (additionalParameters != null && additionalParameters.containsKey(OAuth2ParameterNames.CLIENT_ID)) {
             return additionalParameters.get(OAuth2ParameterNames.CLIENT_ID).toString();
@@ -161,7 +172,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         return jwtService.generateJWT(payload.toString());
     }
 
-    private String generateIdToken(String subject, String audience, Instant issueTime, Instant expirationTime) {
+    private String generateIdToken(String subject, String audience, Instant issueTime, Instant expirationTime, String nonce) {
         // Create the JWT payload (claims) for the ID token
         JWTClaimsSet idTokenClaims = new JWTClaimsSet.Builder()
                 .subject(subject)
@@ -170,6 +181,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .issueTime(Date.from(issueTime))
                 .expirationTime(Date.from(expirationTime))
                 .jwtID(UUID.randomUUID().toString())
+                .claim(NONCE, nonce)
                 .build();
 
         // Use JWTService to generate the ID Token (JWT)

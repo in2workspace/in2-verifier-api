@@ -8,7 +8,8 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 public record AuthorizationCodeData(
         String state,
         JsonNode verifiableCredential,
-        OAuth2Authorization oAuth2Authorization
+        OAuth2Authorization oAuth2Authorization,
+        String clientNonce
 
 ) {
 }

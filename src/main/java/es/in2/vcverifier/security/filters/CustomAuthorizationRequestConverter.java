@@ -32,6 +32,7 @@ import java.security.PublicKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 import static es.in2.vcverifier.util.Constants.*;
@@ -57,6 +58,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         String jwt;
         String clientId = request.getParameter(OAuth2ParameterNames.CLIENT_ID);
         String state = request.getParameter(OAuth2ParameterNames.STATE);
+        String clientNonce = request.getParameter(NONCE);
         String scope = request.getParameter(OAuth2ParameterNames.SCOPE);
         String redirectUri = request.getParameter(OAuth2ParameterNames.REDIRECT_URI);
 
@@ -66,7 +68,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         // Case 1: No 'request' or 'request_uri' is provided, assuming it's an authorization request without a signed object
         if (requestUri == null && request.getParameter("request") == null) {
             log.info("Processing an authorization request without a signed JWT object.");
-            return handleNonSignedAuthorizationRequest(clientId, state, scope, redirectUri);
+            return handleNonSignedAuthorizationRequest(clientId, state, scope, redirectUri, clientNonce);
         }
 
         // Case 2: JWT present via either 'request_uri' or 'request' parameters
@@ -82,19 +84,16 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         validateRedirectUri(clientId, redirectUri, signedJwt);
 
         // Step 5: Process the authorization flow
-        return processAuthorizationFlow(clientId, scope, state, signedJwt);
+        return processAuthorizationFlow(clientId, scope, state, signedJwt, clientNonce);
 
     }
 
     /**
      * Handle authorization requests without a signed JWT object.
      */
-    private Authentication handleNonSignedAuthorizationRequest(String clientId, String state, String scope, String redirectUri) {
+    private Authentication handleNonSignedAuthorizationRequest(String clientId, String state, String scope, String redirectUri, String clientNonce) {
         // Validate redirect_uri for non-signed requests
         validateRedirectUri(clientId, redirectUri, null);
-
-        String nonce = generateNonce();
-        String signedAuthRequest = jwtService.generateJWT(buildAuthorizationRequestJwtPayload(scope, state));
 
         // Cache the OAuth2 authorization request
         cacheStoreForOAuth2AuthorizationRequest.add(state, OAuth2AuthorizationRequest.authorizationCode()
@@ -103,7 +102,11 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .redirectUri(redirectUri)
                 .scope(scope)
                 .authorizationUri(securityProperties.authorizationServer())
+                .additionalParameters(Map.of(NONCE, clientNonce))
                 .build());
+
+        String nonce = generateNonce();
+        String signedAuthRequest = jwtService.generateJWT(buildAuthorizationRequestJwtPayload(scope, state));
 
         return getAuthentication(state, signedAuthRequest, nonce);
     }
@@ -152,7 +155,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         }
     }
 
-    private Authentication processAuthorizationFlow(String clientId, String scope, String state, SignedJWT signedJwt) {
+    private Authentication processAuthorizationFlow(String clientId, String scope, String state, SignedJWT signedJwt, String clientNonce) {
         PublicKey publicKey = didService.getPublicKeyFromDid(clientId);
         jwtService.verifyJWTSignature(signedJwt.serialize(), publicKey, KeyType.EC);
 
@@ -164,6 +167,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .redirectUri(jwtService.getClaimFromPayload(signedJwt.getPayload(), OAuth2ParameterNames.REDIRECT_URI))
                 .scope(scope)
                 .authorizationUri(securityProperties.authorizationServer())
+                .additionalParameters(Map.of(NONCE, clientNonce))
                 .build());
 
         String nonce = generateNonce();
@@ -201,7 +205,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .expirationTime(Date.from(expirationTime))
                 .claim(OAuth2ParameterNames.CLIENT_ID, cryptoComponent.getECKey().getKeyID())
                 .claim("client_id_scheme", "did")
-                .claim("nonce", generateNonce())
+                .claim(NONCE, generateNonce())
                 .claim("response_uri", securityProperties.authorizationServer() + AUTHORIZATION_RESPONSE_ENDPOINT)
                 .claim(OAuth2ParameterNames.SCOPE, scope)
                 .claim(OAuth2ParameterNames.STATE, state)

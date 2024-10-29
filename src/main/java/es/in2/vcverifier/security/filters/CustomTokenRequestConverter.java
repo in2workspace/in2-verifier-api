@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static es.in2.vcverifier.util.Constants.NONCE;
+
 @Slf4j
 @RequiredArgsConstructor
 public class CustomTokenRequestConverter implements AuthenticationConverter {
@@ -86,6 +88,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         Map<String, Object> additionalParameters = new HashMap<>();
         additionalParameters.put(OAuth2ParameterNames.CLIENT_ID,clientId);
         additionalParameters.put("vc",authorizationCodeData.verifiableCredential());
+        additionalParameters.put(NONCE,authorizationCodeData.clientNonce());
         additionalParameters.put(OAuth2ParameterNames.AUDIENCE,clientId);
 
         return new OAuth2AuthorizationCodeAuthenticationToken(code, clientPrincipal, null,additionalParameters);

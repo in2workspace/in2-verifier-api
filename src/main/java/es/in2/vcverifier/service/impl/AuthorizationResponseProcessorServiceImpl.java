@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationCode;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -25,6 +26,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.UUID;
+
+import static es.in2.vcverifier.util.Constants.NONCE;
 
 @Slf4j
 @Service
@@ -88,18 +91,22 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
 
         log.info("OAuth2Authorization generated");
 
+        // Save nonce to be used in the Token Response
+        String clientNonce = oAuth2AuthorizationRequest.getAttributes().get(NONCE).toString();
+
         cacheStoreForAuthorizationCodeData.add(code, AuthorizationCodeData.builder()
                 .state(state)
                 .verifiableCredential(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(decodedVpToken))
                 .oAuth2Authorization(authorization)
+                .clientNonce(clientNonce)
                 .build());
 
         oAuth2AuthorizationService.save(authorization);
 
         // Build the redirect URL with the code (code) and the state
         String redirectUrl = UriComponentsBuilder.fromHttpUrl(redirectUri)
-                .queryParam("code", code)
-                .queryParam("state", state)
+                .queryParam(OAuth2ParameterNames.CODE, code)
+                .queryParam(OAuth2ParameterNames.STATE, state)
                 .build()
                 .toUriString();
 
