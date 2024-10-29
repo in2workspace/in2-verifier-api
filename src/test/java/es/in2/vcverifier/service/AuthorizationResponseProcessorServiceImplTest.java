@@ -72,7 +72,7 @@ class AuthorizationResponseProcessorServiceImplTest {
         String state = UUID.randomUUID().toString();
         String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes(StandardCharsets.UTF_8));
 
-        OAuth2AuthorizationRequest mockAuthRequest = OAuth2AuthorizationRequest.authorizationCode()
+        OAuth2AuthorizationRequest authRequest = OAuth2AuthorizationRequest.authorizationCode()
                 .state(state)
                 .clientId("123")
                 .redirectUri("https://example.com/callback")
@@ -81,13 +81,13 @@ class AuthorizationResponseProcessorServiceImplTest {
                 .additionalParameters(Map.of(NONCE, "321"))
                 .build();
 
-        RegisteredClient mockRegisteredClient = mock(RegisteredClient.class);
+        when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(authRequest);
+        when(authRequest.getRedirectUri()).thenReturn("https://example.com/callback");
 
+        RegisteredClient mockRegisteredClient = mock(RegisteredClient.class);
 
         when(mockRegisteredClient.getClientId()).thenReturn("123");
         when(mockRegisteredClient.getId()).thenReturn("123");
-
-        when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(mockAuthRequest);
 
         when(vpService.validateVerifiablePresentation(anyString())).thenReturn(true);
 
