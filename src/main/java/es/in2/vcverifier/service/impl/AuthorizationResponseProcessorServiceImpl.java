@@ -92,7 +92,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         log.info("OAuth2Authorization generated");
 
         // Save nonce to be used in the Token Response
-        String clientNonce = oAuth2AuthorizationRequest.getAttributes().get(NONCE).toString();
+        String clientNonce = oAuth2AuthorizationRequest.getAdditionalParameters().get(NONCE).toString();
 
         cacheStoreForAuthorizationCodeData.add(code, AuthorizationCodeData.builder()
                 .state(state)
