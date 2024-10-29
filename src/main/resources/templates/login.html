@@ -259,7 +259,7 @@
     <div class="left-column">
         <div class="registration-card">
             <h3>Your organization must be registered in the marketplace before you log in.</h3>
-            <button th:attr="onclick='window.location.href=' + '${onboardingUri}'">
+            <button th:attr="onclick='window.location.href = \'' + ${onboardingUri} + '\''">
                 <i class="fa-solid fa-laptop"></i>
                 Registration
             </button>
