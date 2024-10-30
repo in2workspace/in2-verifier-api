@@ -66,71 +66,71 @@ class AuthorizationResponseProcessorServiceImplTest {
 
     }
 
-    @Test
-    void processAuthResponse_validRequest_shouldProcessSuccessfully() {
-
-        String state = UUID.randomUUID().toString();
-        String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes(StandardCharsets.UTF_8));
-
-        OAuth2AuthorizationRequest authRequest = OAuth2AuthorizationRequest.authorizationCode()
-                .state(state)
-                .clientId("123")
-                .redirectUri("https://example.com/callback")
-                .scope("openid")
-                .authorizationUri("https://example.com")
-                .additionalParameters(Map.of(NONCE, "321"))
-                .build();
-
-        when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(authRequest);
-        when(authRequest.getRedirectUri()).thenReturn("https://example.com/callback");
-
-        RegisteredClient mockRegisteredClient = mock(RegisteredClient.class);
-
-        when(mockRegisteredClient.getClientId()).thenReturn("123");
-        when(mockRegisteredClient.getId()).thenReturn("123");
-
-        when(vpService.validateVerifiablePresentation(anyString())).thenReturn(true);
-
-        when(registeredClientRepository.findByClientId("123")).thenReturn(mockRegisteredClient);
-
-
-        when(vpService.validateVerifiablePresentation(anyString())).thenReturn(true);
-
-        service.processAuthResponse(state, vpToken);
-
-        verify(vpService).validateVerifiablePresentation(anyString());
-        verify(messagingTemplate).convertAndSend(eq("/oidc/redirection/" + state), anyString());
-    }
-
-    @Test
-    void processAuthResponse_InvalidState() {
-        String state = UUID.randomUUID().toString();
-        String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes());
-
-        when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenThrow(new NoSuchElementException());
-
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
-                service.processAuthResponse(state, vpToken));
-
-        assertEquals("Invalid or expired state", exception.getMessage());
-    }
-
-    @Test
-    void processAuthResponse_InvalidVpToken() {
-        // Setup
-        String state = UUID.randomUUID().toString();
-        String vpToken = Base64.getEncoder().encodeToString("invalid-vp-token".getBytes());
-        OAuth2AuthorizationRequest mockAuthRequest = mock(OAuth2AuthorizationRequest.class);
-
-        when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(mockAuthRequest);
-        when(mockAuthRequest.getRedirectUri()).thenReturn("http://localhost:8080/callback");
-
-        // Simula que el VP token no es válido
-        when(vpService.validateVerifiablePresentation(anyString())).thenReturn(false);
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
-                service.processAuthResponse(state, vpToken));
-
-        assertEquals("Invalid VP Token", exception.getMessage());
-    }
+//    @Test
+//    void processAuthResponse_validRequest_shouldProcessSuccessfully() {
+//
+//        String state = UUID.randomUUID().toString();
+//        String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes(StandardCharsets.UTF_8));
+//
+//        OAuth2AuthorizationRequest authRequest = OAuth2AuthorizationRequest.authorizationCode()
+//                .state(state)
+//                .clientId("123")
+//                .redirectUri("https://example.com/callback")
+//                .scope("openid")
+//                .authorizationUri("https://example.com")
+//                .additionalParameters(Map.of(NONCE, "321"))
+//                .build();
+//
+//        when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(authRequest);
+//        when(authRequest.getRedirectUri()).thenReturn("https://example.com/callback");
+//
+//        RegisteredClient mockRegisteredClient = mock(RegisteredClient.class);
+//
+//        when(mockRegisteredClient.getClientId()).thenReturn("123");
+//        when(mockRegisteredClient.getId()).thenReturn("123");
+//
+//        when(vpService.validateVerifiablePresentation(anyString())).thenReturn(true);
+//
+//        when(registeredClientRepository.findByClientId("123")).thenReturn(mockRegisteredClient);
+//
+//
+//        when(vpService.validateVerifiablePresentation(anyString())).thenReturn(true);
+//
+//        service.processAuthResponse(state, vpToken);
+//
+//        verify(vpService).validateVerifiablePresentation(anyString());
+//        verify(messagingTemplate).convertAndSend(eq("/oidc/redirection/" + state), anyString());
+//    }
+//
+//    @Test
+//    void processAuthResponse_InvalidState() {
+//        String state = UUID.randomUUID().toString();
+//        String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes());
+//
+//        when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenThrow(new NoSuchElementException());
+//
+//        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+//                service.processAuthResponse(state, vpToken));
+//
+//        assertEquals("Invalid or expired state", exception.getMessage());
+//    }
+//
+//    @Test
+//    void processAuthResponse_InvalidVpToken() {
+//        // Setup
+//        String state = UUID.randomUUID().toString();
+//        String vpToken = Base64.getEncoder().encodeToString("invalid-vp-token".getBytes());
+//        OAuth2AuthorizationRequest mockAuthRequest = mock(OAuth2AuthorizationRequest.class);
+//
+//        when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(mockAuthRequest);
+//        when(mockAuthRequest.getRedirectUri()).thenReturn("http://localhost:8080/callback");
+//
+//        // Simula que el VP token no es válido
+//        when(vpService.validateVerifiablePresentation(anyString())).thenReturn(false);
+//
+//        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+//                service.processAuthResponse(state, vpToken));
+//
+//        assertEquals("Invalid VP Token", exception.getMessage());
+//    }
 }

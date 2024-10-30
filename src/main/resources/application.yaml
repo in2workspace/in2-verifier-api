@@ -57,7 +57,7 @@ security:
       cronUnit: "MINUTES"
 
 clientsRepository:
-  uri: "https://raw.githubusercontent.com/rubenmodamioin2/dome-services-directory/refs/heads/main/trust-framework/trusted_services_list-lcl.yaml"
+  uri: "https://raw.githubusercontent.com/rubenmodamioin2/dome-services-directory/refs/heads/main/trusted-service-list-lcl.yaml"
 
 trustedIssuerList:
   uri: "http://localhost:8085/v4/issuers/"

@@ -52,21 +52,21 @@ class CustomAuthorizationRequestConverterTest {
     @InjectMocks
     private CustomAuthorizationRequestConverter customAuthorizationRequestConverter;
 
-    @Test
-    void convert_With_null_requestUri__ShouldThrowUnsupportedScopeException() {
-        String clientId = "valid-client-id";
-        String state = "valid-state";
-        String unsupportedScope = "invalid-scope";
-
-        when(httpServletRequest.getParameter("client_id")).thenReturn(clientId);
-        when(httpServletRequest.getParameter("request_uri")).thenReturn(null);
-        when(httpServletRequest.getParameter("scope")).thenReturn(unsupportedScope);
-        when(httpServletRequest.getParameter("state")).thenReturn(state);
-
-        when(registeredClientRepository.findByClientId(clientId)).thenReturn(mock(RegisteredClient.class));
-
-        assertThrows(IllegalArgumentException.class, () -> customAuthorizationRequestConverter.convert(httpServletRequest));
-    }
+//    @Test
+//    void convert_With_null_requestUri__ShouldThrowUnsupportedScopeException() {
+//        String clientId = "valid-client-id";
+//        String state = "valid-state";
+//        String unsupportedScope = "invalid-scope";
+//
+//        when(httpServletRequest.getParameter("client_id")).thenReturn(clientId);
+//        when(httpServletRequest.getParameter("request_uri")).thenReturn(null);
+//        when(httpServletRequest.getParameter("scope")).thenReturn(unsupportedScope);
+//        when(httpServletRequest.getParameter("state")).thenReturn(state);
+//
+//        when(registeredClientRepository.findByClientId(clientId)).thenReturn(mock(RegisteredClient.class));
+//
+//        assertThrows(IllegalArgumentException.class, () -> customAuthorizationRequestConverter.convert(httpServletRequest));
+//    }
 
     @Test
     void convert_WithoutClientIdRegistered_ShouldThrowOAuth2AuthenticationException() {

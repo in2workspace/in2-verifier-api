@@ -2,12 +2,10 @@ package es.in2.vcverifier.security.filters;
 
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.JWTClaimsSet;
-import es.in2.vcverifier.component.CryptoComponent;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.component.CryptoComponent;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.properties.SecurityProperties;
-import es.in2.vcverifier.exception.JWTParsingException;
 import es.in2.vcverifier.exception.RequestMismatchException;
 import es.in2.vcverifier.exception.UnsupportedScopeException;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
@@ -75,27 +73,19 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         String scope = request.getParameter(OAuth2ParameterNames.SCOPE);
         String redirectUri = request.getParameter(OAuth2ParameterNames.REDIRECT_URI);
 
-        // Check for required client ID
-        validateClientId(clientId);
-
-        // Case 1: No 'request' or 'request_uri' is provided, assuming it's an authorization request without a signed object
-        if (requestUri == null && request.getParameter("request") == null) {
-            log.info("Processing an authorization request without a signed JWT object.");
-            return handleNonSignedAuthorizationRequest(clientId, state, scope, redirectUri, clientNonce);
-        String requestUri = request.getParameter(REQUEST_URI); // request_uri parameter
-        String jwt;     // request parameter (JWT directly)
-        String clientId = request.getParameter(CLIENT_ID);     // client_id parameter
-        String state = request.getParameter("state");
-        String scope = request.getParameter(SCOPE);
-
         RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
 
         if (registeredClient == null) {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
         }
 
-        if (clientId == null) {
-            throw new IllegalArgumentException("Client ID is required.");
+        // Check for required client ID
+        validateClientId(clientId);
+
+        // Case 1: No 'request' or 'request_uri' is provided, assuming it's an authorization request without a signed object
+        if (requestUri == null && request.getParameter("request") == null) {
+            log.info("Processing an authorization request without a signed JWT object.");
+            return handleNonSignedAuthorizationRequest(clientId, state, scope, redirectUri, clientNonce, registeredClient);
         }
 
         // Case 2: JWT present via either 'request_uri' or 'request' parameters
@@ -111,14 +101,14 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         validateRedirectUri(clientId, redirectUri, signedJwt);
 
         // Step 5: Process the authorization flow
-        return processAuthorizationFlow(clientId, scope, state, signedJwt, clientNonce);
+        return processAuthorizationFlow(clientId, scope, state, signedJwt, clientNonce, registeredClient);
 
     }
 
     /**
      * Handle authorization requests without a signed JWT object.
      */
-    private Authentication handleNonSignedAuthorizationRequest(String clientId, String state, String scope, String redirectUri, String clientNonce) {
+    private Authentication handleNonSignedAuthorizationRequest(String clientId, String state, String scope, String redirectUri, String clientNonce, RegisteredClient registeredClient) {
         // Validate redirect_uri for non-signed requests
         validateRedirectUri(clientId, redirectUri, null);
 
@@ -135,7 +125,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         String nonce = generateNonce();
         String signedAuthRequest = jwtService.generateJWT(buildAuthorizationRequestJwtPayload(scope, state));
 
-        return getAuthentication(state, signedAuthRequest, nonce);
+        return getAuthentication(state, signedAuthRequest, nonce, registeredClient);
     }
 
     /**
@@ -182,7 +172,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         }
     }
 
-    private Authentication processAuthorizationFlow(String clientId, String scope, String state, SignedJWT signedJwt, String clientNonce) {
+    private Authentication processAuthorizationFlow(String clientId, String scope, String state, SignedJWT signedJwt, String clientNonce, RegisteredClient registeredClient) {
         PublicKey publicKey = didService.getPublicKeyFromDid(clientId);
         jwtService.verifyJWTSignature(signedJwt.serialize(), publicKey, KeyType.EC);
 
@@ -198,16 +188,20 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .build());
 
         String nonce = generateNonce();
-        return getAuthentication(state, signedAuthRequest, nonce);
+        return getAuthentication(state, signedAuthRequest, nonce, registeredClient);
     }
 
-    private Authentication getAuthentication(String state, String signedAuthRequest, String nonce) {
+    private Authentication getAuthentication(String state, String signedAuthRequest, String nonce, RegisteredClient registeredClient) {
         cacheStoreForAuthorizationRequestJWT.add(nonce, AuthorizationRequestJWT.builder().authRequest(signedAuthRequest).build());
 
+        // This is used to allow the user te return to the application if the user wants to cancel the login
+        String homeUri = registeredClient.getClientName();
+
         String authRequest = generateOpenId4VpUrl(nonce);
-        String redirectUrl = String.format("/login?authRequest=%s&state=%s",
+        String redirectUrl = String.format("/login?authRequest=%s&state=%s&homeUri=%s",
                 URLEncoder.encode(authRequest, StandardCharsets.UTF_8),
-                URLEncoder.encode(state, StandardCharsets.UTF_8));
+                URLEncoder.encode(state, StandardCharsets.UTF_8),
+                URLEncoder.encode(homeUri, StandardCharsets.UTF_8));
 
         OAuth2Error error = new OAuth2Error("custom_error", "Redirection required", redirectUrl);
         throw new OAuth2AuthorizationCodeRequestAuthenticationException(error, null);
@@ -221,9 +215,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         } else {
             throw new UnsupportedScopeException("Unsupported scope: " + scope);
         }
-        else {
-            throw new UnsupportedScopeException("Unsupported scope");
-        }
+
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
 
