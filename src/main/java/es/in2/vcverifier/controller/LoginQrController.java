@@ -1,5 +1,6 @@
 package es.in2.vcverifier.controller;
 
+import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.config.properties.VerifierUiLoginUrisProperties;
 import es.in2.vcverifier.exception.QRCodeGenerationException;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +20,11 @@ import java.util.Base64;
 public class LoginQrController {
 
     private final VerifierUiLoginUrisProperties verifierUiLoginUrisProperties;
+    private final SecurityProperties securityProperties;
 
     @GetMapping("/login")
     @ResponseStatus(HttpStatus.OK)
-    public String showQrLogin(@RequestParam("authRequest") String authRequest, @RequestParam("state") String state, Model model) {
+    public String showQrLogin(@RequestParam("authRequest") String authRequest, @RequestParam("state") String state, Model model, @RequestParam("homeUri") String homeUri) {
         try {
             // Generar la imagen QR en base64
             String qrImageBase64 = generateQRCodeImageBase64(authRequest);
@@ -31,9 +33,12 @@ public class LoginQrController {
             model.addAttribute("authRequest", authRequest);
             // Pasar el sessionId al modelo
             model.addAttribute("state", state);
+            model.addAttribute("homeUri", homeUri);
             model.addAttribute("onboardingUri", verifierUiLoginUrisProperties.onboardingUri());
             model.addAttribute("supportUri", verifierUiLoginUrisProperties.supportUri());
             model.addAttribute("walletUri", verifierUiLoginUrisProperties.walletUri());
+            model.addAttribute("cronUnit", securityProperties.loginCode().expirationProperties().cronUnit());
+            model.addAttribute("expiration", securityProperties.loginCode().expirationProperties().expiration());
         } catch (Exception e) {
             throw new QRCodeGenerationException(e.getMessage());
         }

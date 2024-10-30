@@ -65,7 +65,7 @@ public class AuthorizationServerConfig {
                                 // Adds an AuthenticationConverter (pre-processor) used when attempting to extract
                                 // an OAuth2 authorization request (or consent) from HttpServletRequest to an instance
                                 // of OAuth2AuthorizationCodeRequestAuthenticationToken or OAuth2AuthorizationConsentAuthenticationToken.
-                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStoreForAuthorizationRequestJWT,cacheStoreForOAuth2AuthorizationRequest,securityProperties,httpClientService,registeredClientRepository))
+                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStoreForAuthorizationRequestJWT,cacheStoreForOAuth2AuthorizationRequest,securityProperties,registeredClientRepository))
                                 .errorResponseHandler(new CustomErrorResponseHandler())
                 )
                 .tokenEndpoint(tokenEndpoint ->
@@ -104,8 +104,15 @@ public class AuthorizationServerConfig {
         return AuthorizationServerSettings.builder()
                 .issuer(securityProperties.authorizationServer())
                 .authorizationEndpoint("/oidc/authorize")
+                .deviceAuthorizationEndpoint("/oidc/device_authorization")
+                .deviceVerificationEndpoint("/oidc/device_verification")
                 .tokenEndpoint("/oidc/token")
+                .tokenIntrospectionEndpoint("/oidc/introspect")
+                .tokenRevocationEndpoint("/oidc/revoke")
                 .jwkSetEndpoint("/oidc/jwks")
+                .oidcLogoutEndpoint("/oidc/logout")
+                .oidcUserInfoEndpoint("/oidc/userinfo")
+                .oidcClientRegistrationEndpoint("/oidc/register")
                 .build();
     }
 

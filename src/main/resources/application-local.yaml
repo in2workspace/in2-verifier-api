@@ -46,7 +46,11 @@ management:
       application: ${spring.application.name}
 
 security:
-  authorizationServer: "http://localhost:9000"
+  authorizationServer: "https://verifier.dome-marketplace-lcl.org"
+  loginCode:
+    expirationProperties:
+      expiration: "5"
+      cronUnit: "MINUTES"
   token:
     accessToken:
       expiration: "1"

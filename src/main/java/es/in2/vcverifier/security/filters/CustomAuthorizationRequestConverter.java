@@ -2,10 +2,12 @@ package es.in2.vcverifier.security.filters;
 
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.JWTClaimsSet;
+import es.in2.vcverifier.component.CryptoComponent;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.component.CryptoComponent;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.properties.SecurityProperties;
+import es.in2.vcverifier.exception.JWTParsingException;
 import es.in2.vcverifier.exception.RequestMismatchException;
 import es.in2.vcverifier.exception.UnsupportedScopeException;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
@@ -17,7 +19,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationException;
@@ -50,6 +54,15 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private final HttpClientService httpClientService;
     private final RegisteredClientRepository registeredClientRepository;
 
+    /**
+     * The Authorization Request MUST be signed by the Client, and MUST use the request_uri parameter which enables
+     * the request to be passed by reference, as described in section 6.2. Passing a Request Object by Reference of
+     * the OpenID Connect spec. The request_uri value is a URL referencing a resource containing a Request Object
+     * value, which is a JWT containing the request parameters. This URL MUST use the https scheme.
+     *
+     * @param request - The HttpServletRequest
+     * @return - The Authentication object
+     */
     @Override
     public Authentication convert(HttpServletRequest request) {
         log.info("CustomAuthorizationRequestConverter.convert");
@@ -69,6 +82,20 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         if (requestUri == null && request.getParameter("request") == null) {
             log.info("Processing an authorization request without a signed JWT object.");
             return handleNonSignedAuthorizationRequest(clientId, state, scope, redirectUri, clientNonce);
+        String requestUri = request.getParameter(REQUEST_URI); // request_uri parameter
+        String jwt;     // request parameter (JWT directly)
+        String clientId = request.getParameter(CLIENT_ID);     // client_id parameter
+        String state = request.getParameter("state");
+        String scope = request.getParameter(SCOPE);
+
+        RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
+
+        if (registeredClient == null) {
+            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
+        }
+
+        if (clientId == null) {
+            throw new IllegalArgumentException("Client ID is required.");
         }
 
         // Case 2: JWT present via either 'request_uri' or 'request' parameters
@@ -194,7 +221,9 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         } else {
             throw new UnsupportedScopeException("Unsupported scope: " + scope);
         }
-
+        else {
+            throw new UnsupportedScopeException("Unsupported scope");
+        }
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
 
