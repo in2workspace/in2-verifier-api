@@ -1,7 +1,10 @@
 package es.in2.vcverifier.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record ClientData(
         String id,
         String url,
