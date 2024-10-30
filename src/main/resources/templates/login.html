@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#919597">
 
-    <!-- Cargar fuentes y estilos externos -->
+    <!-- Load external fonts and styles -->
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 
-    <!-- Estilos CSS integrados en el HTML -->
+    <!-- Integrated CSS styles -->
     <style>
         :root {
             --fore-color-primary: white !important;
@@ -42,14 +42,20 @@
         .qr-image {
             background-color: white;
             padding: 8px;
-            box-sizing:border-box;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            justify-content: space-between;
         }
 
         .header img {
             max-width: 300px;
             height: auto;
-            margin-left: 20px;
-            margin-top: 20px;
+            margin-right: 20px;
         }
 
         h1, h2, h3, h4, h5, h6 {
@@ -122,7 +128,7 @@
             gap: 10px;
             margin-top: 20px;
             width: auto;
-            font-weight: 20 !important;
+            font-weight: bold;
         }
 
         .qr-container button {
@@ -140,7 +146,7 @@
             gap: 10px;
             margin-top: 20px;
             width: auto;
-            font-weight: 20 !important;
+            font-weight: bold;
         }
 
         .registration-card button:hover, .qr-container button:hover {
@@ -226,7 +232,7 @@
                 margin-right: 0;
             }
             .qr-container{
-                margin-inline: 0px;
+                margin-inline: 2px;
                 padding-inline:20px;
             }
         }
@@ -252,8 +258,7 @@
 </head>
 <body>
 <div class="header">
-    <!-- TODO: Instead of using the css and javascript into the same file replace for references pointing to his respective files -->
-    <img src="https://i.postimg.cc/BbjrWQG2/DOME-Logo-White.png" alt="DOME White Logo">
+    <img src="https://i.postimg.cc/BbjrWQG2/DOME-Logo-White.png" alt="DOME White Logo" th:attr="onclick='window.location.href = \'' + ${homeUri} + '\''" style="cursor: pointer;">
 </div>
 <div class="container">
     <div class="left-column">
@@ -303,65 +308,95 @@
     </div>
 </div>
 
-<!-- Pasar la variable authRequest al JavaScript -->
+<!-- Pass Java variables to JavaScript -->
 <script th:inline="javascript">
     /*<![CDATA[*/
+    let homeUri = /*[[${homeUri}]]*/ "";
     let authRequest = /*[[${authRequest}]]*/ "";
-    let state = /*[[${state}]]*/ "";  // Si 'state' es un identificador único, está bien usarlo
+    let state = /*[[${state}]]*/ "";  // If 'state' is a unique identifier, it is fine to use it
+    let timeUnit = /*[[${cronUnit}]]*/ "MINUTES";
+    let timeValue = parseInt(/*[[${expiration}]]*/ "5");
     /*]]>*/
 </script>
 <script src="https://cdn.jsdelivr.net/sockjs/latest/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 
-<!-- JavaScript integrado en el HTML -->
+<!-- Integrated JavaScript -->
 <script>
-    // Función para cambiar al flujo de "mismo dispositivo"
+    // Function to switch to "same device" login flow
     function switchToSameDeviceLogin() {
+        console.log('Switching to same device login flow'); // Log for debugging
         document.getElementById('qr-title').style.display = 'none';
         document.getElementById('qr-code').style.display = 'none';
         document.getElementById('same-device-title').style.display = 'block';
         document.getElementById('dome-wallet-button').style.display = 'flex';
-        document.getElementById('grey-section-text').innerHTML = 'Cambiar a <a href="#" onclick="switchToQRLogin()">inicio de sesión con QR</a>';
     }
 
-    // Función para cambiar al flujo de QR
+    // Function to switch to QR login flow
     function switchToQRLogin() {
+        console.log('Switching to QR login flow'); // Log for debugging
         document.getElementById('qr-title').style.display = 'block';
         document.getElementById('qr-code').style.display = 'block';
         document.getElementById('same-device-title').style.display = 'none';
         document.getElementById('dome-wallet-button').style.display = 'none';
-        document.getElementById('grey-section-text').innerHTML = '¿No puedes escanear el código QR? Puedes iniciar sesión desde el <a href="#" onclick="switchToSameDeviceLogin()">mismo dispositivo</a>';
     }
 
-    // Función para configurar el enlace del botón con el authRequest
+    // Function to configure the wallet button with the authRequest URL
     function configureAuthRequest() {
+        console.log('Configuring auth request'); // Log for debugging
         const walletButton = document.getElementById('dome-wallet-button');
         if (authRequest) {
             let walletUri = authRequest.replace("openid4vp://", "https://wallet.dome-marketplace.org");
-            walletButton.onclick = () => window.location.href = walletUri;
+            walletButton.onclick = () => {
+                console.log('Redirecting to wallet URI: ', walletUri); // Log for debugging
+                window.location.href = walletUri;
+            };
         }
     }
 
-    // Función para conectarse al WebSocket y manejar la redirección
+    // Function to connect to the WebSocket and handle redirection
     function connectWebSocketForRedirect() {
+        console.log('Connecting to WebSocket for redirect'); // Log for debugging
         const socket = new SockJS('/qr-socket');
         const stompClient = Stomp.over(socket);
 
         stompClient.connect({}, function () {
-            // Suscribirse al canal específico basado en el state (si este es único para cada sesión)
+            console.log('Connected to WebSocket'); // Log for debugging
+            // Subscribe to the specific channel based on the state (if this is unique for each session)
             stompClient.subscribe('/oidc/redirection/' + state, function (message) {
-                // Redirigir al usuario a la URL recibida
+                console.log('Received redirect message: ', message.body); // Log for debugging
+                // Redirect the user to the received URL
                 window.location.href = message.body;
             });
         });
     }
 
-    // Evento que se activa cuando el DOM ha cargado
+    // Automatically redirect to the home page after a specified time
+    function setAutoRedirect() {
+        console.log('Setting auto redirect'); // Log for debugging
+        let timeInMs;
+        if (timeUnit === 'MINUTES') {
+            timeInMs = timeValue * 60 * 1000;
+        } else if (timeUnit === 'SECONDS') {
+            timeInMs = timeValue * 1000;
+        } else {
+            console.error('Invalid time unit'); // Log error in English
+            return;
+        }
+        console.log(`Redirecting to home in ${timeInMs} milliseconds`); // Log for debugging
+        setTimeout(() => {
+            console.log('Redirecting to home URL:', homeUri); // Log for debugging
+            window.location.href = homeUri;
+        }, timeInMs);
+    }
+
+    // Event that triggers when the DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM fully loaded and parsed'); // Log for debugging
         configureAuthRequest();
-        connectWebSocketForRedirect();  // Conectar al WebSocket cuando el DOM esté listo
+        connectWebSocketForRedirect();  // Connect to the WebSocket when the DOM is ready
+        setAutoRedirect();  // Set up automatic redirection
     });
 </script>
 </body>
 </html>
-

@@ -42,7 +42,15 @@ public class ClientLoaderConfig {
             List<RegisteredClient> registeredClients = new ArrayList<>();
             // Convertir cada ClientData a RegisteredClient y agregarlo a la lista
             for (ClientData clientData : clientsYamlData.clients()) {
-                RegisteredClient.Builder registeredClientBuilder = RegisteredClient.withId(UUID.randomUUID().toString()).clientId(clientData.clientId()).clientAuthenticationMethods(authMethods -> clientData.clientAuthenticationMethods().forEach(method -> authMethods.add(new ClientAuthenticationMethod(method)))).authorizationGrantTypes(grantTypes -> clientData.authorizationGrantTypes().forEach(grantType -> grantTypes.add(new AuthorizationGrantType(grantType)))).redirectUris(uris -> uris.addAll(clientData.redirectUris())).postLogoutRedirectUris(uris -> uris.addAll(clientData.postLogoutRedirectUris())).scopes(scopes -> scopes.addAll(clientData.scopes()));
+                RegisteredClient.Builder registeredClientBuilder = RegisteredClient
+                        .withId(UUID.randomUUID().toString())
+                        .clientId(clientData.clientId())
+                        .clientAuthenticationMethods(authMethods -> clientData.clientAuthenticationMethods().forEach(method -> authMethods.add(new ClientAuthenticationMethod(method))))
+                        .authorizationGrantTypes(grantTypes -> clientData.authorizationGrantTypes().forEach(grantType -> grantTypes.add(new AuthorizationGrantType(grantType))))
+                        .redirectUris(uris -> uris.addAll(clientData.redirectUris()))
+                        .postLogoutRedirectUris(uris -> uris.addAll(clientData.postLogoutRedirectUris()))
+                        .scopes(scopes -> scopes.addAll(clientData.scopes()))
+                        .clientName(clientData.domain());
 
                 if (clientData.clientSecret() != null && !clientData.clientSecret().isBlank()) {
                     registeredClientBuilder.clientSecret(clientData.clientSecret());
@@ -67,7 +75,4 @@ public class ClientLoaderConfig {
             throw new ClientLoadingException("Error loading clients from Yaml", e);
         }
     }
-
 }
-
-

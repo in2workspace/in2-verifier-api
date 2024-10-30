@@ -44,6 +44,10 @@ management:
 
 security:
   authorizationServer:
+  loginCode:
+    expirationProperties:
+      expiration:
+      cronUnit:
   token:
     accessToken:
       cronUnit:

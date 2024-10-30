@@ -1,5 +1,6 @@
 package es.in2.vcverifier.oid4vp.controller;
 
+import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.config.properties.VerifierUiLoginUrisProperties;
 import es.in2.vcverifier.controller.LoginQrController;
 import es.in2.vcverifier.exception.QRCodeGenerationException;
@@ -18,6 +19,7 @@ import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,6 +32,8 @@ class LoginQrControllerTest {
     private Model model;
 
     @Mock
+    private SecurityProperties securityProperties;
+    @Mock
     private VerifierUiLoginUrisProperties verifierUiLoginUrisProperties;
 
 
@@ -41,19 +45,26 @@ class LoginQrControllerTest {
         when(verifierUiLoginUrisProperties.onboardingUri()).thenReturn("onboardingUri");
         when(verifierUiLoginUrisProperties.supportUri()).thenReturn("supportUri");
         when(verifierUiLoginUrisProperties.walletUri()).thenReturn("walletUri");
+        when(securityProperties.loginCode()).thenReturn(mock(SecurityProperties.LoginCodeProperties.class));
+        when(securityProperties.loginCode().expirationProperties()).thenReturn(mock(SecurityProperties.LoginCodeProperties.ExpirationProperties.class));
+        when(securityProperties.loginCode().expirationProperties().expiration()).thenReturn("10");
+        when(securityProperties.loginCode().expirationProperties().cronUnit()).thenReturn("MINUTES");
 
         try (MockedStatic<QRCode> qrCodeMock = Mockito.mockStatic(QRCode.class)) {
             qrCodeMock.when(() -> QRCode.from(authRequest)).thenReturn(Mockito.mock(QRCode.class));
             qrCodeMock.when(() -> QRCode.from(authRequest).withSize(250, 250)).thenReturn(Mockito.mock(QRCode.class));
             qrCodeMock.when(() -> QRCode.from(authRequest).withSize(250, 250).stream()).thenReturn(new ByteArrayOutputStream());
 
-            String viewName = loginQrController.showQrLogin(authRequest, state, model);
+            String viewName = loginQrController.showQrLogin(authRequest, state, model, "homeUri");
 
             assertEquals("login", viewName);
 
             Mockito.verify(model).addAttribute("qrImage", "data:image/png;base64," + Base64.getEncoder().encodeToString(new ByteArrayOutputStream().toByteArray()));
             Mockito.verify(model).addAttribute("authRequest", authRequest);
             Mockito.verify(model).addAttribute("state", state);
+            Mockito.verify(model).addAttribute("homeUri", "homeUri");
+            Mockito.verify(model).addAttribute("expiration", "10");
+            Mockito.verify(model).addAttribute("cronUnit", "MINUTES");
         }
     }
 
@@ -66,7 +77,7 @@ class LoginQrControllerTest {
             qrCodeMock.when(() -> QRCode.from(authRequest)).thenThrow(new RuntimeException("QR Code Generation Failed"));
 
             QRCodeGenerationException exception = assertThrows(QRCodeGenerationException.class, () ->
-                    loginQrController.showQrLogin(authRequest, state, model)
+                    loginQrController.showQrLogin(authRequest, state, model, "homeUri")
             );
 
             assertEquals("QR Code Generation Failed", exception.getMessage());

@@ -2,9 +2,9 @@ package es.in2.vcverifier.security.filters;
 
 import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jwt.JWTClaimsSet;
+import es.in2.vcverifier.component.CryptoComponent;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.properties.SecurityProperties;
-import es.in2.vcverifier.component.CryptoComponent;
 import es.in2.vcverifier.exception.JWTParsingException;
 import es.in2.vcverifier.exception.RequestMismatchException;
 import es.in2.vcverifier.exception.RequestObjectRetrievalException;
@@ -19,9 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationException;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.web.authentication.AuthenticationConverter;
 
 import java.io.IOException;
@@ -50,6 +54,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private final CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT;
     private final CacheStore<OAuth2AuthorizationRequest> cacheStoreForOAuth2AuthorizationRequest;
     private final SecurityProperties securityProperties;
+    private final RegisteredClientRepository registeredClientRepository;
 
     /**
      * The Authorization Request MUST be signed by the Client, and MUST use the request_uri parameter which enables
@@ -68,9 +73,17 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         String clientId = request.getParameter(CLIENT_ID);     // client_id parameter
         String state = request.getParameter("state");
         String scope = request.getParameter(SCOPE);
+
+        RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
+
+        if (registeredClient == null) {
+            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
+        }
+
         if (clientId == null) {
             throw new IllegalArgumentException("Client ID is required.");
         }
+
         // Case 1: JWT needs to be retrieved via "request_uri"
         if (requestUri != null) {
             log.info("Retrieving JWT from request_uri: " + requestUri);
@@ -117,10 +130,15 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                     .authRequest(signedAuthRequest)
                     .build()
             );
+
+            // This is used to allow the user te return to the application if the user wants to cancel the login
+            String homeUri = registeredClient.getClientName();
+
             String authRequest = generateOpenId4VpUrl(nonce);
-            String redirectUrl = String.format("/login?authRequest=%s&state=%s",
+            String redirectUrl = String.format("/login?authRequest=%s&state=%s&homeUri=%s",
                     URLEncoder.encode(authRequest, StandardCharsets.UTF_8),
-                    URLEncoder.encode(state, StandardCharsets.UTF_8));
+                    URLEncoder.encode(state, StandardCharsets.UTF_8),
+                    URLEncoder.encode(homeUri, StandardCharsets.UTF_8));
             OAuth2Error error = new OAuth2Error("custom_error", "Redirection required", redirectUrl);
             throw new OAuth2AuthorizationCodeRequestAuthenticationException(error,null);
         } catch (ParseException e) {
@@ -138,6 +156,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
             String jwtResponseType = jwtClaims.optString(RESPONSE_TYPE);
             String jwtClientId = jwtClaims.optString(CLIENT_ID);
             String jwtScope = jwtClaims.optString(SCOPE);
+
             // Ensure that required OAuth 2.0 parameters match those in the JWT
             return requestResponseType.equals(jwtResponseType)
                     && requestClientId.equals(jwtClientId)

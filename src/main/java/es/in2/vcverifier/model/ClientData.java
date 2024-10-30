@@ -4,6 +4,7 @@ import java.util.List;
 
 public record ClientData(
         String id,
+        String domain,
         String clientId,
         String clientSecret,
         List<String> redirectUris,

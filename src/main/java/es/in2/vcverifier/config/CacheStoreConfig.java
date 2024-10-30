@@ -1,5 +1,6 @@
 package es.in2.vcverifier.config;
 
+import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import lombok.RequiredArgsConstructor;
@@ -7,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -15,9 +17,12 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class CacheStoreConfig {
 
+    private final SecurityProperties securityProperties;
     @Bean
     public CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT() {
-        return new CacheStore<>(10, TimeUnit.MINUTES);
+        return new CacheStore<>(
+                Long.parseLong(securityProperties.loginCode().expirationProperties().expiration()),
+                TimeUnit.of(ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit())));
     }
 
     @Bean
