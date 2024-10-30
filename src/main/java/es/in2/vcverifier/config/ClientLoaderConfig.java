@@ -50,7 +50,7 @@ public class ClientLoaderConfig {
                         .redirectUris(uris -> uris.addAll(clientData.redirectUris()))
                         .postLogoutRedirectUris(uris -> uris.addAll(clientData.postLogoutRedirectUris()))
                         .scopes(scopes -> scopes.addAll(clientData.scopes()))
-                        .clientName(clientData.domain());
+                        .clientName(clientData.url());
 
                 if (clientData.clientSecret() != null && !clientData.clientSecret().isBlank()) {
                     registeredClientBuilder.clientSecret(clientData.clientSecret());
