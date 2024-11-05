@@ -1,5 +1,6 @@
 package es.in2.vcverifier.exception.handler;
 
+import es.in2.vcverifier.exception.CredentialRevokedException;
 import es.in2.vcverifier.exception.QRCodeGenerationException;
 import es.in2.vcverifier.exception.ResourceNotFoundException;
 import es.in2.vcverifier.model.GlobalErrorMessage;
@@ -37,6 +38,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new GlobalErrorMessage("QR Code Generation Failed","","");
     }
 
+    @ExceptionHandler(CredentialRevokedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public GlobalErrorMessage handleException(CredentialRevokedException ex) {
+        log.error("The credential has been revoked: ", ex);
+        return new GlobalErrorMessage("Verifiable presentation failed","","");
+    }
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public GlobalErrorMessage handleException(Exception ex) {
