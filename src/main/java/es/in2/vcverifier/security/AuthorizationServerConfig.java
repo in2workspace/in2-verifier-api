@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import es.in2.vcverifier.component.CryptoComponent;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.properties.SecurityProperties;
-import es.in2.vcverifier.component.CryptoComponent;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import es.in2.vcverifier.security.filters.CustomAuthenticationProvider;
@@ -71,7 +71,7 @@ public class AuthorizationServerConfig {
                 .tokenEndpoint(tokenEndpoint ->
                         tokenEndpoint
                                 .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService, clientAssertionValidationService, vpService, cacheStoreForAuthorizationCodeData,oAuth2AuthorizationService(),objectMapper))
-                                .authenticationProvider(new CustomAuthenticationProvider(cryptoComponent,jwtService,registeredClientRepository,securityProperties,objectMapper))
+                                .authenticationProvider(new CustomAuthenticationProvider(jwtService,registeredClientRepository,securityProperties,objectMapper))
                 )
                 .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
         return http.build();

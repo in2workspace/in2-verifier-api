@@ -55,6 +55,9 @@ security:
     accessToken:
       expiration: "1"
       cronUnit: "DAYS"
+    idToken:
+      expiration: "1"
+      cronUnit: "MINUTES"
 
 clientsRepository:
   uri: "https://raw.githubusercontent.com/rubenmodamioin2/dome-services-directory/refs/heads/main/trusted-service-list-lcl.yaml"

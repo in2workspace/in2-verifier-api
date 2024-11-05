@@ -52,6 +52,9 @@ security:
     accessToken:
       cronUnit:
       expiration:
+    idToken:
+      expiration:
+      cronUnit:
 
 clientsRepository:
   uri:

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import es.in2.vcverifier.config.properties.SecurityProperties;
-import es.in2.vcverifier.component.CryptoComponent;
 import es.in2.vcverifier.exception.InvalidCredentialTypeException;
 import es.in2.vcverifier.model.credentials.employee.LEARCredentialEmployee;
 import es.in2.vcverifier.model.credentials.machine.LEARCredentialMachine;
@@ -30,14 +29,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import static es.in2.vcverifier.util.Constants.NONCE;
 
 @Slf4j
 @RequiredArgsConstructor
 public class CustomAuthenticationProvider implements AuthenticationProvider {
-    private final CryptoComponent cryptoComponent;
     private final JWTService jwtService;
     private final RegisteredClientRepository registeredClientRepository;
     private final SecurityProperties securityProperties;
@@ -73,8 +70,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 expirationTime
         );
 
-        // Keycloak requires the id_token to be in the additional parameters in order to be able to validate it and bound to the user session
-        String idToken = generateIdToken(subject, audience, issueTime, expirationTime, nonce);
+        String idToken = generateIdToken(credential, subject, audience, nonce);
 
         Map<String, Object> additionalParameters = new HashMap<>();
         additionalParameters.put("id_token", idToken);
@@ -159,33 +155,75 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     private String generateAccessTokenWithVc(Object verifiableCredential, Instant issueTime, Instant expirationTime, String subject, String audience) {
         JWTClaimsSet payload = new JWTClaimsSet.Builder()
-                .issuer(cryptoComponent.getECKey().getKeyID())
+                .issuer(securityProperties.authorizationServer())
                 .audience(audience)
                 .subject(subject)
-                .jwtID(UUID.randomUUID().toString())
                 .issueTime(Date.from(issueTime))
                 .expirationTime(Date.from(expirationTime))
                 .claim(OAuth2ParameterNames.SCOPE, getScope(verifiableCredential))
-                .claim(OAuth2ParameterNames.CLIENT_ID, cryptoComponent.getECKey().getKeyID())
-                .claim("verifiableCredential", verifiableCredential)
+                .claim("vc", verifiableCredential)
                 .build();
         return jwtService.generateJWT(payload.toString());
     }
 
-    private String generateIdToken(String subject, String audience, Instant issueTime, Instant expirationTime, String nonce) {
+    private String generateIdToken(Object verifiableCredential, String subject, String audience, String nonce) {
+        // Extract additional claims from the verifiable credential
+        Map<String, Object> additionalClaims = extractClaimsFromVerifiableCredential(verifiableCredential);
+
+        Instant issueTime = Instant.now();
+        Instant expirationTime = issueTime.plus(
+                Long.parseLong(securityProperties.token().idToken().expiration()),
+                ChronoUnit.valueOf(securityProperties.token().idToken().cronUnit())
+        );
+
+        // Fixme - This is a workaround to convert the verifiableCredential to a JSON string
+        // Convert verifiableCredential to JSON string
+        String vcJsonString;
+        try {
+            vcJsonString = new ObjectMapper().writeValueAsString(verifiableCredential);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to convert verifiableCredential to JSON string", e);
+        }
+
         // Create the JWT payload (claims) for the ID token
-        JWTClaimsSet idTokenClaims = new JWTClaimsSet.Builder()
+        JWTClaimsSet.Builder idTokenClaimsBuilder = new JWTClaimsSet.Builder()
                 .subject(subject)
-                .issuer(cryptoComponent.getECKey().getKeyID())
+                .issuer(securityProperties.authorizationServer())
                 .audience(audience)
                 .issueTime(Date.from(issueTime))
                 .expirationTime(Date.from(expirationTime))
-                .jwtID(UUID.randomUUID().toString())
+                .claim("auth_time", Date.from(issueTime))
+                .claim("acr", "0")
                 .claim(NONCE, nonce)
-                .build();
+                .claim("vc", vcJsonString); // Use the JSON string here
+
+        // Add each additional claim to the ID token
+        additionalClaims.forEach(idTokenClaimsBuilder::claim);
+
+        JWTClaimsSet idTokenClaims = idTokenClaimsBuilder.build();
 
         // Use JWTService to generate the ID Token (JWT)
         return jwtService.generateJWT(idTokenClaims.toString());
+    }
+
+
+    private Map<String, Object> extractClaimsFromVerifiableCredential(Object verifiableCredential) {
+        Map<String, Object> claims = new HashMap<>();
+
+        if (verifiableCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
+            String name = learCredentialEmployee.credentialSubject().mandate().mandatee().firstName() + " " + learCredentialEmployee.credentialSubject().mandate().mandatee().lastName();
+            String givenName = learCredentialEmployee.credentialSubject().mandate().mandatee().firstName();
+            String familyName = learCredentialEmployee.credentialSubject().mandate().mandatee().lastName();
+            String email = learCredentialEmployee.credentialSubject().mandate().mandatee().email();
+
+            claims.put("name", name);
+            claims.put("given_name", givenName);
+            claims.put("family_name", familyName);
+            claims.put("email", email);
+            claims.put("email_verified", true);
+        }
+
+        return claims;
     }
 
 
