@@ -8,7 +8,6 @@ import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidCredentialTypeException;
 import es.in2.vcverifier.exception.UnsupportedGrantTypeException;
 import es.in2.vcverifier.model.AuthorizationCodeData;
-import es.in2.vcverifier.model.credentials.machine.LEARCredentialMachine;
 import es.in2.vcverifier.model.enums.LEARCredentialType;
 import es.in2.vcverifier.service.ClientAssertionValidationService;
 import es.in2.vcverifier.service.JWTService;

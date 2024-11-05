@@ -1,4 +1,4 @@
-package es.in2.vcverifier.model;
+package es.in2.vcverifier.model.credentials;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,6 +20,7 @@ public abstract class VerifiableCredential {
     protected String name;
     protected String description;
     protected String issuer;
+    protected Map<String, Object> issuerObject;
     protected Map<String, Object> credentialSubject;
     protected Instant validFrom;
     protected Instant validUntil;

@@ -1,10 +1,10 @@
-package es.in2.vcverifier.model.credentials;
+package es.in2.vcverifier.model.credentials.lear;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
 
-@Builder
-public record Signer(
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public record Mandator(
         @JsonProperty("commonName") String commonName,
         @JsonProperty("country") String country,
         @JsonProperty("emailAddress") String emailAddress,
@@ -12,3 +12,4 @@ public record Signer(
         @JsonProperty("organizationIdentifier") String organizationIdentifier,
         @JsonProperty("serialNumber") String serialNumber
 ) {}
+
