@@ -53,11 +53,13 @@ security:
       cronUnit:
       expiration:
 
-clientsRepository:
-  uri:
-
-trustedIssuerList:
-  uri:
+trustFramework:
+  trustedIssuerList:
+    uri:
+  clientsRepository:
+    uri:
+  revocationList:
+    uri:
 
 crypto:
   privateKey:

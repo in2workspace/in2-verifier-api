@@ -30,5 +30,4 @@ public class VcVerifierApplication {
     public ObjectMapper objectMapper() {
         return OBJECT_MAPPER;
     }
-
 }

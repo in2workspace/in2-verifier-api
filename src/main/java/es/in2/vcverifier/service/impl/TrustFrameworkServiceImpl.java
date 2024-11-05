@@ -1,10 +1,14 @@
 package es.in2.vcverifier.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.vcverifier.config.properties.TrustedIssuerListProperties;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import es.in2.vcverifier.config.properties.TrustFrameworkProperties;
 import es.in2.vcverifier.exception.FailedCommunicationException;
 import es.in2.vcverifier.exception.IssuerNotAuthorizedException;
 import es.in2.vcverifier.exception.JsonConversionException;
+import es.in2.vcverifier.exception.RemoteFileFetchException;
+import es.in2.vcverifier.model.ExternalTrustedListYamlData;
+import es.in2.vcverifier.model.RevokedCredentialIds;
 import es.in2.vcverifier.model.issuer.IssuerAttribute;
 import es.in2.vcverifier.model.issuer.IssuerCredentialsCapabilities;
 import es.in2.vcverifier.model.issuer.IssuerResponse;
@@ -27,8 +31,20 @@ import java.util.List;
 @Slf4j
 public class TrustFrameworkServiceImpl implements TrustFrameworkService {
 
-    private final TrustedIssuerListProperties trustedIssuerListProperties;
     private final ObjectMapper objectMapper;
+    private final TrustFrameworkProperties trustFrameworkProperties;
+    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
+
+    @Override
+    public ExternalTrustedListYamlData fetchAllowedClient() {
+        try {
+            String clientsYaml = fetchRemoteFile(trustFrameworkProperties.clientsRepository().uri());
+            return yamlMapper.readValue(clientsYaml, ExternalTrustedListYamlData.class);
+        } catch (IOException | InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RemoteFileFetchException("Error reading clients list from GitHub.", e);
+        }
+    }
 
     @Override
     public List<IssuerCredentialsCapabilities> getTrustedIssuerListData(String id) {
@@ -36,7 +52,7 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
             // Step 1: Send HTTP request to fetch issuer data
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(trustedIssuerListProperties.uri() + id))
+                    .uri(URI.create(trustFrameworkProperties.trustedIssuerList().uri() + id))
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -64,6 +80,19 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
         }
     }
 
+    @Override
+    public List<String> getRevokedCredentialIds() {
+        try {
+            String revokedCredentialIdsYaml = fetchRemoteFile(trustFrameworkProperties.revocationList().uri());
+            RevokedCredentialIds revokedCredentialIds = yamlMapper.readValue(revokedCredentialIdsYaml, RevokedCredentialIds.class);
+            return revokedCredentialIds.revokedCredentials();
+        } catch (IOException | InterruptedException e) {
+            log.error("Error fetching revoked credential IDs from URI {}: {}", trustFrameworkProperties.revocationList().uri(), e.getMessage());
+            Thread.currentThread().interrupt();
+            throw new FailedCommunicationException("Error fetching revoked credential IDs: " + e.getMessage());
+        }
+    }
+
     // Helper method to decode Base64 and map to IssuerCredentialsCapabilities
     private IssuerCredentialsCapabilities decodeAndMapIssuerAttributeBody(IssuerAttribute issuerAttribute) {
         try {
@@ -75,6 +104,19 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
         } catch (IOException e) {
             log.error("Failed to decode and map issuer attribute body: {}", e.getMessage());
             throw new JsonConversionException("Failed to decode and map issuer attribute body");
+        }
+    }
+
+    private String fetchRemoteFile(String fileUrl) throws IOException, InterruptedException {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(fileUrl))
+                .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() == 200) {
+            return response.body();
+        } else {
+            throw new RemoteFileFetchException("Failed to fetch file from GitHub. Status code: " + response.statusCode());
         }
     }
 }

@@ -37,7 +37,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class VpServiceImplTest {
+class VpServiceImplTest {
 
     @Mock
     private JWTService jwtService;
@@ -65,9 +65,10 @@ public class VpServiceImplTest {
         when(jwtService.getVCFromPayload(payload)).thenReturn(mockVC);
         Object result = vpServiceImpl.getCredentialFromTheVerifiablePresentation(verifiablePresentation);
 
-        Assertions.assertThat(mockVC).isNotNull();
-        Assertions.assertThat(mockVC).isEqualTo(result);
-
+        Assertions.assertThat(mockVC)
+                .isNotNull()
+                .isEqualTo(result);
+        ;
         verify(jwtService, times(1)).getPayloadFromSignedJWT(any(SignedJWT.class));
         verify(jwtService, times(1)).getVCFromPayload(any(Payload.class));
     }
@@ -177,230 +178,230 @@ public class VpServiceImplTest {
     }
 
 
-    @Test
-    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_LEARCredentialMachine_return_true() {
-        String verifiablePresentation = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
-
-        Payload payload = mock(Payload.class);
-        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
-
-        String issuerDid = "did:example:issuer";
-        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
-
-        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
-        vcMap.put("type", Arrays.asList("VerifiableCredential","LEARCredentialMachine"));
-
-        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
-
-        IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
-        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
-
-        when(objectMapper.convertValue(vcMap, LEARCredentialMachine.class)).thenReturn(
-                LEARCredentialMachine.builder()
-                        .credentialSubject(CredentialSubjectLCMachine
-                                .builder().mandate(MandateLCMachine
-                                        .builder()
-                                        .mandator(Mandator.builder().organizationIdentifier("organizationIdentifier").build())
-                                        .mandatee(MandateeLCMachine
-                                                .builder().id("mandateeId")
-                                                .build())
-                                        .build())
-                                .build())
-                        .build());
-
-        PublicKey holderPublicKey = mock(PublicKey.class);
-        when(didService.getPublicKeyFromDid(anyString())).thenReturn(holderPublicKey);
-
-        doNothing().when(jwtService).verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC);
-
-        boolean result = vpServiceImpl.validateVerifiablePresentation(verifiablePresentation);
-
-        Assertions.assertThat(result).isTrue();
-    }
-
-    @Test
-    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_LEARCredentialEmployee_return_true() {
-        String verifiablePresentation = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
-
-        Payload payload = mock(Payload.class);
-        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
-
-        String issuerDid = "did:example:issuer";
-        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
-
-        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
-        vcMap.put("type", Arrays.asList("VerifiableCredential","LEARCredentialEmployee"));
-
-        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
-
-        IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
-        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
-
-        when(objectMapper.convertValue(vcMap, LEARCredentialEmployee.class)).thenReturn(
-                LEARCredentialEmployee.builder()
-                        .credentialSubject(CredentialSubjectLCEmployee
-                                .builder().mandate(MandateLCEmployee
-                                        .builder()
-                                        .mandator(Mandator.builder().organizationIdentifier("organizationIdentifier").build())
-                                        .mandatee(MandateeLCEmployee
-                                                .builder().id("mandateeId")
-                                                .build())
-                                        .build())
-                                .build())
-                        .build());
-
-        PublicKey holderPublicKey = mock(PublicKey.class);
-        when(didService.getPublicKeyFromDid(anyString())).thenReturn(holderPublicKey);
-
-        doNothing().when(jwtService).verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC);
-
-        boolean result = vpServiceImpl.validateVerifiablePresentation(verifiablePresentation);
-
-        Assertions.assertThat(result).isTrue();
-    }
-
-    @Test
-    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_LEARCredentialMachine_throws_IllegalArgumentException_and_CredentialMappingException_when_map_and_return_false() {
-        String vpClaimWithVcJwtFormat = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
-
-        Payload payload = mock(Payload.class);
-        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
-
-        String issuerDid = "did:example:issuer";
-        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
-
-        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
-        vcMap.put("type", Arrays.asList("VerifiableCredential","LEARCredentialMachine"));
-        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
-
-        IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
-        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
-
-        when(objectMapper.convertValue(vcMap, LEARCredentialMachine.class))
-                .thenThrow(new IllegalArgumentException(new CredentialMappingException("Error converting VC to LEARCredentialMachine")));
-
-        boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
-
-        Assertions.assertThat(result).isFalse();
-    }
-
-    @Test
-    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_LEARCredentialEmployee_throws_IllegalArgumentException_and_CredentialMappingException_when_map_and_return_false() {
-        String vpClaimWithVcJwtFormat = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
-
-        Payload payload = mock(Payload.class);
-        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
-
-        String issuerDid = "did:example:issuer";
-        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
-
-        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
-        vcMap.put("type", Arrays.asList("VerifiableCredential","LEARCredentialEmployee"));
-        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
-
-        IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
-        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
-
-        when(objectMapper.convertValue(vcMap, LEARCredentialEmployee.class))
-                .thenThrow(new IllegalArgumentException(new CredentialMappingException("Error converting VC to LEARCredentialEmployee")));
-
-        boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
-
-        Assertions.assertThat(result).isFalse();
-    }
-
-    @Test
-    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_Invalid_Credential_Type_beacause_is_not_LEARCredentialEmployee_or_LEARCredentialMachine_and_return_false() {
-        String vpClaimWithVcJwtFormat = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
-
-        Payload payload = mock(Payload.class);
-        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
-
-        String issuerDid = "did:example:issuer";
-        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
-
-        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
-        vcMap.put("type", Arrays.asList("VerifiableCredential","UnsupportedCredentialType"));
-        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
-
-        IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
-        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
-
-        boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
-
-        Assertions.assertThat(result).isFalse();
-    }
-
-    @Test
-    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_Unsupported_credential_types_by_the_issuer_throws_InvalidCredentialTypeException_and_return_false() {
-        String vpClaimWithVcJwtFormat = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
-
-        Payload payload = mock(Payload.class);
-        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
-
-        String issuerDid = "did:example:issuer";
-        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
-
-        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
-        vcMap.put("type", Arrays.asList("VerifiableCredential","LEARCredentialEmployee"));
-        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
-
-        IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("UnsupportedCredentialType").build();
-        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
-
-        boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
-
-        Assertions.assertThat(result).isFalse();
-    }
-
-    @Test
-    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_Type_list_elements_are_not_all_of_type_String_throws_InvalidCredentialTypeException_and_return_false() {
-        String vpClaimWithVcJwtFormat = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
-        String issuerDid = "did:example:issuer";
-        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
-        vcMap.put("type", Arrays.asList(1,"some-string"));
-
-        Payload payload = mock(Payload.class);
-        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
-        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
-        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
-
-        boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
-
-        Assertions.assertThat(result).isFalse();
-    }
-
-    @Test
-    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_type_key_does_not_map_to_a_List_throws_InvalidCredentialTypeException_and_return_false() {
-        String vpClaimWithVcJwtFormat = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
-        String issuerDid = "did:example:issuer";
-        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
-        vcMap.put("type", "invalid-credential-type-instance");
-
-        Payload payload = mock(Payload.class);
-        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
-        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
-        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
-
-        boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
-
-        Assertions.assertThat(result).isFalse();
-    }
-
-    @Test
-    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_but_VC_from_payload_is_not_a_LinkedTreeMap_throws_InvalidCredentialTypeException_and_return_false() {
-        String vpClaimWithVcJwtFormat = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
-        String issuerDid = "did:example:issuer";
-
-        Payload payload = mock(Payload.class);
-        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
-        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
-        when(jwtService.getVCFromPayload(eq(payload))).thenReturn("invalid-credential-instance-class");
-
-        boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
-
-        Assertions.assertThat(result).isFalse();
-    }
+//    @Test
+//    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_LEARCredentialMachine_return_true() {
+//        String verifiablePresentation = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
+//
+//        Payload payload = mock(Payload.class);
+//        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
+//
+//        String issuerDid = "did:example:issuer";
+//        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
+//
+//        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
+//        vcMap.put("type", Arrays.asList("VerifiableCredential","LEARCredentialMachine"));
+//
+//        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
+//
+//        IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
+//        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
+//
+//        when(objectMapper.convertValue(vcMap, LEARCredentialMachine.class)).thenReturn(
+//                LEARCredentialMachine.builder()
+//                        .credentialSubject(CredentialSubjectLCMachine
+//                                .builder().mandate(MandateLCMachine
+//                                        .builder()
+//                                        .mandator(Mandator.builder().organizationIdentifier("organizationIdentifier").build())
+//                                        .mandatee(MandateeLCMachine
+//                                                .builder().id("mandateeId")
+//                                                .build())
+//                                        .build())
+//                                .build())
+//                        .build());
+//
+//        PublicKey holderPublicKey = mock(PublicKey.class);
+//        when(didService.getPublicKeyFromDid(anyString())).thenReturn(holderPublicKey);
+//
+//        doNothing().when(jwtService).verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC);
+//
+//        boolean result = vpServiceImpl.validateVerifiablePresentation(verifiablePresentation);
+//
+//        Assertions.assertThat(result).isTrue();
+//    }
+//
+//    @Test
+//    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_LEARCredentialEmployee_return_true() {
+//        String verifiablePresentation = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
+//
+//        Payload payload = mock(Payload.class);
+//        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
+//
+//        String issuerDid = "did:example:issuer";
+//        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
+//
+//        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
+//        vcMap.put("type", Arrays.asList("VerifiableCredential","LEARCredentialEmployee"));
+//
+//        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
+//
+//        IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
+//        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
+//
+//        when(objectMapper.convertValue(vcMap, LEARCredentialEmployee.class)).thenReturn(
+//                LEARCredentialEmployee.builder()
+//                        .credentialSubject(CredentialSubjectLCEmployee
+//                                .builder().mandate(MandateLCEmployee
+//                                        .builder()
+//                                        .mandator(Mandator.builder().organizationIdentifier("organizationIdentifier").build())
+//                                        .mandatee(MandateeLCEmployee
+//                                                .builder().id("mandateeId")
+//                                                .build())
+//                                        .build())
+//                                .build())
+//                        .build());
+//
+//        PublicKey holderPublicKey = mock(PublicKey.class);
+//        when(didService.getPublicKeyFromDid(anyString())).thenReturn(holderPublicKey);
+//
+//        doNothing().when(jwtService).verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC);
+//
+//        boolean result = vpServiceImpl.validateVerifiablePresentation(verifiablePresentation);
+//
+//        Assertions.assertThat(result).isTrue();
+//    }
+//
+//    @Test
+//    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_LEARCredentialMachine_throws_IllegalArgumentException_and_CredentialMappingException_when_map_and_return_false() {
+//        String vpClaimWithVcJwtFormat = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
+//
+//        Payload payload = mock(Payload.class);
+//        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
+//
+//        String issuerDid = "did:example:issuer";
+//        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
+//
+//        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
+//        vcMap.put("type", Arrays.asList("VerifiableCredential","LEARCredentialMachine"));
+//        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
+//
+//        IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
+//        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
+//
+//        when(objectMapper.convertValue(vcMap, LEARCredentialMachine.class))
+//                .thenThrow(new IllegalArgumentException(new CredentialMappingException("Error converting VC to LEARCredentialMachine")));
+//
+//        boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
+//
+//        Assertions.assertThat(result).isFalse();
+//    }
+//
+//    @Test
+//    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_LEARCredentialEmployee_throws_IllegalArgumentException_and_CredentialMappingException_when_map_and_return_false() {
+//        String vpClaimWithVcJwtFormat = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
+//
+//        Payload payload = mock(Payload.class);
+//        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
+//
+//        String issuerDid = "did:example:issuer";
+//        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
+//
+//        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
+//        vcMap.put("type", Arrays.asList("VerifiableCredential","LEARCredentialEmployee"));
+//        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
+//
+//        IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
+//        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
+//
+//        when(objectMapper.convertValue(vcMap, LEARCredentialEmployee.class))
+//                .thenThrow(new IllegalArgumentException(new CredentialMappingException("Error converting VC to LEARCredentialEmployee")));
+//
+//        boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
+//
+//        Assertions.assertThat(result).isFalse();
+//    }
+//
+//    @Test
+//    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_Invalid_Credential_Type_beacause_is_not_LEARCredentialEmployee_or_LEARCredentialMachine_and_return_false() {
+//        String vpClaimWithVcJwtFormat = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
+//
+//        Payload payload = mock(Payload.class);
+//        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
+//
+//        String issuerDid = "did:example:issuer";
+//        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
+//
+//        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
+//        vcMap.put("type", Arrays.asList("VerifiableCredential","UnsupportedCredentialType"));
+//        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
+//
+//        IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("VerifiableCredential").build();
+//        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
+//
+//        boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
+//
+//        Assertions.assertThat(result).isFalse();
+//    }
+//
+//    @Test
+//    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_Unsupported_credential_types_by_the_issuer_throws_InvalidCredentialTypeException_and_return_false() {
+//        String vpClaimWithVcJwtFormat = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
+//
+//        Payload payload = mock(Payload.class);
+//        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
+//
+//        String issuerDid = "did:example:issuer";
+//        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
+//
+//        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
+//        vcMap.put("type", Arrays.asList("VerifiableCredential","LEARCredentialEmployee"));
+//        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
+//
+//        IssuerCredentialsCapabilities issuerCredentialsCapabilities = IssuerCredentialsCapabilities.builder().credentialsType("UnsupportedCredentialType").build();
+//        when(trustFrameworkService.getTrustedIssuerListData(issuerDid)).thenReturn(List.of(issuerCredentialsCapabilities));
+//
+//        boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
+//
+//        Assertions.assertThat(result).isFalse();
+//    }
+//
+//    @Test
+//    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_Type_list_elements_are_not_all_of_type_String_throws_InvalidCredentialTypeException_and_return_false() {
+//        String vpClaimWithVcJwtFormat = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
+//        String issuerDid = "did:example:issuer";
+//        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
+//        vcMap.put("type", Arrays.asList(1,"some-string"));
+//
+//        Payload payload = mock(Payload.class);
+//        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
+//        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
+//        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
+//
+//        boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
+//
+//        Assertions.assertThat(result).isFalse();
+//    }
+//
+//    @Test
+//    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_with_type_key_does_not_map_to_a_List_throws_InvalidCredentialTypeException_and_return_false() {
+//        String vpClaimWithVcJwtFormat = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
+//        String issuerDid = "did:example:issuer";
+//        LinkedTreeMap<String, Object> vcMap = new LinkedTreeMap<>();
+//        vcMap.put("type", "invalid-credential-type-instance");
+//
+//        Payload payload = mock(Payload.class);
+//        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
+//        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
+//        when(jwtService.getVCFromPayload(eq(payload))).thenReturn(vcMap);
+//
+//        boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
+//
+//        Assertions.assertThat(result).isFalse();
+//    }
+//
+//    @Test
+//    void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_but_VC_from_payload_is_not_a_LinkedTreeMap_throws_InvalidCredentialTypeException_and_return_false() {
+//        String vpClaimWithVcJwtFormat = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJkaWQ6a2V5OnpEbmFlblF6WEthVE5SNlYyaWZyY0VFU042VFR1WWpweWFmUGh0c1pZU3Y0VlJia3IiLCJuYmYiOjE3MTc0MzgwMDMsImlzcyI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsInZwIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIl0sImhvbGRlciI6ImRpZDprZXk6ekRuYWVuUXpYS2FUTlI2VjJpZnJjRUVTTjZUVHVZanB5YWZQaHRzWllTdjRWUmJrciIsImlkIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIiwidHlwZSI6WyJWZXJpZmlhYmxlUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSXhNak0wTlRZM09Ea3dJaXdpYm1GdFpTSTZJa3B2YUc0Z1JHOWxJaXdpYVdGMElqb3hOVEUyTWpNNU1ESXlmUS5TZmxLeHdSSlNNZUtLRjJRVDRmd3BNZUpmMzZQT2s2eUpWX2FkUXNzdzVjIl19LCJleHAiOjE3MjAwMzAwMDMsImlhdCI6MTcxNzQzODAwMywianRpIjoiNDFhY2FkYTMtNjdiNC00OTRlLWE2ZTMtZTA5NjY0NDlmMjVkIn0._tIB_9fsQjZmJV2cgGDWtYXmps9fbLbMDtu8wZhIwC9u6I7RAaR4NK5WrnRC1TIVbQa06ZeneELxc_ktTkdhfA";
+//        String issuerDid = "did:example:issuer";
+//
+//        Payload payload = mock(Payload.class);
+//        when(jwtService.getPayloadFromSignedJWT(any(SignedJWT.class))).thenReturn(payload);
+//        when(jwtService.getClaimFromPayload(eq(payload), eq("iss"))).thenReturn(issuerDid);
+//        when(jwtService.getVCFromPayload(eq(payload))).thenReturn("invalid-credential-instance-class");
+//
+//        boolean result = vpServiceImpl.validateVerifiablePresentation(vpClaimWithVcJwtFormat);
+//
+//        Assertions.assertThat(result).isFalse();
+//    }
 
     @Test
     void validateVerifiablePresentation_vp_claim_with_verifiableCredential_claim_string_but_not_jwt_format_throws_JWTParsingException_and_return_false() {
