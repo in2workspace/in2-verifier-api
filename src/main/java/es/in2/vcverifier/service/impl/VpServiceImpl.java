@@ -3,11 +3,11 @@ package es.in2.vcverifier.service.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
-import com.nimbusds.jose.shaded.gson.internal.LinkedTreeMap;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.exception.*;
-import es.in2.vcverifier.model.credentials.employee.LEARCredentialEmployee;
-import es.in2.vcverifier.model.credentials.machine.LEARCredentialMachine;
+import es.in2.vcverifier.model.credentials.VerifiableCredential;
+import es.in2.vcverifier.model.credentials.lear.employee.LEARCredentialEmployee;
+import es.in2.vcverifier.model.credentials.lear.machine.LEARCredentialMachine;
 import es.in2.vcverifier.model.enums.KeyType;
 import es.in2.vcverifier.model.enums.LEARCredentialType;
 import es.in2.vcverifier.model.issuer.IssuerCredentialsCapabilities;
@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.PublicKey;
 import java.text.ParseException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -55,11 +56,15 @@ public class VpServiceImpl implements VpService {
             SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
             Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
 
+            // Step 2: Map the Payload to the Correct VC Class
+            VerifiableCredential verifiableCredential = mapPayloadToVerifiableCredential(payload);
+
+
             // Step 2: Validate the issuer
-            String credentialIssuerDid = jwtService.getClaimFromPayload(payload, "iss");
+            String credentialIssuerDid = verifiableCredential.getIssuer();
 
             // Step 3: Extract and validate credential types
-            List<String> credentialTypes = getCredentialTypes(payload);
+            List<String> credentialTypes = verifiableCredential.getType();
 
             // Step 4: Retrieve the list of issuer capabilities
             List<IssuerCredentialsCapabilities> issuerCapabilitiesList = trustFrameworkService.getTrustedIssuerListData(credentialIssuerDid);
@@ -69,7 +74,7 @@ public class VpServiceImpl implements VpService {
             log.info("Issuer DID {} is a trusted participant", credentialIssuerDid);
 
             // Step 5: Extract the mandateId from the Verifiable Credential
-            String mandatorOrganizationIdentifier = extractMandatorOrganizationIdentifier(credentialTypes, payload);
+            String mandatorOrganizationIdentifier = extractMandatorOrganizationIdentifier(verifiableCredential);
 
             //TODO this must be validated against the participants list, not the issuer list
 
@@ -79,7 +84,7 @@ public class VpServiceImpl implements VpService {
             log.info("Mandator OrganizationIdentifier {} is valid and allowed", mandatorOrganizationIdentifier);
 
             // Step 6: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
-            String mandateeId = extractMandateeId(credentialTypes, payload);
+            String mandateeId = extractMandateeId(verifiableCredential);
             PublicKey holderPublicKey = didService.getPublicKeyFromDid(mandateeId); // Get the holder's public key in bytes
             jwtService.verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC); // Validate the VP was signed by the holder DID
 
@@ -89,6 +94,66 @@ public class VpServiceImpl implements VpService {
             return false;
         }
     }
+
+    private VerifiableCredential mapPayloadToVerifiableCredential(Payload payload) {
+        Object vcObject = jwtService.getVCFromPayload(payload);
+        try {
+            Map<String, Object> vcMap = validateAndCastToMap(vcObject);
+            List<String> types = extractAndValidateTypes(vcMap);
+            return mapToSpecificCredential(vcMap, types);
+        } catch (IllegalArgumentException e) {
+            throw new CredentialMappingException("Error mapping VC payload to specific Verifiable Credential class: " + e.getMessage());
+        }
+    }
+
+    private Map<String, Object> validateAndCastToMap(Object vcObject) {
+        if (!(vcObject instanceof Map<?, ?> map)) {
+            throw new CredentialMappingException("Invalid payload format for Verifiable Credential.");
+        }
+
+        // Ensure the map's keys are all types are Strings and values are Objects
+        Map<String, Object> validatedMap = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            if (!(entry.getKey() instanceof String)) {
+                throw new CredentialMappingException("Invalid key type found in Verifiable Credential map: " + entry.getKey());
+            }
+            validatedMap.put((String) entry.getKey(), entry.getValue());
+        }
+
+        return validatedMap;
+    }
+
+
+    private List<String> extractAndValidateTypes(Map<String, Object> vcMap) {
+        Object typeObject = vcMap.get("type");
+
+        // Validate that the "type" object is a list
+        if (!(typeObject instanceof List<?> typeList)) {
+            throw new CredentialMappingException("'type' key is not a list.");
+        }
+
+        // Ensure that all elements in the list are Strings
+        if (!typeList.stream().allMatch(String.class::isInstance)) {
+            throw new CredentialMappingException("'type' list contains non-string elements.");
+        }
+
+        // Safely cast the List<?> to List<String>
+        return typeList.stream()
+                .map(String.class::cast)
+                .toList();
+    }
+
+    private VerifiableCredential mapToSpecificCredential(Map<String, Object> vcMap, List<String> types) {
+        if (types.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
+            return objectMapper.convertValue(vcMap, LEARCredentialEmployee.class);
+        } else if (types.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())) {
+            return objectMapper.convertValue(vcMap, LEARCredentialMachine.class);
+        } else {
+            throw new InvalidCredentialTypeException("Unsupported credential type: " + types);
+        }
+    }
+
+
 
     @Override
     public Object getCredentialFromTheVerifiablePresentation(String verifiablePresentation) {
@@ -103,58 +168,35 @@ public class VpServiceImpl implements VpService {
         return convertObjectToJSONNode(getCredentialFromTheVerifiablePresentation(verifiablePresentation));
     }
 
-    private List<String> getCredentialTypes(Payload payload) {
-        // Extract and validate the credential types from the payload
-        Object vcFromPayload = jwtService.getVCFromPayload(payload);
-
-        if (vcFromPayload instanceof LinkedTreeMap<?, ?> vcObject) {
-            // Use a wildcard generic type to avoid unchecked cast warning
-            Object typeObject = vcObject.get("type");
-
-            if (typeObject instanceof List<?> typeList) {
-                // Check each element to ensure it's a String
-                if (typeList.stream().allMatch(String.class::isInstance)) {
-                    // Safely cast the List<?> to List<String>
-                    return typeList.stream().map(String.class::cast).toList();
-                } else {
-                    throw new InvalidCredentialTypeException("Type list elements are not all of type String.");
-                }
-            } else {
-                throw new InvalidCredentialTypeException("'type' key does not map to a List.");
-            }
+    private String extractMandateeId(VerifiableCredential verifiableCredential) {
+        if (verifiableCredential instanceof LEARCredentialEmployee employeeCredential) {
+            // Obtain the specific CredentialSubject and access the Mandatee information
+            LEARCredentialEmployee.CredentialSubject credentialSubject = employeeCredential.getLearCredentialSubject();
+            return credentialSubject.mandate().mandatee().id();
+        } else if (verifiableCredential instanceof LEARCredentialMachine machineCredential) {
+            // Obtain the specific CredentialSubject and access the Mandatee information
+            LEARCredentialMachine.CredentialSubject credentialSubject = machineCredential.getLearMachineSubject();
+            return credentialSubject.mandate().mandatee().id();
         } else {
-            throw new InvalidCredentialTypeException("VC from payload is not a LinkedTreeMap.");
+            throw new InvalidCredentialTypeException("Invalid Credential Type. LEARCredentialEmployee or LEARCredentialMachine required.");
         }
     }
 
-    private String extractMandateeId(List<String> credentialTypes, Payload payload) {
-        Object vcObject = jwtService.getVCFromPayload(payload);
-
-        if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
-            LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(vcObject);
-            return learCredentialEmployee.credentialSubject().mandate().mandatee().id();
-        } else if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())) {
-            LEARCredentialMachine learCredentialMachine = mapCredentialToLEARCredentialMachine(vcObject);
-            return learCredentialMachine.credentialSubject().mandate().mandatee().id();
+    private String extractMandatorOrganizationIdentifier(VerifiableCredential verifiableCredential) {
+        if (verifiableCredential instanceof LEARCredentialEmployee employeeCredential) {
+            // Obtain the specific CredentialSubject and access the Mandator information
+            LEARCredentialEmployee.CredentialSubject credentialSubject = employeeCredential.getLearCredentialSubject();
+            return credentialSubject.mandate().mandator().organizationIdentifier();
+        } else if (verifiableCredential instanceof LEARCredentialMachine machineCredential) {
+            // Obtain the specific CredentialSubject and access the Mandator information
+            LEARCredentialMachine.CredentialSubject credentialSubject = machineCredential.getLearMachineSubject();
+            return credentialSubject.mandate().mandator().organizationIdentifier();
         } else {
             throw new InvalidCredentialTypeException("Invalid Credential Type. LEARCredentialEmployee or LEARCredentialMachine required.");
         }
     }
 
 
-    private String extractMandatorOrganizationIdentifier(List<String> credentialTypes, Payload payload) {
-        Object vcObject = jwtService.getVCFromPayload(payload);
-
-        if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
-            LEARCredentialEmployee learCredentialEmployee = mapCredentialToLEARCredentialEmployee(vcObject);
-            return learCredentialEmployee.credentialSubject().mandate().mandator().organizationIdentifier();
-        } else if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())) {
-            LEARCredentialMachine learCredentialMachine = mapCredentialToLEARCredentialMachine(vcObject);
-            return learCredentialMachine.credentialSubject().mandate().mandator().organizationIdentifier();
-        } else {
-            throw new InvalidCredentialTypeException("Invalid Credential Type. LEARCredentialEmployee or LEARCredentialMachine required.");
-        }
-    }
 
     private void validateCredentialTypeWithIssuerCapabilities(List<IssuerCredentialsCapabilities> issuerCapabilitiesList, List<String> credentialTypes) {
         // Iterate over each credential type in the verifiable credential
@@ -188,24 +230,6 @@ public class VpServiceImpl implements VpService {
             throw new JsonConversionException("Error durante la conversión a JsonNode.");
         }
         return jsonNode;
-    }
-
-
-    private LEARCredentialMachine mapCredentialToLEARCredentialMachine(Object vcObject) {
-        try {
-            return objectMapper.convertValue(vcObject, LEARCredentialMachine.class);
-        } catch (IllegalArgumentException e) {
-            throw new CredentialMappingException("Error converting VC to LEARCredentialMachine");
-        }
-    }
-
-    private LEARCredentialEmployee mapCredentialToLEARCredentialEmployee(Object vcObject) {
-        try {
-            // Convert the Object to a Map or directly to the LEARCredentialEmployee class
-            return objectMapper.convertValue(vcObject, LEARCredentialEmployee.class);
-        } catch (IllegalArgumentException e) {
-            throw new CredentialMappingException("Error converting VC to LEARCredentialEmployee");
-        }
     }
 
     private SignedJWT extractFirstVerifiableCredential(String verifiablePresentation) {

@@ -9,17 +9,18 @@ import es.in2.vcverifier.model.credentials.lear.Power;
 import es.in2.vcverifier.model.credentials.lear.Signer;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
+import lombok.extern.jackson.Jacksonized;
 
 import java.util.List;
 
 @Getter
 @SuperBuilder
+@Jacksonized
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class LEARCredentialEmployee extends VerifiableCredential {
 
     @JsonProperty("credentialSubject")
-    private CredentialSubject credentialSubject;
-
+    private final CredentialSubject learCredentialSubject;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record CredentialSubject(
             @JsonProperty("mandate") Mandate mandate

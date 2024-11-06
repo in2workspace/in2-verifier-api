@@ -3,12 +3,13 @@ package es.in2.vcverifier.model.credentials;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
 @Getter
+@SuperBuilder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class VerifiableCredential {
 
@@ -22,8 +23,8 @@ public abstract class VerifiableCredential {
     protected String issuer;
     protected Map<String, Object> issuerObject;
     protected Map<String, Object> credentialSubject;
-    protected Instant validFrom;
-    protected Instant validUntil;
+    protected String validFrom;
+    protected String validUntil;
     protected Map<String, Object> status;
     protected Map<String, Object> credentialSchema;
     protected Map<String, Object> refreshService;
