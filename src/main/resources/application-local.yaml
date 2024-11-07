@@ -55,15 +55,14 @@ security:
     accessToken:
       expiration: "1"
       cronUnit: "DAYS"
-    idToken:
-      expiration: "1"
-      cronUnit: "MINUTES"
 
-clientsRepository:
-  uri: "https://raw.githubusercontent.com/rubenmodamioin2/dome-services-directory/refs/heads/main/trusted-service-list-lcl.yaml"
-
-trustedIssuerList:
-  uri: "http://localhost:8085/v4/issuers/"
+trustFramework:
+  trustedIssuerList:
+    uri: "http://localhost:8080/v4/issuers/"
+  clientsRepository:
+    uri: "https://raw.githubusercontent.com/DOME-Marketplace/dome-services-directory/refs/heads/main/trusted-service-list-"
+  revocationList:
+    uri: ""
 
 crypto:
   privateKey: "73e509a7681d4a395b1ced75681c4dc4020dbab02da868512276dd766733d5b5" # for test purposes

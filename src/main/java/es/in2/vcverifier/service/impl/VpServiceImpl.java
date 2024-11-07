@@ -56,6 +56,11 @@ public class VpServiceImpl implements VpService {
             SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
             Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
 
+            // Step 2: Validate the credential id is not in the revoked list
+            validateCredentialNotRevoked(payload);
+
+            // Step 3: Validate the issuer
+            String credentialIssuerDid = jwtService.getClaimFromPayload(payload, "iss");
             // Step 2: Map the Payload to the Correct VC Class
             VerifiableCredential verifiableCredential = mapPayloadToVerifiableCredential(payload);
 
@@ -206,6 +211,23 @@ public class VpServiceImpl implements VpService {
         // If none of the credential types are supported, throw an exception
         throw new InvalidCredentialTypeException("Credential types " + credentialTypes + " are not supported by the issuer.");
     }
+
+    private void validateCredentialNotRevoked(Payload payload) {
+        Object vcFromPayload = jwtService.getVCFromPayload(payload);
+
+        if (vcFromPayload instanceof LinkedTreeMap<?, ?> vcObject) {
+            // Use a wildcard generic type to avoid unchecked cast warning
+            Object credentialId = vcObject.get("id").toString();
+            List<String> revokedIds = trustFrameworkService.getRevokedCredentialIds();
+            if (revokedIds.contains(credentialId)) {
+                throw new CredentialRevokedException("Credential ID " + credentialId + " is revoked.");
+            }
+        }
+        else {
+            throw new InvalidCredentialTypeException("VC from payload is not a LinkedTreeMap.");
+        }
+    }
+
 
     private JsonNode convertObjectToJSONNode(Object vcObject) throws JsonConversionException {
         JsonNode jsonNode;
