@@ -1,5 +1,6 @@
 package es.in2.vcverifier.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import es.in2.vcverifier.config.properties.TrustFrameworkProperties;
@@ -12,15 +13,13 @@ import es.in2.vcverifier.model.RevokedCredentialIds;
 import es.in2.vcverifier.model.issuer.IssuerAttribute;
 import es.in2.vcverifier.model.issuer.IssuerCredentialsCapabilities;
 import es.in2.vcverifier.model.issuer.IssuerResponse;
+import es.in2.vcverifier.service.HttpClientService;
 import es.in2.vcverifier.service.TrustFrameworkService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -33,6 +32,7 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
 
     private final ObjectMapper objectMapper;
     private final TrustFrameworkProperties trustFrameworkProperties;
+    private final HttpClientService httpClientService;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
 
     @Override
@@ -40,43 +40,35 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
         try {
             String clientsYaml = fetchRemoteFile(trustFrameworkProperties.clientsRepository().uri());
             return yamlMapper.readValue(clientsYaml, ExternalTrustedListYamlData.class);
-        } catch (IOException | InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RemoteFileFetchException("Error reading clients list from GitHub.", e);
+        } catch (JsonProcessingException e) {
+            throw new JsonConversionException("Error reading clients list from GitHub: " + e);
         }
     }
 
     @Override
     public List<IssuerCredentialsCapabilities> getTrustedIssuerListData(String id) {
-        try {
-            // Step 1: Send HTTP request to fetch issuer data
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(trustFrameworkProperties.trustedIssuerList().uri() + id))
-                    .build();
+        String uri = trustFrameworkProperties.trustedIssuerList().uri() + id;
+        HttpResponse<String> response = httpClientService.performGetRequest(uri);
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() == 200) {
-                // Step 2: Map response to IssuerResponse object
-                IssuerResponse issuerResponse = objectMapper.readValue(response.body(), IssuerResponse.class);
-
-                // Step 3: Decode and map each attribute's body to IssuerCredentialsCapabilities
-                return issuerResponse.attributes().stream()
-                        .map(this::decodeAndMapIssuerAttributeBody)
-                        .toList();
-            } else if (response.statusCode() == 404) {
-                throw new IssuerNotAuthorizedException("Issuer with id: " + id + " not found.");
-            } else {
-                throw new IOException("Failed to fetch issuer data. Status code: " + response.statusCode());
+        // Handle the response directly here
+        if (response.statusCode() == 200) {
+            // Step 2: Map response to IssuerResponse object
+            IssuerResponse issuerResponse;
+            try {
+                issuerResponse = objectMapper.readValue(response.body(), IssuerResponse.class);
+            } catch (IOException e) {
+                log.error("Error mapping response to IssuerResponse: {}", e.getMessage());
+                throw new JsonConversionException("Error mapping response to IssuerResponse");
             }
-        } catch (IssuerNotAuthorizedException e) {
-            log.error("Issuer not found: {}", e.getMessage());
-            throw e;
-        } catch (IOException | InterruptedException e) {
-            log.error("Error fetching issuer data for id {}: {}", id, e.getMessage());
-            Thread.currentThread().interrupt();
-            throw new FailedCommunicationException("Error fetching issuer data");
+
+            // Step 3: Decode and map each attribute's body to IssuerCredentialsCapabilities
+            return issuerResponse.attributes().stream()
+                    .map(this::decodeAndMapIssuerAttributeBody)
+                    .toList();
+        } else if (response.statusCode() == 404) {
+            throw new IssuerNotAuthorizedException("Issuer with id: " + id + " not found.");
+        } else {
+            throw new FailedCommunicationException("Failed to fetch issuer data. Status code: " + response.statusCode());
         }
     }
 
@@ -86,10 +78,9 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
             String revokedCredentialIdsYaml = fetchRemoteFile(trustFrameworkProperties.revocationList().uri());
             RevokedCredentialIds revokedCredentialIds = yamlMapper.readValue(revokedCredentialIdsYaml, RevokedCredentialIds.class);
             return revokedCredentialIds.revokedCredentials();
-        } catch (IOException | InterruptedException e) {
-            log.error("Error fetching revoked credential IDs from URI {}: {}", trustFrameworkProperties.revocationList().uri(), e.getMessage());
-            Thread.currentThread().interrupt();
-            throw new FailedCommunicationException("Error fetching revoked credential IDs: " + e.getMessage());
+        } catch (JsonProcessingException e) {
+            log.error("Error reading revoked credential IDs from URI {}: {}", trustFrameworkProperties.revocationList().uri(), e.getMessage());
+            throw new JsonConversionException("Error reading revoked credential IDs: " + e.getMessage());
         }
     }
 
@@ -107,12 +98,8 @@ public class TrustFrameworkServiceImpl implements TrustFrameworkService {
         }
     }
 
-    private String fetchRemoteFile(String fileUrl) throws IOException, InterruptedException {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(fileUrl))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+    private String fetchRemoteFile(String fileUrl){
+        HttpResponse<String> response = httpClientService.performGetRequest(fileUrl);
         if (response.statusCode() == 200) {
             return response.body();
         } else {

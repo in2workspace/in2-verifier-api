@@ -56,29 +56,26 @@ public class VpServiceImpl implements VpService {
             SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
             Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
 
-            // Step 2: Validate the credential id is not in the revoked list
-            validateCredentialNotRevoked(payload);
-
-            // Step 3: Validate the issuer
-            String credentialIssuerDid = jwtService.getClaimFromPayload(payload, "iss");
             // Step 2: Map the Payload to the Correct VC Class
             VerifiableCredential verifiableCredential = mapPayloadToVerifiableCredential(payload);
 
+            // Step 3: Validate the credential id is not in the revoked list
+            validateCredentialNotRevoked(verifiableCredential.getId());
 
-            // Step 2: Validate the issuer
+            // Step 4: Validate the issuer
             String credentialIssuerDid = verifiableCredential.getIssuer();
 
-            // Step 3: Extract and validate credential types
+            // Step 5: Extract and validate credential types
             List<String> credentialTypes = verifiableCredential.getType();
 
-            // Step 4: Retrieve the list of issuer capabilities
+            // Step 5: Retrieve the list of issuer capabilities
             List<IssuerCredentialsCapabilities> issuerCapabilitiesList = trustFrameworkService.getTrustedIssuerListData(credentialIssuerDid);
 
-            // Step 5: Validate credential type against issuer capabilities
+            // Step 6: Validate credential type against issuer capabilities
             validateCredentialTypeWithIssuerCapabilities(issuerCapabilitiesList, credentialTypes);
             log.info("Issuer DID {} is a trusted participant", credentialIssuerDid);
 
-            // Step 5: Extract the mandateId from the Verifiable Credential
+            // Step 7: Extract the mandateId from the Verifiable Credential
             String mandatorOrganizationIdentifier = extractMandatorOrganizationIdentifier(verifiableCredential);
 
             //TODO this must be validated against the participants list, not the issuer list
@@ -88,7 +85,7 @@ public class VpServiceImpl implements VpService {
 
             log.info("Mandator OrganizationIdentifier {} is valid and allowed", mandatorOrganizationIdentifier);
 
-            // Step 6: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
+            // Step 8: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
             String mandateeId = extractMandateeId(verifiableCredential);
             PublicKey holderPublicKey = didService.getPublicKeyFromDid(mandateeId); // Get the holder's public key in bytes
             jwtService.verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC); // Validate the VP was signed by the holder DID
@@ -158,9 +155,6 @@ public class VpServiceImpl implements VpService {
         }
     }
 
-
-
-
     @Override
     public Object getCredentialFromTheVerifiablePresentation(String verifiablePresentation) {
         // Step 1: Extract the Verifiable Credential (VC) from the VP (JWT)
@@ -212,20 +206,12 @@ public class VpServiceImpl implements VpService {
         throw new InvalidCredentialTypeException("Credential types " + credentialTypes + " are not supported by the issuer.");
     }
 
-    private void validateCredentialNotRevoked(Payload payload) {
-        Object vcFromPayload = jwtService.getVCFromPayload(payload);
+    private void validateCredentialNotRevoked(String credentialId) {
+        List<String> revokedIds = trustFrameworkService.getRevokedCredentialIds();
+        if (revokedIds.contains(credentialId)) {
+            throw new CredentialRevokedException("Credential ID " + credentialId + " is revoked.");
+        }
 
-        if (vcFromPayload instanceof LinkedTreeMap<?, ?> vcObject) {
-            // Use a wildcard generic type to avoid unchecked cast warning
-            Object credentialId = vcObject.get("id").toString();
-            List<String> revokedIds = trustFrameworkService.getRevokedCredentialIds();
-            if (revokedIds.contains(credentialId)) {
-                throw new CredentialRevokedException("Credential ID " + credentialId + " is revoked.");
-            }
-        }
-        else {
-            throw new InvalidCredentialTypeException("VC from payload is not a LinkedTreeMap.");
-        }
     }
 
 
