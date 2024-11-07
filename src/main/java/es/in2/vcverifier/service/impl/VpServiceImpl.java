@@ -6,8 +6,8 @@ import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.exception.*;
 import es.in2.vcverifier.model.credentials.VerifiableCredential;
-import es.in2.vcverifier.model.credentials.lear.employee.LEARCredentialEmployee;
-import es.in2.vcverifier.model.credentials.lear.machine.LEARCredentialMachine;
+import es.in2.vcverifier.model.credentials.dome.employee.EmployeeCredentialAdapter;
+import es.in2.vcverifier.model.credentials.dome.machine.MachineCredentialAdapter;
 import es.in2.vcverifier.model.enums.KeyType;
 import es.in2.vcverifier.model.enums.LEARCredentialType;
 import es.in2.vcverifier.model.issuer.IssuerCredentialsCapabilities;
@@ -145,13 +145,14 @@ public class VpServiceImpl implements VpService {
 
     private VerifiableCredential mapToSpecificCredential(Map<String, Object> vcMap, List<String> types) {
         if (types.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
-            return objectMapper.convertValue(vcMap, LEARCredentialEmployee.class);
+            return new EmployeeCredentialAdapter(vcMap, objectMapper);
         } else if (types.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())) {
-            return objectMapper.convertValue(vcMap, LEARCredentialMachine.class);
+            return new MachineCredentialAdapter(vcMap, objectMapper);
         } else {
             throw new InvalidCredentialTypeException("Unsupported credential type: " + types);
         }
     }
+
 
 
 
@@ -169,32 +170,25 @@ public class VpServiceImpl implements VpService {
     }
 
     private String extractMandateeId(VerifiableCredential verifiableCredential) {
-        if (verifiableCredential instanceof LEARCredentialEmployee employeeCredential) {
-            // Obtain the specific CredentialSubject and access the Mandatee information
-            LEARCredentialEmployee.CredentialSubject credentialSubject = employeeCredential.getLearCredentialSubject();
-            return credentialSubject.mandate().mandatee().id();
-        } else if (verifiableCredential instanceof LEARCredentialMachine machineCredential) {
-            // Obtain the specific CredentialSubject and access the Mandatee information
-            LEARCredentialMachine.CredentialSubject credentialSubject = machineCredential.getLearMachineSubject();
-            return credentialSubject.mandate().mandatee().id();
+        if (verifiableCredential instanceof EmployeeCredentialAdapter employeeCredential) {
+            return employeeCredential.getMandateeId();
+        } else if (verifiableCredential instanceof MachineCredentialAdapter machineCredential) {
+            return machineCredential.getMandateeId();
         } else {
-            throw new InvalidCredentialTypeException("Invalid Credential Type. LEARCredentialEmployee or LEARCredentialMachine required.");
+            throw new InvalidCredentialTypeException("Invalid Credential Type. EmployeeCredentialAdapter or MachineCredentialAdapter required.");
         }
     }
 
     private String extractMandatorOrganizationIdentifier(VerifiableCredential verifiableCredential) {
-        if (verifiableCredential instanceof LEARCredentialEmployee employeeCredential) {
-            // Obtain the specific CredentialSubject and access the Mandator information
-            LEARCredentialEmployee.CredentialSubject credentialSubject = employeeCredential.getLearCredentialSubject();
-            return credentialSubject.mandate().mandator().organizationIdentifier();
-        } else if (verifiableCredential instanceof LEARCredentialMachine machineCredential) {
-            // Obtain the specific CredentialSubject and access the Mandator information
-            LEARCredentialMachine.CredentialSubject credentialSubject = machineCredential.getLearMachineSubject();
-            return credentialSubject.mandate().mandator().organizationIdentifier();
+        if (verifiableCredential instanceof EmployeeCredentialAdapter employeeCredential) {
+            return employeeCredential.getMandatorOrganizationIdentifier();
+        } else if (verifiableCredential instanceof MachineCredentialAdapter machineCredential) {
+            return machineCredential.getMandatorOrganizationIdentifier();
         } else {
-            throw new InvalidCredentialTypeException("Invalid Credential Type. LEARCredentialEmployee or LEARCredentialMachine required.");
+            throw new InvalidCredentialTypeException("Invalid Credential Type. EmployeeCredentialAdapter or MachineCredentialAdapter required.");
         }
     }
+
 
 
 
