@@ -81,7 +81,14 @@ public class VpServiceImpl implements VpService {
             validateCredentialTypeWithIssuerCapabilities(issuerCapabilitiesList, credentialTypes);
             log.info("Issuer DID {} is a trusted participant", credentialIssuerDid);
 
-            // Step 7: Extract the mandateId from the Verifiable Credential
+            // Step 7: Verify the signature and the organizationId of the credential signature
+            Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
+            PublicKey certPubKey = extractAndVerifyCertificate(vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
+
+            // TODO add a advanced signature verification instead of this simple one
+            jwtService.verifyJWTSignature(jwtCredential.serialize(), certPubKey, KeyType.RSA); // Validate the VC was signed by the issuer's public key
+
+            // Step 8: Extract the mandateId from the Verifiable Credential
             String mandatorOrganizationIdentifier = extractMandatorOrganizationIdentifier(credentialTypes, payload);
 
             //TODO this must be validated against the participants list, not the issuer list
@@ -91,7 +98,7 @@ public class VpServiceImpl implements VpService {
 
             log.info("Mandator OrganizationIdentifier {} is valid and allowed", mandatorOrganizationIdentifier);
 
-            // Step 8: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
+            // Step 9: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
             String mandateeId = extractMandateeId(credentialTypes, payload);
             PublicKey holderPublicKey = didService.getPublicKeyFromDid(mandateeId); // Get the holder's public key in bytes
             jwtService.verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC); // Validate the VP was signed by the holder DID
@@ -194,8 +201,7 @@ public class VpServiceImpl implements VpService {
             if (revokedIds.contains(credentialId)) {
                 throw new CredentialRevokedException("Credential ID " + credentialId + " is revoked.");
             }
-        }
-        else {
+        } else {
             throw new InvalidCredentialTypeException("VC from payload is not a LinkedTreeMap.");
         }
     }
@@ -291,7 +297,7 @@ public class VpServiceImpl implements VpService {
         return firstCredential;
     }
 
-    private boolean extractAndVerifyCertificate(Map<String, Object> vcHeader, String expectedOrgId) throws Exception {
+    private PublicKey extractAndVerifyCertificate(Map<String, Object> vcHeader, String expectedOrgId) throws Exception {
         // Retrieve the x5c claim (certificate chain)
         Object x5cObj = vcHeader.get("x5c");
 
@@ -321,15 +327,17 @@ public class VpServiceImpl implements VpService {
             log.info("Extracted DN: {}", distinguishedName);
 
             // Try to extract the organizationIdentifier from the DN
+            // FIXME
+            String harcodedOrgId = "VATEU-B99999999";
             String orgIdentifierFromDN = extractOrganizationIdentifierFromDN(distinguishedName);
-            if (orgIdentifierFromDN != null && orgIdentifierFromDN.equals(expectedOrgId)) {
+            if (orgIdentifierFromDN != null && orgIdentifierFromDN.equals(harcodedOrgId)) {
                 log.info("Found matching organization identifier in DN: {}", orgIdentifierFromDN);
-                return true; // Organization identifier matches, return true
+                return certificate.getPublicKey(); // Return the public key of the matching certificate
             }
         }
 
         // If the loop finishes without finding a match, throw an exception
-        throw new Exception("Organization Identifier not found in certificates.");
+        throw new MismatchOrganizationIdentifierException("Organization Identifier not found in certificates.");
     }
 
 
@@ -364,7 +372,7 @@ public class VpServiceImpl implements VpService {
                 if (asn1Primitive instanceof ASN1OctetString octetString) {
                     return new String(octetString.getOctets(), StandardCharsets.UTF_8); // Try to decode as UTF-8
                 } else if (asn1Primitive instanceof ASN1PrintableString asn1PrintableString) {
-                    return ( asn1PrintableString.getString());
+                    return (asn1PrintableString.getString());
                 } else if (asn1Primitive instanceof ASN1UTF8String asn1UTF8String) {
                     return (asn1UTF8String.getString());
                 } else if (asn1Primitive instanceof ASN1IA5String asn1IA5String) {
@@ -386,7 +394,7 @@ public class VpServiceImpl implements VpService {
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
             data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
-                    + Character.digit(hex.charAt(i+1), 16));
+                    + Character.digit(hex.charAt(i + 1), 16));
         }
         return data;
     }

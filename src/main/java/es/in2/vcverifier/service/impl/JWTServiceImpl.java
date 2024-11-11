@@ -82,18 +82,36 @@ public class JWTServiceImpl implements JWTService {
             // Parse the JWT
             SignedJWT signedJWT = SignedJWT.parse(jwt);
 
+            // Log the header, payload, and signature for debugging
+            log.debug("JWT Header: {}", signedJWT.getHeader().toJSONObject());
+            log.debug("JWT Payload: {}", signedJWT.getPayload().toJSONObject());
+            log.debug("JWT Signature: {}", signedJWT.getSignature());
+
             // Create the appropriate verifier based on the key type
             JWSVerifier verifier = createVerifier(publicKey, keyType);
 
+            // Log the key details and type being used for verification
+            log.debug("Using PublicKey: {}", publicKey);
+            log.debug("Using KeyType: {}", keyType);
+
+            boolean result = signedJWT.verify(verifier);
             // Verify the signature
-            if (!signedJWT.verify(verifier)) {
+            if (!result) {
                 throw new JWTVerificationException("Invalid JWT signature");
             }
 
+        } catch (JOSEException e) {
+            log.error("JOSEException during JWT signature verification: {}", e.getMessage(), e);
+            throw new JWTVerificationException("JWT signature verification failed due to JOSEException: " + e.getMessage());
+        } catch (IllegalStateException e) {
+            log.error("IllegalStateException during JWT signature verification: {}", e.getMessage(), e);
+            throw new JWTVerificationException("JWT signature verification failed due to IllegalStateException: " + e.getMessage());
         } catch (Exception e) {
-            throw new JWTVerificationException("JWT signature verification failed.");
+            log.error("Exception during JWT signature verification: {}", e.getMessage(), e);
+            throw new JWTVerificationException("JWT signature verification failed due to unexpected error: " + e);
         }
     }
+
 
     private JWSVerifier createVerifier(PublicKey publicKey, KeyType keyType) throws JOSEException {
         return switch (keyType) {
