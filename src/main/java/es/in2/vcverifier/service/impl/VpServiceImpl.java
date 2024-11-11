@@ -85,7 +85,6 @@ public class VpServiceImpl implements VpService {
             Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
             PublicKey certPubKey = extractAndVerifyCertificate(vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
 
-            // TODO add a advanced signature verification instead of this simple one
             jwtService.verifyJWTSignature(jwtCredential.serialize(), certPubKey, KeyType.RSA); // Validate the VC was signed by the issuer's public key
 
             // Step 8: Extract the mandateId from the Verifiable Credential
@@ -327,10 +326,8 @@ public class VpServiceImpl implements VpService {
             log.info("Extracted DN: {}", distinguishedName);
 
             // Try to extract the organizationIdentifier from the DN
-            // FIXME
-            String harcodedOrgId = "VATEU-B99999999";
             String orgIdentifierFromDN = extractOrganizationIdentifierFromDN(distinguishedName);
-            if (orgIdentifierFromDN != null && orgIdentifierFromDN.equals(harcodedOrgId)) {
+            if (orgIdentifierFromDN != null && orgIdentifierFromDN.equals(expectedOrgId)) {
                 log.info("Found matching organization identifier in DN: {}", orgIdentifierFromDN);
                 return certificate.getPublicKey(); // Return the public key of the matching certificate
             }

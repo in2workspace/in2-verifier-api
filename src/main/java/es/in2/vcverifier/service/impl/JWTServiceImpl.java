@@ -8,6 +8,7 @@ import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jose.crypto.impl.CriticalHeaderParamsDeferral;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -26,7 +27,9 @@ import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -82,38 +85,24 @@ public class JWTServiceImpl implements JWTService {
             // Parse the JWT
             SignedJWT signedJWT = SignedJWT.parse(jwt);
 
-            // Log the header, payload, and signature for debugging
-            log.debug("JWT Header: {}", signedJWT.getHeader().toJSONObject());
-            log.debug("JWT Payload: {}", signedJWT.getPayload().toJSONObject());
-            log.debug("JWT Signature: {}", signedJWT.getSignature());
-
             // Create the appropriate verifier based on the key type
             JWSVerifier verifier = createVerifier(publicKey, keyType);
 
-            // Log the key details and type being used for verification
-            log.debug("Using PublicKey: {}", publicKey);
-            log.debug("Using KeyType: {}", keyType);
-
-            boolean result = signedJWT.verify(verifier);
             // Verify the signature
-            if (!result) {
+            if (!signedJWT.verify(verifier)) {
                 throw new JWTVerificationException("Invalid JWT signature");
             }
 
-        } catch (JOSEException e) {
-            log.error("JOSEException during JWT signature verification: {}", e.getMessage(), e);
-            throw new JWTVerificationException("JWT signature verification failed due to JOSEException: " + e.getMessage());
-        } catch (IllegalStateException e) {
-            log.error("IllegalStateException during JWT signature verification: {}", e.getMessage(), e);
-            throw new JWTVerificationException("JWT signature verification failed due to IllegalStateException: " + e.getMessage());
         } catch (Exception e) {
-            log.error("Exception during JWT signature verification: {}", e.getMessage(), e);
-            throw new JWTVerificationException("JWT signature verification failed due to unexpected error: " + e);
+            log.error("Exception during JWT signature verification", e);
+            throw new JWTVerificationException("JWT signature verification failed due to unexpected error" + e);
         }
     }
 
 
+
     private JWSVerifier createVerifier(PublicKey publicKey, KeyType keyType) throws JOSEException {
+
         return switch (keyType) {
             case EC -> {
                 if (!(publicKey instanceof ECPublicKey)) {
@@ -125,10 +114,20 @@ public class JWTServiceImpl implements JWTService {
                 if (!(publicKey instanceof RSAPublicKey)) {
                     throw new IllegalArgumentException("Invalid key type for RSA verification");
                 }
-                yield new RSASSAVerifier((RSAPublicKey) publicKey);
+                // FIXME: This shouldn't be replaced by andavanced signature verification
+                // Create a set with the critical headers you want to defer
+                Set<String> defCriticalHeaders = new HashSet<>();
+                defCriticalHeaders.add("sigT");
+
+                // Create a policy for critical header parameters and set the deferred ones
+                CriticalHeaderParamsDeferral critPolicy = new CriticalHeaderParamsDeferral();
+                critPolicy.setDeferredCriticalHeaderParams(defCriticalHeaders);
+
+                yield new RSASSAVerifier((RSAPublicKey) publicKey, defCriticalHeaders);
             }
         };
     }
+
 
     @Override
     public SignedJWT parseJWT(String jwt) {
