@@ -46,7 +46,7 @@ management:
       application: ${spring.application.name}
 
 security:
-  authorizationServer: "https://verifier.dome-marketplace-lcl.org"
+  authorizationServer: "http://localhost:9000"
   loginCode:
     expirationProperties:
       expiration: "5"
@@ -59,9 +59,9 @@ security:
 
 trustFramework:
   trustedIssuerList:
-    uri: "http://localhost:8080/v4/issuers/"
+    uri: "http://localhost:8085/v4/issuers/"
   clientsRepository:
-    uri: "https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml"
+    uri: "https://raw.githubusercontent.com/rubenmodamioin2/dome-services-directory/refs/heads/main/trusted-service-list-lcl.yaml"
   revocationList:
     uri: ""
 
