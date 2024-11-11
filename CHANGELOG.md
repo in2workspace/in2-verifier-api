@@ -11,11 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Only uses Claims with Requesting Claims using Scope Values (openid learcredential)
   - Only uses Passing Request Parameters as JWTs (Passing a Request Object by Reference).
   - Only use Client Authentication method with Private Key JWT.
-  - Only uses for P-256 ECDSA keys for Signing Access Token. 
+  - Only uses for P-256 ECDSA keys for Signing Access Token.
 - Support for OpenID for Verifiable Presentations (OID4VP).
   - Implement VP Proof of Possession verification.
   - Implement Issuers, Participants and Services verification against the DOME Trust Framework.
   - Implement VC verification against the DOME Revoked Credentials List.
+- Support FAPI
+  - Only use request_uri as a REQUIRED claim in the Authentication Request Object.
 - Implement DOME Human-To-Machine (H2M) authentication.
   - Implement Login page with QR code.
 - Implement DOME Machine-To-Machine (M2M) authentication.
