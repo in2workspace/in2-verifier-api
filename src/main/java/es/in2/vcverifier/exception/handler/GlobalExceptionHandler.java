@@ -1,6 +1,7 @@
 package es.in2.vcverifier.exception.handler;
 
 import es.in2.vcverifier.exception.CredentialRevokedException;
+import es.in2.vcverifier.exception.MismatchOrganizationIdentifierException;
 import es.in2.vcverifier.exception.QRCodeGenerationException;
 import es.in2.vcverifier.exception.ResourceNotFoundException;
 import es.in2.vcverifier.model.GlobalErrorMessage;
@@ -43,6 +44,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public GlobalErrorMessage handleException(CredentialRevokedException ex) {
         log.error("The credential has been revoked: ", ex);
         return new GlobalErrorMessage("Verifiable presentation failed","","");
+    }
+
+    @ExceptionHandler(MismatchOrganizationIdentifierException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public GlobalErrorMessage handleException(MismatchOrganizationIdentifierException ex) {
+        log.error("The organization identifier of the cert does not match the organization identifier from the credential payload: ", ex);
+        return new GlobalErrorMessage("","","");
     }
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
