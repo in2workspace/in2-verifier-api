@@ -66,7 +66,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
      */
     @Override
     public Authentication convert(HttpServletRequest request) {
-        log.info("CustomAuthorizationRequestConverter.convert");
+        log.info("Starting CustomAuthorizationRequestConverter of authorization request");
         String requestUri = request.getParameter(REQUEST_URI); // request_uri parameter
         String jwt;     // request parameter (JWT directly)
         String clientId = request.getParameter(CLIENT_ID);     // client_id parameter
@@ -76,16 +76,18 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
 
         if (registeredClient == null) {
+            log.error("CustomAuthorizationRequestConverter -- convert -- Unauthorized client: Client with ID {} not found.", clientId);
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
         }
 
         if (clientId == null) {
+            log.error("CustomAuthorizationRequestConverter -- convert -- client ID is missing in the request.");
             throw new IllegalArgumentException("Client ID is required.");
         }
 
         // Case 1: JWT needs to be retrieved via "request_uri"
         if (requestUri != null) {
-            log.info("Retrieving JWT from request_uri: " + requestUri);
+            log.info("Retrieving JWT from request_uri: {}", requestUri);
             // Retrieve the JWT from the request_uri via HTTP GET
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest httpRequest = HttpRequest.newBuilder()
@@ -96,12 +98,15 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
             try {
                 httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
                 jwt = httpResponse.body(); // Set the JWT from the HTTP response body
+                log.debug("CustomAuthorizationRequestConverter -- convert -- JWT successfully retrieved from request_uri.");
             } catch (IOException | InterruptedException e) {
+                log.error("CustomAuthorizationRequestConverter -- convert -- Failed to retrieve JWT from request_uri.", e);
                 Thread.currentThread().interrupt();
                 throw new RequestObjectRetrievalException(e.getMessage());
             }
         } else {
             // If neither request nor request_uri is provided, throw an exception
+            log.error("CustomAuthorizationRequestConverter -- convert -- Neither 'request' nor 'request_uri' was provided in the request.");
             throw new IllegalArgumentException("Either 'request' or 'request_uri' must be provided.");
         }
         // Validate the JWT and create a custom authentication token
@@ -109,6 +114,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
             JWSObject jwsObject = JWSObject.parse(jwt);
             // Validate OAuth 2.0 parameters against the JWT
             if (!validateOAuth2Parameters(request, jwsObject)) {
+                log.error("CustomAuthorizationRequestConverter -- convert -- OAuth 2.0 parameters do not match the JWT claims.");
                 throw new RequestMismatchException("OAuth 2.0 parameters do not match the JWT claims.");
             }
             // Use DIDService to get the public key bytes
@@ -141,12 +147,14 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
             OAuth2Error error = new OAuth2Error("custom_error", "Redirection required", redirectUrl);
             throw new OAuth2AuthorizationCodeRequestAuthenticationException(error,null);
         } catch (ParseException e) {
+            log.error("CustomAuthorizationRequestConverter -- convert -- Failed to parse JWT from request.", e);
             throw new RequestObjectRetrievalException(e.getMessage());
         }
     }
 
     private boolean validateOAuth2Parameters(HttpServletRequest request, JWSObject jwsObject) {
         try {
+            log.info("Validating OAuth 2.0 parameters against JWT claims.");
             String jwtPayload = jwsObject.getPayload().toString();
             JSONObject jwtClaims = new JSONObject(jwtPayload);
             String requestResponseType = request.getParameter(RESPONSE_TYPE);
@@ -162,16 +170,19 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                     && requestScope.contains("openid")
                     && requestScope.equals(jwtScope);
         } catch (JSONException e) {
+            log.error("CustomAuthorizationRequestConverter -- validateOAuth2Parameters -- Failed to parse JWT payload.", e);
             throw new JWTParsingException("Invalid JWT payload " + e.getMessage());
         }
     }
 
     private String buildAuthorizationRequestJwtPayload(String scope, String state) {
         // TODO this should be mapped with his presentation definition and return the presentation definition
+        log.info("Building JWT payload for authorization request.");
         if (scope.equals("openid learcredential")){
             scope = "dome.credentials.presentation.LEARCredentialEmployee";
         }
         else {
+            log.error("CustomAuthorizationRequestConverter -- buildAuthorizationRequestJwtPayload -- Unsupported scope in the request: {}", scope);
             throw new UnsupportedScopeException("Unsupported scope");
         }
         Instant issueTime = Instant.now();
@@ -190,6 +201,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .claim("response_type", "vp_token")
                 .claim("response_mode", "direct_post")
                 .build();
+        log.debug("CustomAuthorizationRequestConverter -- buildAuthorizationRequestJwtPayload -- Authorization request JWT payload built: {}", payload);
         return payload.toString();
     }
 

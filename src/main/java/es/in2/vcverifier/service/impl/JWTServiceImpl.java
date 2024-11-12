@@ -36,22 +36,32 @@ public class JWTServiceImpl implements JWTService {
     @Override
     public String generateJWT(String payload) {
         try {
+            log.info("Starting JWT generation process");
+
             // Get ECKey
             ECKey ecJWK = cryptoComponent.getECKey();
+            log.debug("JWTServiceImpl -- generateJWT -- ECKey obtained for signing: {}", ecJWK.getKeyID());
+
             // Set Header
             JWSHeader jwsHeader = new JWSHeader.Builder(JWSAlgorithm.ES256)
                     .keyID(cryptoComponent.getECKey().getKeyID())
                     .type(JOSEObjectType.JWT)
                     .build();
+            log.debug("JWTServiceImpl -- generateJWT -- JWT header set with algorithm: {}", JWSAlgorithm.ES256);
+
             // Set Payload
             JWTClaimsSet claimsSet = convertPayloadToJWTClaimsSet(payload);
+            log.debug("JWTServiceImpl -- generateJWT -- JWT claims set created from payload: {}", claimsSet);
+
             // Create JWT for ES256R algorithm
             SignedJWT jwt = new SignedJWT(jwsHeader, claimsSet);
             // Sign with a private EC key
             JWSSigner signer = new ECDSASigner(ecJWK);
             jwt.sign(signer);
+            log.info("JWT generated and signed successfully");
             return jwt.serialize();
         } catch (JOSEException e) {
+            log.error("JWTServiceImpl -- generateJWT -- Error during JWT creation", e);
             throw new JWTCreationException("Error creating JWT");
         }
     }
@@ -103,8 +113,8 @@ public class JWTServiceImpl implements JWTService {
         try {
             return SignedJWT.parse(jwt);
         } catch (ParseException e) {
-            log.error("Error al parsear el JWTs: {}", e.getMessage());
-            throw new JWTParsingException("Error al parsear el JWTs");
+            log.error("Error parsing JWT: {}", e.getMessage());
+            throw new JWTParsingException("Error parsing JWT");
         }
     }
 
@@ -117,6 +127,7 @@ public class JWTServiceImpl implements JWTService {
     public String getClaimFromPayload(Payload payload, String claimName) {
         String claimValue = (String) payload.toJSONObject().get(claimName);
         if (claimValue == null || claimValue.trim().isEmpty()) {
+            log.error("JWTServiceImpl -- getClaimFromPayload -- Claim '{}' is missing or empty in the JWT payload", claimName);
             throw new JWTClaimMissingException(String.format("The '%s' claim is missing or empty in the JWT payload.", claimName));
         }
         return claimValue;
@@ -124,15 +135,19 @@ public class JWTServiceImpl implements JWTService {
 
     @Override
     public long getExpirationFromPayload(Payload payload) {
+        log.info("Retrieving expiration ('exp') from JWT payload");
         Long exp = (Long) payload.toJSONObject().get("exp");
         if (exp == null || exp <= 0) {
+            log.error("JWTServiceImpl -- getExpirationFromPayload -- Expiration claim ('exp') is missing or invalid in the JWT payload");
             throw new JWTClaimMissingException("The 'exp' (expiration) claim is missing or invalid in the JWT payload.");
         }
+        log.debug("JWTServiceImpl -- getExpirationFromPayload -- Expiration claim ('exp') retrieved successfully: {}", exp);
         return exp;
     }
 
     @Override
     public Object getVCFromPayload(Payload payload) {
+        log.info("Retrieving verifiable credential ('vc') from JWT payload");
         return payload.toJSONObject().get("vc");
     }
 }

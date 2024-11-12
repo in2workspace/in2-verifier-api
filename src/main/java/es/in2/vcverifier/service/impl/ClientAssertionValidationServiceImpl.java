@@ -20,6 +20,7 @@ public class ClientAssertionValidationServiceImpl implements ClientAssertionVali
 
     @Override
     public boolean validateClientAssertionJWTClaims(String clientId, Payload payload) {
+        log.info("Starting client assertion JWT claims validation for clientId: {}", clientId);
         return validateIssuerAndSubject(clientId, payload) &&
                 validateAudience(payload) &&
                 validateJti(payload) &&
@@ -31,24 +32,29 @@ public class ClientAssertionValidationServiceImpl implements ClientAssertionVali
     }
 
     private boolean validateIfIssuerMatchesWithClientId(String clientId, Payload payload) {
+        log.debug("ClientAssertionValidationServiceImpl -- validateIfIssuerMatchesWithClientId -- Checking if 'iss' (issuer) matches clientId: {}", clientId);
         String iss = jwtService.getClaimFromPayload(payload, "iss");
         if (!iss.equals(clientId)) {
             log.error("VpValidationServiceImpl -- validateIssuer -- The 'iss' (issuer) claim does not match the clientId.");
             return false;
         }
+        log.info("ClientAssertionValidation -- 'iss' (issuer) claim matches clientId: {}", clientId);
         return true;
     }
 
     private boolean validateIfSubjectMatchesWithClientId(String clientId, Payload payload) {
+        log.debug("ClientAssertionValidationServiceImpl -- validateIfSubjectMatchesWithClientId -- Checking if 'sub' (subject) matches clientId: {}", clientId);
         String sub = jwtService.getClaimFromPayload(payload, "sub");
         if (!sub.equals(clientId)) {
             log.error("VpValidationServiceImpl -- validateSubject -- The 'sub' (subject) claim does not match the clientId.");
             return false;
         }
+        log.info("ClientAssertionValidation -- 'sub' (subject) claim matches clientId: {}", clientId);
         return true;
     }
 
     private boolean validateAudience(Payload payload) {
+        log.debug("ClientAssertionValidationServiceImpl -- validateAudience -- Validating 'aud' (audience) claim against expected audience");
         String aud = jwtService.getClaimFromPayload(payload, "aud");
         String expectedAudience = securityProperties.authorizationServer();
 
@@ -56,22 +62,26 @@ public class ClientAssertionValidationServiceImpl implements ClientAssertionVali
             log.error("VpValidationServiceImpl -- validateAudience -- The 'aud' (audience) claim does not match the expected audience.");
             return false;
         }
+        log.info("ClientAssertionValidation -- 'aud' (audience) matches expected audience");
         return true;
     }
 
     private boolean validateJti(Payload payload) {
+        log.debug("ClientAssertionValidationServiceImpl -- validateJti -- Validating 'jti' (JWT ID) for replay prevention");
         String jti = jwtService.getClaimFromPayload(payload, "jti");
 
         if (jtiTokenCache.isJtiPresent(jti)) {
             log.error("VpValidationServiceImpl -- validateJti -- The token with jti: {} has already been used.", jti);
             return false;
         } else {
+            log.info("ClientAssertionValidation -- Adding 'jti' '{}' to cache for future replay prevention", jti);
             jtiTokenCache.addJti(jti);
         }
         return true;
     }
 
     private boolean validateExpiration(Payload payload) {
+        log.debug("ClientAssertionValidationServiceImpl -- validateExpiration -- Validating 'exp' (expiration) claim");
         long exp = jwtService.getExpirationFromPayload(payload);
         long currentTimeInSeconds = System.currentTimeMillis() / 1000;
 
@@ -79,6 +89,7 @@ public class ClientAssertionValidationServiceImpl implements ClientAssertionVali
             log.error("VpValidationServiceImpl -- validateExpiration -- The 'exp' (expiration) claim has expired.");
             return false;
         }
+        log.info("ClientAssertionValidation -- Expiration validation successful: 'exp' (expiration) is valid");
         return true;
     }
 }

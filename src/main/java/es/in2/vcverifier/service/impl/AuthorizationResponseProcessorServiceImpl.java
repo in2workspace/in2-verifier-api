@@ -42,6 +42,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
 
     @Override
     public void processAuthResponse(String state, String vpToken){
+        log.info("Processing authorization response");
         // Validate if the state exists in the cache
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = cacheStoreForOAuth2AuthorizationRequest.get(state);
         // Remove the state from cache after retrieving the Object

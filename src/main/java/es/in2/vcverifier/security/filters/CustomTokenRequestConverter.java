@@ -60,6 +60,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
     }
 
     private Authentication handleH2MGrant(MultiValueMap<String, String> parameters) {
+        log.info("CustomTokenRequestConverter --> handleH2MGrant -- INIT");
         String code = parameters.getFirst(OAuth2ParameterNames.CODE);
         String state = parameters.getFirst(OAuth2ParameterNames.STATE);
         String clientId = parameters.getFirst(OAuth2ParameterNames.CLIENT_ID);
@@ -73,7 +74,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
 
         // Check state only if it is not null and not blank
         if (state != null && !state.isBlank() && (!authorizationCodeData.state().equals(state))) {
-                log.error("State mismatch. Expected: {}, Actual: {}", authorizationCodeData.state(), state);
+                log.error("CustomTokenRequestConverter -- handleH2MGrant -- State mismatch. Expected: {}, Actual: {}", authorizationCodeData.state(), state);
                 throw new IllegalArgumentException("Invalid state parameter");
 
         }
@@ -92,7 +93,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
     }
 
     private Authentication handleM2MGrant(MultiValueMap<String, String> parameters) {
-
+        log.info("CustomTokenRequestConverter --> handleM2MGrant -- INIT");
         Authentication clientPrincipal = SecurityContextHolder.getContext().getAuthentication();
 
         String clientId = parameters.getFirst(OAuth2ParameterNames.CLIENT_ID);
@@ -107,21 +108,21 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         LEARCredentialMachine learCredentialMachine = objectMapper.convertValue(vc, LEARCredentialMachine.class);
         List<String> types = learCredentialMachine.type();
         if (!types.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())){
-            log.error("LEARCredentialType Expected: {}", LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue());
+            log.error("CustomTokenRequestConverter -- handleM2MGrant -- LEARCredentialType Expected: {}", LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue());
             throw new InvalidCredentialTypeException("Invalid LEARCredentialType. Expected LEARCredentialMachine");
         }
 
         // Check Client Assertion JWT Claims
         boolean isValid = clientAssertionValidationService.validateClientAssertionJWTClaims(clientId,payload);
         if (!isValid) {
-            log.error("JWT claims from assertion are invalid");
+            log.error("CustomTokenRequestConverter -- handleM2MGrant -- JWT claims from assertion are invalid");
             throw new IllegalArgumentException("Invalid JWT claims from assertion");
         }
 
         // Validate VP
         isValid = vpService.validateVerifiablePresentation(vpToken);
         if (!isValid) {
-            log.error("VP Token is invalid");
+            log.error("CustomTokenRequestConverter -- handleM2MGrant -- VP Token is invalid");
             throw new IllegalArgumentException("Invalid VP Token");
         }
         log.info("VP Token validated successfully");

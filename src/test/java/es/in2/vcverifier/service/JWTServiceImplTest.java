@@ -152,7 +152,7 @@ class JWTServiceImplTest {
 
             JWTParsingException exception = assertThrows(JWTParsingException.class, () -> jwtService.parseJWT(invalidToken));
 
-            Assertions.assertEquals("Error al parsear el JWTs", exception.getMessage());
+            Assertions.assertEquals("Error parsing JWT", exception.getMessage());
         }
     }
 
