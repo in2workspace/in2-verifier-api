@@ -20,7 +20,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
-@Component
 public class CertificateUtils {
     private CertificateUtils() {
         throw new IllegalStateException("Utility class");
