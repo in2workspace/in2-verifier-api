@@ -55,14 +55,14 @@ public class CertificateValidationServiceImpl implements CertificateValidationSe
                 PublicKey publicKey = processCertificate(certBase64Str, expectedOrgId, certificateFactory);
                 if (publicKey != null) {
                     verifyJWTWithRSAKey(verifiableCredential ,publicKey);
+                    return;
                 }
+                // If the loop finishes without finding a match, throw an exception
+                throw new MismatchOrganizationIdentifierException("Organization Identifier not found in certificates.");
             }
         } catch (CertificateException e) {
             log.error("Error initializing CertificateFactory: {}", e.getMessage());
         }
-
-        // If the loop finishes without finding a match, throw an exception
-        throw new MismatchOrganizationIdentifierException("Organization Identifier not found in certificates.");
 
     }
 
