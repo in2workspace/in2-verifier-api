@@ -50,42 +50,56 @@ public class VpServiceImpl implements VpService {
 
     @Override
     public boolean validateVerifiablePresentation(String verifiablePresentation) {
+        log.info("Starting validation of Verifiable Presentation");
         try {
             // Step 1: Extract the Verifiable Credential (VC) from the VP (JWT)
+            log.debug("VpServiceImpl -- validateVerifiablePresentation -- Extracting first Verifiable Credential from Verifiable Presentation");
             SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
             Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
+            log.debug("VpServiceImpl -- validateVerifiablePresentation -- Successfully extracted the Verifiable Credential payload");
 
             // Step 2: Validate the credential id is not in the revoked list
+            log.debug("VpServiceImpl -- validateVerifiablePresentation -- Validating that the credential is not revoked");
             validateCredentialNotRevoked(payload);
+            log.info("Credential is not revoked");
 
             // Step 3: Validate the issuer
             String credentialIssuerDid = jwtService.getClaimFromPayload(payload, "iss");
+            log.debug("VpServiceImpl -- validateVerifiablePresentation -- Retrieved issuer DID from payload: {}", credentialIssuerDid);
 
             // Step 4: Extract and validate credential types
             List<String> credentialTypes = getCredentialTypes(payload);
+            log.debug("VpServiceImpl -- validateVerifiablePresentation -- Credential types extracted: {}", credentialTypes);
 
             // Step 5: Retrieve the list of issuer capabilities
+            log.debug("VpServiceImpl -- validateVerifiablePresentation -- Retrieving issuer capabilities for DID {}", credentialIssuerDid);
             List<IssuerCredentialsCapabilities> issuerCapabilitiesList = trustFrameworkService.getTrustedIssuerListData(credentialIssuerDid);
+            log.info("Retrieved issuer capabilities");
 
             // Step 6: Validate credential type against issuer capabilities
+            log.debug("VpServiceImpl -- validateVerifiablePresentation -- Validating credential types against issuer capabilities");
             validateCredentialTypeWithIssuerCapabilities(issuerCapabilitiesList, credentialTypes);
             log.info("Issuer DID {} is a trusted participant", credentialIssuerDid);
 
-            // Step 7: Extract the mandateId from the Verifiable Credential
+            // Step 7: Extract the mandatorOrganizationIdentifier from the Verifiable Credential
             String mandatorOrganizationIdentifier = extractMandatorOrganizationIdentifier(credentialTypes, payload);
+            log.debug("VpServiceImpl -- validateVerifiablePresentation -- Extracted Mandator Organization Identifier from Verifiable Credential: {}", mandatorOrganizationIdentifier);
 
             //TODO this must be validated against the participants list, not the issuer list
 
             // Validate the mandator with trusted issuer service, if is not present the trustedIssuerListService throws an exception
+            log.debug("VpServiceImpl -- validateVerifiablePresentation -- Validating Mandator Organization Identifier with trusted issuer list");
             trustFrameworkService.getTrustedIssuerListData(DID_ELSI_PREFIX + mandatorOrganizationIdentifier);
-
             log.info("Mandator OrganizationIdentifier {} is valid and allowed", mandatorOrganizationIdentifier);
 
             // Step 8: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
+            log.debug("VpServiceImpl -- validateVerifiablePresentation -- Extracting mandatee ID and validating VP's signature");
             String mandateeId = extractMandateeId(credentialTypes, payload);
             PublicKey holderPublicKey = didService.getPublicKeyFromDid(mandateeId); // Get the holder's public key in bytes
             jwtService.verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC); // Validate the VP was signed by the holder DID
+            log.info("VP's signature is valid, holder DID {} confirmed", mandateeId);
 
+            log.info("Verifiable Presentation validation completed successfully");
             return true; // All validations passed
         } catch (Exception e) {
             log.error("Error during VP validation: {}", e.getMessage());
@@ -95,6 +109,7 @@ public class VpServiceImpl implements VpService {
 
     @Override
     public Object getCredentialFromTheVerifiablePresentation(String verifiablePresentation) {
+        log.debug("VpServiceImpl -- getCredentialFromTheVerifiablePresentation -- Extracting Verifiable Credential object from Verifiable Presentation");
         // Step 1: Extract the Verifiable Credential (VC) from the VP (JWT)
         SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
         Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
@@ -103,10 +118,12 @@ public class VpServiceImpl implements VpService {
 
     @Override
     public JsonNode getCredentialFromTheVerifiablePresentationAsJsonNode(String verifiablePresentation) {
+        log.debug("VpServiceImpl -- getCredentialFromTheVerifiablePresentationAsJsonNode -- Converting Verifiable Credential to JSON Node format");
         return convertObjectToJSONNode(getCredentialFromTheVerifiablePresentation(verifiablePresentation));
     }
 
     private List<String> getCredentialTypes(Payload payload) {
+        log.debug("VpServiceImpl -- getCredentialTypes -- Extracting credential types from payload");
         // Extract and validate the credential types from the payload
         Object vcFromPayload = jwtService.getVCFromPayload(payload);
 
@@ -118,14 +135,18 @@ public class VpServiceImpl implements VpService {
                 // Check each element to ensure it's a String
                 if (typeList.stream().allMatch(String.class::isInstance)) {
                     // Safely cast the List<?> to List<String>
+                    log.info("Credential types successfully extracted: {}", typeList);
                     return typeList.stream().map(String.class::cast).toList();
                 } else {
+                    log.error("VpServiceImpl -- getCredentialTypes -- Type list elements are not all of type String.");
                     throw new InvalidCredentialTypeException("Type list elements are not all of type String.");
                 }
             } else {
+                log.error("VpServiceImpl -- getCredentialTypes -- 'type' key does not map to a List.");
                 throw new InvalidCredentialTypeException("'type' key does not map to a List.");
             }
         } else {
+            log.error("VpServiceImpl -- getCredentialTypes -- VC from payload is not a LinkedTreeMap.");
             throw new InvalidCredentialTypeException("VC from payload is not a LinkedTreeMap.");
         }
     }
@@ -140,6 +161,7 @@ public class VpServiceImpl implements VpService {
             LEARCredentialMachine learCredentialMachine = mapCredentialToLEARCredentialMachine(vcObject);
             return learCredentialMachine.credentialSubject().mandate().mandatee().id();
         } else {
+            log.error("VpServiceImpl -- extractMandateeId -- Invalid Credential Type. LEARCredentialEmployee or LEARCredentialMachine required.");
             throw new InvalidCredentialTypeException("Invalid Credential Type. LEARCredentialEmployee or LEARCredentialMachine required.");
         }
     }
@@ -175,6 +197,8 @@ public class VpServiceImpl implements VpService {
     }
 
     private void validateCredentialNotRevoked(Payload payload) {
+        log.debug("VpServiceImpl -- validateCredentialNotRevoked -- Checking if credential is in the revoked list");
+
         Object vcFromPayload = jwtService.getVCFromPayload(payload);
 
         if (vcFromPayload instanceof LinkedTreeMap<?, ?> vcObject) {
@@ -182,10 +206,12 @@ public class VpServiceImpl implements VpService {
             Object credentialId = vcObject.get("id").toString();
             List<String> revokedIds = trustFrameworkService.getRevokedCredentialIds();
             if (revokedIds.contains(credentialId)) {
+                log.error("VpServiceImpl -- validateCredentialNotRevoked -- Credential ID {} is revoked", credentialId);
                 throw new CredentialRevokedException("Credential ID " + credentialId + " is revoked.");
             }
         }
         else {
+            log.error("VpServiceImpl -- validateCredentialNotRevoked -- VC from payload is not a LinkedTreeMap.");
             throw new InvalidCredentialTypeException("VC from payload is not a LinkedTreeMap.");
         }
     }
