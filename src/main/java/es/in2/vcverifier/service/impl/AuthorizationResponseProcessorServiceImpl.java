@@ -93,6 +93,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
                 .state(state)
                 .verifiableCredential(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(decodedVpToken))
                 .oAuth2Authorization(authorization)
+                .requestedScopes(oAuth2AuthorizationRequest.getScopes())
                 .build());
 
         oAuth2AuthorizationService.save(authorization);
