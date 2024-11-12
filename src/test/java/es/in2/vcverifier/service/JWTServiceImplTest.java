@@ -404,7 +404,7 @@ class JWTServiceImplTest {
 
         when(cryptoComponent.getECKey()).thenReturn(null);
 
-        NullPointerException exception = assertThrows(NullPointerException.class, () -> jwtService.generateJWT(payload));
+        assertThrows(NullPointerException.class, () -> jwtService.generateJWT(payload));
     }
 
 
