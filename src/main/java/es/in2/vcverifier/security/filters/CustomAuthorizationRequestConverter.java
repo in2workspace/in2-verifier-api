@@ -178,7 +178,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private String buildAuthorizationRequestJwtPayload(String scope, String state) {
         // TODO this should be mapped with his presentation definition and return the presentation definition
         log.info("Building JWT payload for authorization request.");
-        if (scope.contains("openid learcredential")){
+        if (scope.contains("learcredential")){
             scope = "dome.credentials.presentation.LEARCredentialEmployee";
         }
         else {
