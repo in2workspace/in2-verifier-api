@@ -4,9 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jose.jwk.KeyUse;
+import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jose.util.JSONObjectUtils;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -24,6 +30,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigInteger;
@@ -311,6 +319,147 @@ class JWTServiceImplTest {
         assertThrows(JWTVerificationException.class, () -> jwtService.verifyJWTSignature(jwt, ecPublicKey, keyType));
 
     }
+
+    @Test
+    void verifyJWTSignature_withInvalidSignature_throwsJWTVerificationException() throws Exception {
+        String jwt = "invalid.jwt.signature";
+        KeyType keyType = KeyType.EC;
+
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
+        keyPairGenerator.initialize(new ECGenParameterSpec("secp256r1")); // P-256 curve
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+        ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
+
+        SignedJWT signedJWT = mock(SignedJWT.class);
+
+        try (MockedStatic<SignedJWT> mockedSignedJWT = mockStatic(SignedJWT.class)) {
+            mockedSignedJWT.when(() -> SignedJWT.parse(jwt)).thenReturn(signedJWT);
+
+            when(signedJWT.verify(any(JWSVerifier.class))).thenReturn(false);
+
+            JWTVerificationException exception = assertThrows(JWTVerificationException.class, () -> jwtService.verifyJWTSignature(jwt, publicKey, keyType));
+            assertEquals("JWT signature verification failed due to unexpected error: es.in2.vcverifier.exception.JWTVerificationException: Invalid JWT signature", exception.getMessage());
+        }
+    }
+
+    @Test
+    void verifyJWTSignature_whenVerifierThrowsException_shouldThrowJWTVerificationException() throws Exception {
+        // Test data
+        String jwt = "valid.jwt.token";
+        KeyType keyType = KeyType.EC;
+
+        // Generate a valid EC public key with P-256 curve
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
+        keyPairGenerator.initialize(new ECGenParameterSpec("secp256r1")); // P-256 curve
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+        ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
+
+        // Mock SignedJWT.parse to return a SignedJWT that will throw an exception during verification
+        SignedJWT signedJWT = mock(SignedJWT.class);
+
+        try (MockedStatic<SignedJWT> mockedSignedJWT = mockStatic(SignedJWT.class)) {
+            mockedSignedJWT.when(() -> SignedJWT.parse(jwt)).thenReturn(signedJWT);
+
+            // Mock the verification to throw JOSEException
+            when(signedJWT.verify(any(JWSVerifier.class))).thenThrow(new JOSEException("Verification error"));
+
+            // Execute and assert
+            JWTVerificationException exception = assertThrows(JWTVerificationException.class, () -> jwtService.verifyJWTSignature(jwt, publicKey, keyType));
+            assertTrue(exception.getMessage().contains("JWT signature verification failed due to unexpected error"));
+        }
+    }
+
+    @Test
+    void verifyJWTSignature_whenParseException_shouldThrowJWTVerificationException() throws Exception {
+        // Test data
+        String jwt = "invalid.jwt.token";
+        KeyType keyType = KeyType.EC;
+
+        // Generate a valid EC public key with P-256 curve
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
+        keyPairGenerator.initialize(new ECGenParameterSpec("secp256r1")); // P-256 curve
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+        ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
+
+        try (MockedStatic<SignedJWT> mockedSignedJWT = mockStatic(SignedJWT.class)) {
+            // Mock SignedJWT.parse to throw ParseException
+            mockedSignedJWT.when(() -> SignedJWT.parse(jwt)).thenThrow(new ParseException("Invalid token", 0));
+
+            // Execute and assert
+            JWTVerificationException exception = assertThrows(JWTVerificationException.class, () -> jwtService.verifyJWTSignature(jwt, publicKey, keyType));
+            assertTrue(exception.getMessage().contains("JWT signature verification failed due to unexpected error"));
+        }
+    }
+
+    @Test
+    void generateJWT_whenSigningFails_shouldThrowJWTCreationException() throws Exception {
+        String payload = "{\"sub\":\"1234567890\",\"name\":\"John Doe\",\"iat\":1516239022}";
+
+        // Generate a valid ECKey
+        ECKey ecJWK = new ECKeyGenerator(Curve.P_256)
+                .keyUse(KeyUse.SIGNATURE)
+                .keyID("testKeyID")
+                .generate();
+
+        // Mock cryptoComponent to return our ecJWK
+        when(cryptoComponent.getECKey()).thenReturn(ecJWK);
+
+        JsonNode mockJsonNode = mock(JsonNode.class);
+        when(objectMapper.readTree(payload)).thenReturn(mockJsonNode);
+
+        Map<String, Object> claimsMap = new HashMap<>();
+        claimsMap.put("sub", "1234567890");
+        claimsMap.put("name", "John Doe");
+        claimsMap.put("iat", 1516239022);
+        when(objectMapper.convertValue(any(JsonNode.class), any(TypeReference.class))).thenReturn(claimsMap);
+
+        // Mock ECDSASigner to throw JOSEException when sign is called
+        try (MockedConstruction<ECDSASigner> mockedECDSASigner = mockConstruction(ECDSASigner.class, (mock, context) -> {
+            doThrow(new JOSEException("Signing failed")).when(mock).sign(any(JWSHeader.class), any(byte[].class));
+        })) {
+            // Execute and assert
+            JWTCreationException exception = assertThrows(JWTCreationException.class, () -> jwtService.generateJWT(payload));
+            assertEquals("Error creating JWT", exception.getMessage());
+        }
+    }
+    @Test
+    void verifyJWTSignature_RSA_Success() throws Exception {
+        // Test data
+        String jwt = "valid.jwt.token";
+        KeyType keyType = KeyType.RSA;
+
+        // Generate a valid RSA public key
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        keyPairGenerator.initialize(2048); // Key size of 2048 bits
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+
+        // Mock SignedJWT.parse to return a valid SignedJWT
+        SignedJWT signedJWT = mock(SignedJWT.class);
+
+        try (MockedStatic<SignedJWT> mockedSignedJWT = mockStatic(SignedJWT.class)) {
+            mockedSignedJWT.when(() -> SignedJWT.parse(jwt)).thenReturn(signedJWT);
+
+            // Mock the verification to return true
+            when(signedJWT.verify(any(JWSVerifier.class))).thenReturn(true);
+
+            // Execute and assert (should not throw an exception)
+            jwtService.verifyJWTSignature(jwt, publicKey, keyType);
+
+            // Verify that signedJWT.verify(verifier) was called
+            verify(signedJWT).verify(any(JWSVerifier.class));
+        }
+    }
+
+    @Test
+    void generateJWT_whenECKeyIsNull_shouldThrowNullPointerException() {
+        String payload = "{\"sub\":\"1234567890\",\"name\":\"John Doe\",\"iat\":1516239022}";
+
+        when(cryptoComponent.getECKey()).thenReturn(null);
+
+        NullPointerException exception = assertThrows(NullPointerException.class, () -> jwtService.generateJWT(payload));
+    }
+
 
     private PrivateKey getPrivateKeyFromJson(String json) throws Exception {
         JSONObject jsonKey = new JSONObject(json);

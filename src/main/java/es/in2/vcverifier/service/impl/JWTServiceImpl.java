@@ -95,7 +95,7 @@ public class JWTServiceImpl implements JWTService {
 
         } catch (Exception e) {
             log.error("Exception during JWT signature verification", e);
-            throw new JWTVerificationException("JWT signature verification failed due to unexpected error" + e);
+            throw new JWTVerificationException("JWT signature verification failed due to unexpected error: " + e);
         }
     }
 
@@ -120,8 +120,8 @@ public class JWTServiceImpl implements JWTService {
                 defCriticalHeaders.add("sigT");
 
                 // Create a policy for critical header parameters and set the deferred ones
-                CriticalHeaderParamsDeferral critPolicy = new CriticalHeaderParamsDeferral();
-                critPolicy.setDeferredCriticalHeaderParams(defCriticalHeaders);
+                CriticalHeaderParamsDeferral criticalPolicy = new CriticalHeaderParamsDeferral();
+                criticalPolicy.setDeferredCriticalHeaderParams(defCriticalHeaders);
 
                 yield new RSASSAVerifier((RSAPublicKey) publicKey, defCriticalHeaders);
             }
