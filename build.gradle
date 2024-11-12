@@ -49,7 +49,8 @@ sonar {
 				"src/main/java/es/in2/vcverifier/VcVerifierApplication.java, " +
 						"src/main/java/es/in2/vcverifier/service/impl/ClientAssertionValidationServiceImpl.java, " +
 						"src/main/java/es/in2/vcverifier/security/filters/CustomAuthorizationRequestConverter.java, " +
-						"src/main/java/es/in2/vcverifier/service/impl/TrustFrameworkServiceImpl.java, "
+						"src/main/java/es/in2/vcverifier/service/impl/TrustFrameworkServiceImpl.java, " +
+						"src/main/java/es/in2/vcverifier/service/impl/CertificateValidationServiceImpl.java"
 	}
 }
 
@@ -124,6 +125,7 @@ tasks.jacocoTestReport {
 				"**/AuthorizationResponseProcessorServiceImpl.class",
 				"**/CustomAuthorizationRequestConverter.class",
 				"**/TrustFrameworkServiceImpl.class",
+				"**/CertificateValidationServiceImpl.class"
 		])
 	}))
 }

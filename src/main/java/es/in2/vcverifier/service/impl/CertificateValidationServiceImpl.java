@@ -1,9 +1,16 @@
-package es.in2.vcverifier.util;
+package es.in2.vcverifier.service.impl;
 
+import com.nimbusds.jose.JWSVerifier;
+import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jose.crypto.impl.CriticalHeaderParamsDeferral;
+import com.nimbusds.jwt.SignedJWT;
+import es.in2.vcverifier.exception.JWTVerificationException;
 import es.in2.vcverifier.exception.MismatchOrganizationIdentifierException;
+import es.in2.vcverifier.service.CertificateValidationService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.*;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
@@ -13,19 +20,17 @@ import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
+import java.security.interfaces.RSAPublicKey;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
-public class CertificateUtils {
-    private CertificateUtils() {
-        throw new IllegalStateException("Utility class");
-    }
-
-    public static PublicKey extractAndVerifyCertificate(Map<String, Object> vcHeader, String expectedOrgId) {
+@Service
+@RequiredArgsConstructor
+public class CertificateValidationServiceImpl implements CertificateValidationService {
+    @Override
+    public void extractAndVerifyCertificate(String verifiableCredential, Map<String, Object> vcHeader, String expectedOrgId) {
         // Retrieve the x5c claim (certificate chain)
         Object x5cObj = vcHeader.get("x5c");
 
@@ -49,7 +54,7 @@ public class CertificateUtils {
                 // Use the extracted method to process the certificate
                 PublicKey publicKey = processCertificate(certBase64Str, expectedOrgId, certificateFactory);
                 if (publicKey != null) {
-                    return publicKey; // Matching certificate found
+                    verifyJWTWithRSAKey(verifiableCredential ,publicKey);
                 }
             }
         } catch (CertificateException e) {
@@ -58,6 +63,7 @@ public class CertificateUtils {
 
         // If the loop finishes without finding a match, throw an exception
         throw new MismatchOrganizationIdentifierException("Organization Identifier not found in certificates.");
+
     }
 
     private static PublicKey processCertificate(String certBase64Str, String expectedOrgId, CertificateFactory certificateFactory) {
@@ -158,7 +164,36 @@ public class CertificateUtils {
         }
         return data;
     }
+
+    private void verifyJWTWithRSAKey(String jwt, PublicKey publicKey) {
+        try {
+            // Ensure the provided key is of the correct type
+            if (!(publicKey instanceof RSAPublicKey)) {
+                throw new IllegalArgumentException("Invalid key type for RSA verification");
+            }
+
+            // Parse the JWT
+            SignedJWT signedJWT = SignedJWT.parse(jwt);
+
+            // Define critical headers to defer
+            Set<String> defCriticalHeaders = new HashSet<>();
+            defCriticalHeaders.add("sigT");
+
+            // Create a policy for critical header parameters and set the deferred ones
+            CriticalHeaderParamsDeferral criticalPolicy = new CriticalHeaderParamsDeferral();
+            criticalPolicy.setDeferredCriticalHeaderParams(defCriticalHeaders);
+
+            // Create the RSA verifier
+            JWSVerifier verifier = new RSASSAVerifier((RSAPublicKey) publicKey, defCriticalHeaders);
+
+            // Verify the signature
+            if (!signedJWT.verify(verifier)) {
+                throw new JWTVerificationException("Invalid JWT signature for RSA key");
+            }
+
+        } catch (Exception e) {
+            log.error("Exception during JWT signature verification with RSA key", e);
+            throw new JWTVerificationException("JWT signature verification failed due to unexpected error: " + e);
+        }
+    }
 }
-
-
-

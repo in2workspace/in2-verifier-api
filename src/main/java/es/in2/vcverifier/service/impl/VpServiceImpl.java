@@ -8,14 +8,9 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.exception.*;
 import es.in2.vcverifier.model.credentials.employee.LEARCredentialEmployee;
 import es.in2.vcverifier.model.credentials.machine.LEARCredentialMachine;
-import es.in2.vcverifier.model.enums.KeyType;
 import es.in2.vcverifier.model.enums.LEARCredentialType;
 import es.in2.vcverifier.model.issuer.IssuerCredentialsCapabilities;
-import es.in2.vcverifier.service.DIDService;
-import es.in2.vcverifier.service.JWTService;
-import es.in2.vcverifier.service.TrustFrameworkService;
-import es.in2.vcverifier.service.VpService;
-import es.in2.vcverifier.util.CertificateUtils;
+import es.in2.vcverifier.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
@@ -47,6 +42,7 @@ public class VpServiceImpl implements VpService {
     private final ObjectMapper objectMapper;
     private final TrustFrameworkService trustFrameworkService;
     private final DIDService didService;
+    private final CertificateValidationService certificateValidationService;
 
 
     @Override
@@ -72,17 +68,15 @@ public class VpServiceImpl implements VpService {
             validateCredentialTypeWithIssuerCapabilities(issuerCapabilitiesList, credentialTypes);
             log.info("Issuer DID {} is a trusted participant", credentialIssuerDid);
 
+            // TODO remove step 7 after the advanced certificate validation component is implemented
             // Step 7: Verify the signature and the organizationId of the credential signature
             Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
-            PublicKey certPubKey = CertificateUtils.extractAndVerifyCertificate(vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
-
-            jwtService.verifyJWTSignature(jwtCredential.serialize(), certPubKey, KeyType.RSA); // Validate the VC was signed by the issuer's public key
+            certificateValidationService.extractAndVerifyCertificate(jwtCredential.serialize(),vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
 
             // Step 8: Extract the mandateId from the Verifiable Credential
             String mandatorOrganizationIdentifier = extractMandatorOrganizationIdentifier(credentialTypes, payload);
 
             //TODO this must be validated against the participants list, not the issuer list
-
             // Validate the mandator with trusted issuer service, if is not present the trustedIssuerListService throws an exception
             trustFrameworkService.getTrustedIssuerListData(DID_ELSI_PREFIX + mandatorOrganizationIdentifier);
 
@@ -91,7 +85,7 @@ public class VpServiceImpl implements VpService {
             // Step 9: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
             String mandateeId = extractMandateeId(credentialTypes, payload);
             PublicKey holderPublicKey = didService.getPublicKeyFromDid(mandateeId); // Get the holder's public key in bytes
-            jwtService.verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC); // Validate the VP was signed by the holder DID
+            jwtService.verifyJWTWithECKey(verifiablePresentation, holderPublicKey); // Validate the VP was signed by the holder DID
 
             return true; // All validations passed
         } catch (Exception e) {

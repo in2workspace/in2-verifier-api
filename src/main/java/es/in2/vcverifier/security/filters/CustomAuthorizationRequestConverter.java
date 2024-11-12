@@ -10,7 +10,6 @@ import es.in2.vcverifier.exception.RequestMismatchException;
 import es.in2.vcverifier.exception.RequestObjectRetrievalException;
 import es.in2.vcverifier.exception.UnsupportedScopeException;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
-import es.in2.vcverifier.model.enums.KeyType;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -115,7 +114,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
             // Use DIDService to get the public key bytes
             PublicKey publicKey = didService.getPublicKeyFromDid(clientId);
             // Use JWTService to verify the JWT signature
-            jwtService.verifyJWTSignature(jwt, publicKey, KeyType.EC);
+            jwtService.verifyJWTWithECKey(jwt, publicKey);
             String signedAuthRequest = jwtService.generateJWT(buildAuthorizationRequestJwtPayload(scope, state));
             cacheStoreForOAuth2AuthorizationRequest.add(state, OAuth2AuthorizationRequest.authorizationCode()
                     .state(state)

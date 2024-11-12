@@ -14,11 +14,9 @@ import es.in2.vcverifier.model.credentials.employee.CredentialSubjectLCEmployee;
 import es.in2.vcverifier.model.credentials.employee.LEARCredentialEmployee;
 import es.in2.vcverifier.model.credentials.employee.MandateLCEmployee;
 import es.in2.vcverifier.model.credentials.employee.MandateeLCEmployee;
-import es.in2.vcverifier.model.enums.KeyType;
 import es.in2.vcverifier.model.issuer.IssuerCredentialsCapabilities;
 import es.in2.vcverifier.model.issuer.TimeRange;
 import es.in2.vcverifier.service.impl.VpServiceImpl;
-import es.in2.vcverifier.util.CertificateUtils;
 import org.assertj.core.api.Assertions;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
@@ -33,7 +31,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.time.Instant;
 import java.util.Collections;
@@ -57,6 +54,8 @@ class VpServiceImplTest {
 
     @Mock
     private DIDService didService;
+    @Mock
+    private CertificateValidationService certificateValidationService;
 
     @Mock
     private ObjectMapper objectMapper;
@@ -266,8 +265,7 @@ class VpServiceImplTest {
 
         // Step 1: Parse the VP JWT
         SignedJWT vpSignedJWT = mock(SignedJWT.class);
-        try (MockedStatic<SignedJWT> mockedSignedJWT = mockStatic(SignedJWT.class);
-             MockedStatic<CertificateUtils> mockedCertificateUtils = mockStatic(CertificateUtils.class)) {
+        try (MockedStatic<SignedJWT> mockedSignedJWT = mockStatic(SignedJWT.class)) {
 
             mockedSignedJWT.when(() -> SignedJWT.parse(verifiablePresentation)).thenReturn(vpSignedJWT);
 
@@ -321,13 +319,10 @@ class VpServiceImplTest {
             when(jwtCredential.getHeader()).thenReturn(header);
             when(header.toJSONObject()).thenReturn(vcHeader);
 
-            // Mock CertificateUtils.extractAndVerifyCertificate
-            PublicKey certPubKey = generateRSAPublicKey();
-            mockedCertificateUtils.when(() -> CertificateUtils.extractAndVerifyCertificate(eq(vcHeader), anyString())).thenReturn(certPubKey);
 
             when(jwtCredential.serialize()).thenReturn(vcJwt);
-            // Mock jwtService.verifyJWTSignature for the Verifiable Credential
-            doNothing().when(jwtService).verifyJWTSignature(any(), eq(certPubKey), eq(KeyType.RSA));
+
+            doNothing().when(certificateValidationService).extractAndVerifyCertificate(any(), eq(vcHeader),eq("issuer123"));
 
             // Step 8: Mock the mapping to LEARCredentialEmployee
             LEARCredentialEmployee learCredentialEmployee = mock(LEARCredentialEmployee.class);
@@ -353,7 +348,7 @@ class VpServiceImplTest {
             when(didService.getPublicKeyFromDid("did:example:mandatee123")).thenReturn(holderPublicKey);
 
             // Mock jwtService.verifyJWTSignature for the Verifiable Presentation
-            doNothing().when(jwtService).verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC);
+            doNothing().when(jwtService).verifyJWTWithECKey(verifiablePresentation, holderPublicKey);
 
             // When
             boolean result = vpServiceImpl.validateVerifiablePresentation(verifiablePresentation);
@@ -362,16 +357,10 @@ class VpServiceImplTest {
             assertTrue(result);
 
             // Verify interactions
-            verify(jwtService).verifyJWTSignature(verifiablePresentation, holderPublicKey, KeyType.EC);
-            verify(jwtService).verifyJWTSignature(vcJwt, certPubKey, KeyType.RSA);
+            verify(jwtService).verifyJWTWithECKey(verifiablePresentation, holderPublicKey);
         }
     }
 
-    private RSAPublicKey generateRSAPublicKey() throws NoSuchAlgorithmException {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-        keyPairGenerator.initialize(2048);
-        return (RSAPublicKey) keyPairGenerator.generateKeyPair().getPublic();
-    }
     private ECPublicKey generateECPublicKey() throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
         keyPairGenerator.initialize(new ECGenParameterSpec("secp256r1"));
