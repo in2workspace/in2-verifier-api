@@ -10,7 +10,7 @@ plugins {
 }
 
 group = 'es.in2'
-version = '1.0.3'
+version = '1.0.4'
 
 java {
 	toolchain {
@@ -49,7 +49,9 @@ sonar {
 				"src/main/java/es/in2/vcverifier/VcVerifierApplication.java, " +
 						"src/main/java/es/in2/vcverifier/service/impl/ClientAssertionValidationServiceImpl.java, " +
 						"src/main/java/es/in2/vcverifier/security/filters/CustomAuthorizationRequestConverter.java, " +
-						"src/main/java/es/in2/vcverifier/service/impl/TrustFrameworkServiceImpl.java, "
+						"src/main/java/es/in2/vcverifier/service/impl/TrustFrameworkServiceImpl.java, " +
+						"src/main/java/es/in2/vcverifier/service/impl/CertificateValidationServiceImpl.java, " +
+						"src/main/java/es/in2/vcverifier/exception/MismatchOrganizationIdentifierException.java"
 	}
 }
 
@@ -124,6 +126,8 @@ tasks.jacocoTestReport {
 				"**/AuthorizationResponseProcessorServiceImpl.class",
 				"**/CustomAuthorizationRequestConverter.class",
 				"**/TrustFrameworkServiceImpl.class",
+				"**/CertificateValidationServiceImpl.class",
+				"**/MismatchOrganizationIdentifierException.class",
 		])
 	}))
 }
