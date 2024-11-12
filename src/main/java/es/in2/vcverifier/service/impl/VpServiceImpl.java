@@ -80,8 +80,9 @@ public class VpServiceImpl implements VpService {
 
             // TODO remove step 7 after the advanced certificate validation component is implemented
             // Step 7: Verify the signature and the organizationId of the credential signature
-            Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
-            certificateValidationService.extractAndVerifyCertificate(jwtCredential.serialize(),vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
+            // FIXME: comented. need to be implemented when all users has a valid credentials
+            // Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
+            // certificateValidationService.extractAndVerifyCertificate(jwtCredential.serialize(),vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
 
             // Step 8: Extract the mandateId from the Verifiable Credential
             String mandatorOrganizationIdentifier = extractMandatorOrganizationIdentifier(credentialTypes, payload);
