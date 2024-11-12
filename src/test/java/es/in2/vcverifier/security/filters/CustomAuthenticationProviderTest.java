@@ -2,10 +2,11 @@ package es.in2.vcverifier.security.filters;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.jose.jwk.ECKey;
 import es.in2.vcverifier.config.properties.SecurityProperties;
-import es.in2.vcverifier.component.CryptoComponent;
-import es.in2.vcverifier.model.credentials.employee.*;
+import es.in2.vcverifier.model.credentials.employee.CredentialSubjectLCEmployee;
+import es.in2.vcverifier.model.credentials.employee.LEARCredentialEmployee;
+import es.in2.vcverifier.model.credentials.employee.MandateLCEmployee;
+import es.in2.vcverifier.model.credentials.employee.MandateeLCEmployee;
 import es.in2.vcverifier.model.credentials.machine.CredentialSubjectLCMachine;
 import es.in2.vcverifier.model.credentials.machine.LEARCredentialMachine;
 import es.in2.vcverifier.model.credentials.machine.MandateLCMachine;
@@ -37,10 +38,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class CustomAuthenticationProviderTest {
-
-    @Mock
-    private CryptoComponent cryptoComponent;
+class CustomAuthenticationProviderTest {
 
     @Mock
     private JWTService jwtService;
@@ -64,6 +62,7 @@ public class CustomAuthenticationProviderTest {
         additionalParameters.put("vc", new HashMap<>());
         additionalParameters.put("client_id", clientId);
         additionalParameters.put("audience", "test-audience");
+        additionalParameters.put("nonce", "test-nonce");
 
         OAuth2AuthorizationCodeAuthenticationToken auth = mock(OAuth2AuthorizationCodeAuthenticationToken.class);
         when(auth.getAdditionalParameters()).thenReturn(additionalParameters);
@@ -71,9 +70,14 @@ public class CustomAuthenticationProviderTest {
         RegisteredClient registeredClient = mock(RegisteredClient.class);
         when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
         when(securityProperties.token()).thenReturn(mock(SecurityProperties.TokenProperties.class));
+
         when(securityProperties.token().accessToken()).thenReturn(mock(SecurityProperties.TokenProperties.AccessTokenProperties.class));
         when(securityProperties.token().accessToken().expiration()).thenReturn("3600");
         when(securityProperties.token().accessToken().cronUnit()).thenReturn("SECONDS");
+
+        when(securityProperties.token().idToken()).thenReturn(mock(SecurityProperties.TokenProperties.IdTokenProperties.class));
+        when(securityProperties.token().idToken().expiration()).thenReturn("3600");
+        when(securityProperties.token().idToken().cronUnit()).thenReturn("SECONDS");
 
         JsonNode jsonNode = mock(JsonNode.class);
         when(objectMapper.convertValue(additionalParameters.get("vc"), JsonNode.class)).thenReturn(jsonNode);
@@ -83,9 +87,6 @@ public class CustomAuthenticationProviderTest {
 
         String jwtToken = "mock-jwt-token";
         when(jwtService.generateJWT(any())).thenReturn(jwtToken);
-
-        when(cryptoComponent.getECKey()).thenReturn(mock(ECKey.class));
-        when(cryptoComponent.getECKey().getKeyID()).thenReturn("mock-key-id");
 
         Authentication result = customAuthenticationProvider.authenticate(auth);
 
@@ -110,10 +111,16 @@ public class CustomAuthenticationProviderTest {
 
         RegisteredClient registeredClient = mock(RegisteredClient.class);
         when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+
         when(securityProperties.token()).thenReturn(mock(SecurityProperties.TokenProperties.class));
+
         when(securityProperties.token().accessToken()).thenReturn(mock(SecurityProperties.TokenProperties.AccessTokenProperties.class));
         when(securityProperties.token().accessToken().expiration()).thenReturn("3600");
         when(securityProperties.token().accessToken().cronUnit()).thenReturn("SECONDS");
+
+        when(securityProperties.token().idToken()).thenReturn(mock(SecurityProperties.TokenProperties.IdTokenProperties.class));
+        when(securityProperties.token().idToken().expiration()).thenReturn("3600");
+        when(securityProperties.token().idToken().cronUnit()).thenReturn("SECONDS");
 
         JsonNode jsonNode = mock(JsonNode.class);
         when(objectMapper.convertValue(additionalParameters.get("vc"), JsonNode.class)).thenReturn(jsonNode);
@@ -123,9 +130,6 @@ public class CustomAuthenticationProviderTest {
 
         String jwtToken = "mock-jwt-token";
         when(jwtService.generateJWT(any())).thenReturn(jwtToken);
-
-        when(cryptoComponent.getECKey()).thenReturn(mock(ECKey.class));
-        when(cryptoComponent.getECKey().getKeyID()).thenReturn("mock-key-id");
 
         Authentication result = customAuthenticationProvider.authenticate(auth);
 

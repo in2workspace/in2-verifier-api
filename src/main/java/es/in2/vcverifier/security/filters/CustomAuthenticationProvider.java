@@ -81,8 +81,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 expirationTime
         );
 
-        Set<String> requestedScopes = new HashSet<>(Arrays.asList(authentication.getAdditionalParameters().get(OAuth2ParameterNames.SCOPE).toString().split(" ")));
-        String idToken = generateIdToken(credential, subject, audience, requestedScopes);
+        String idToken = generateIdToken(credential, subject, audience, authentication.getAdditionalParameters());
 
         Map<String, Object> additionalParameters = new HashMap<>();
         additionalParameters.put("id_token", idToken);
@@ -178,10 +177,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         return jwtService.generateJWT(payload.toString());
     }
 
-    private String generateIdToken(Object verifiableCredential, String subject, String audience, Set<String> requestedScopes) {
-        // Extract additional claims from the verifiable credential
-        Map<String, Object> additionalClaims = extractClaimsFromVerifiableCredential(verifiableCredential, requestedScopes);
-
+    private String generateIdToken(Object verifiableCredential, String subject, String audience, Map<String, Object> additionalParameters) {
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(
                 Long.parseLong(securityProperties.token().idToken().expiration()),
@@ -209,7 +205,13 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .claim("vc", verifiableCredentialJson);
 
         // Add each additional claim to the ID token
-        additionalClaims.forEach(idTokenClaimsBuilder::claim);
+        // Extract additional claims from the verifiable credential
+        Map<String, Object> additionalClaims;
+
+        if (additionalParameters.containsKey(OAuth2ParameterNames.SCOPE)) {
+            additionalClaims = extractClaimsFromVerifiableCredential(verifiableCredential, additionalParameters);
+            additionalClaims.forEach(idTokenClaimsBuilder::claim);
+        }
 
         JWTClaimsSet idTokenClaims = idTokenClaimsBuilder.build();
 
@@ -217,7 +219,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         return jwtService.generateJWT(idTokenClaims.toString());
     }
 
-    private Map<String, Object> extractClaimsFromVerifiableCredential(Object verifiableCredential, Set<String> requestedScopes) {
+    private Map<String, Object> extractClaimsFromVerifiableCredential(Object verifiableCredential, Map<String, Object> additionalParameters) {
+        Set<String> requestedScopes = new HashSet<>(Arrays.asList(additionalParameters.get(OAuth2ParameterNames.SCOPE).toString().split(" ")));
         Map<String, Object> claims = new HashMap<>();
 
         if (verifiableCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
