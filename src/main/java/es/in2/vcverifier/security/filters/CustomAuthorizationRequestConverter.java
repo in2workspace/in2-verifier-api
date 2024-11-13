@@ -162,10 +162,8 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         String requestClientId = request.getParameter(CLIENT_ID);
         String requestScope = request.getParameter(SCOPE);
         Payload payload = signedJwt.getPayload();
-
         String jwtClientId = jwtService.getClaimFromPayload(payload, CLIENT_ID);
         String jwtScope = jwtService.getClaimFromPayload(payload, SCOPE);
-
         if (!requestClientId.equals(jwtClientId) || !requestScope.equals(jwtScope)) {
             throw new RequestMismatchException("OAuth 2.0 parameters do not match the JWT claims.");
         }
@@ -224,12 +222,8 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private String buildAuthorizationRequestJwtPayload(String scope, String state) {
         // TODO this should be mapped with his presentation definition and return the presentation definition
         // Check and map the scope based on the specific requirement
-        if (scope.contains("learcredential")) {
-            scope = "dome.credentials.presentation.LEARCredentialEmployee";
-        } else {
-            throw new UnsupportedScopeException("Unsupported scope: " + scope);
-        }
-
+        checkAuthorizationRequestScope(scope);
+        
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
 
@@ -242,7 +236,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .claim("client_id_scheme", "did")
                 .claim(NONCE, generateNonce())
                 .claim("response_uri", securityProperties.authorizationServer() + AUTHORIZATION_RESPONSE_ENDPOINT)
-                .claim(OAuth2ParameterNames.SCOPE, scope)
+                .claim(OAuth2ParameterNames.SCOPE, "dome.credentials.presentation.LEARCredentialEmployee")
                 .claim(OAuth2ParameterNames.STATE, state)
                 .claim(OAuth2ParameterNames.RESPONSE_TYPE, "vp_token")
                 .claim("response_mode", "direct_post")
@@ -250,6 +244,12 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .build();
 
         return payload.toString();
+    }
+
+    private void checkAuthorizationRequestScope(String scope) {
+        if (!scope.contains("learcredential")) {
+            throw new UnsupportedScopeException("Unsupported scope: " + scope);
+        }
     }
 
     private String generateOpenId4VpUrl(String nonce) {
