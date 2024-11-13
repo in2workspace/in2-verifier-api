@@ -3,6 +3,7 @@ package es.in2.vcverifier.component;
 import com.nimbusds.jose.crypto.bc.BouncyCastleProviderSingleton;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jose.jwk.KeyUse;
 import es.in2.vcverifier.config.CryptoConfig;
 import es.in2.vcverifier.exception.DidKeyCreationException;
 import es.in2.vcverifier.exception.ECKeyCreationException;
@@ -57,6 +58,7 @@ public class CryptoComponent {
             return new ECKey.Builder(Curve.P_256, publicKey)
                     .privateKey(privateKey)
                     .keyID(generateDidKey(publicKey))
+                    .keyUse(KeyUse.SIGNATURE)
                     .build();
         } catch (Exception e) {
             throw new ECKeyCreationException("Error creating JWK source for secp256r1: " + e);
