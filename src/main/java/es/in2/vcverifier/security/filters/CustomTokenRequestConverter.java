@@ -87,6 +87,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         Map<String, Object> additionalParameters = new HashMap<>();
         additionalParameters.put(OAuth2ParameterNames.CLIENT_ID,clientId);
         additionalParameters.put("vc",authorizationCodeData.verifiableCredential());
+        additionalParameters.put(OAuth2ParameterNames.SCOPE, String.join(" ", authorizationCodeData.requestedScopes()));
         additionalParameters.put(OAuth2ParameterNames.AUDIENCE,clientId);
 
         return new OAuth2AuthorizationCodeAuthenticationToken(code, clientPrincipal, null,additionalParameters);

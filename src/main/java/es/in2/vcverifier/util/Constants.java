@@ -11,6 +11,7 @@ public class Constants {
     public static final String SCOPE = "scope";
     public static final String AUTHORIZATION_RESPONSE_ENDPOINT= "/oid4vp/auth-response";
     public static final String DID_ELSI_PREFIX = "did:elsi:";
+    public static final String MINUTES = "MINUTES";
 
     public static final long MSB = 0x80L;
     public static final long MSBALL = 0xFFFFFF80L;

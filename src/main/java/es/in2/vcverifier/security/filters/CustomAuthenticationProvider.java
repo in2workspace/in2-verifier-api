@@ -1,11 +1,12 @@
 package es.in2.vcverifier.security.filters;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import es.in2.vcverifier.config.properties.SecurityProperties;
-import es.in2.vcverifier.component.CryptoComponent;
 import es.in2.vcverifier.exception.InvalidCredentialTypeException;
+import es.in2.vcverifier.exception.JsonConversionException;
 import es.in2.vcverifier.model.credentials.employee.LEARCredentialEmployee;
 import es.in2.vcverifier.model.credentials.machine.LEARCredentialMachine;
 import es.in2.vcverifier.service.JWTService;
@@ -27,14 +28,11 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @RequiredArgsConstructor
 public class CustomAuthenticationProvider implements AuthenticationProvider {
-    private final CryptoComponent cryptoComponent;
     private final JWTService jwtService;
     private final RegisteredClientRepository registeredClientRepository;
     private final SecurityProperties securityProperties;
@@ -82,8 +80,14 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 issueTime,
                 expirationTime
         );
+
+        String idToken = generateIdToken(credential, subject, audience, authentication.getAdditionalParameters());
+
+        Map<String, Object> additionalParameters = new HashMap<>();
+        additionalParameters.put("id_token", idToken);
+
         log.info("Authorization grant successfully processed");
-        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken);
+        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken, null,additionalParameters);
     }
 
     private String getClientId(OAuth2AuthorizationGrantAuthenticationToken authentication) {
@@ -161,18 +165,82 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     private String generateAccessTokenWithVc(Object verifiableCredential, Instant issueTime, Instant expirationTime, String subject, String audience) {
         log.info("Generating access token with verifiableCredential");
         JWTClaimsSet payload = new JWTClaimsSet.Builder()
-                .issuer(cryptoComponent.getECKey().getKeyID())
+                .issuer(securityProperties.authorizationServer())
                 .audience(audience) // Utiliza el valor de "audience" calculado
                 .subject(subject)
                 .jwtID(UUID.randomUUID().toString())
                 .issueTime(Date.from(issueTime))
                 .expirationTime(Date.from(expirationTime))
                 .claim(OAuth2ParameterNames.SCOPE, getScope(verifiableCredential))
-                .claim(OAuth2ParameterNames.CLIENT_ID, cryptoComponent.getECKey().getKeyID())
                 .claim("verifiableCredential", verifiableCredential)
                 .build();
         return jwtService.generateJWT(payload.toString());
     }
+
+    private String generateIdToken(Object verifiableCredential, String subject, String audience, Map<String, Object> additionalParameters) {
+        Instant issueTime = Instant.now();
+        Instant expirationTime = issueTime.plus(
+                Long.parseLong(securityProperties.token().idToken().expiration()),
+                ChronoUnit.valueOf(securityProperties.token().idToken().cronUnit())
+        );
+
+        // Convert the VerifiableCredential to a JSON string
+        String verifiableCredentialJson;
+        try {
+            verifiableCredentialJson = objectMapper.writeValueAsString(verifiableCredential);
+        } catch (JsonProcessingException e) {
+            throw new JsonConversionException("Error converting Verifiable Credential to JSON: " + e.getMessage());
+        }
+
+        // Create the JWT payload (claims) for the ID token
+        JWTClaimsSet.Builder idTokenClaimsBuilder = new JWTClaimsSet.Builder()
+                .subject(subject)
+                .issuer(securityProperties.authorizationServer())
+                .audience(audience)
+                .issueTime(Date.from(issueTime))
+                .expirationTime(Date.from(expirationTime))
+                .claim("auth_time", Date.from(issueTime))
+                .claim("acr", "0")
+                // Here is used in json format string to be able to save the VC in json format as Keycloak user attribute
+                .claim("vc", verifiableCredentialJson);
+
+        // Add each additional claim to the ID token
+        // Extract additional claims from the verifiable credential
+        Map<String, Object> additionalClaims;
+
+        if (additionalParameters.containsKey(OAuth2ParameterNames.SCOPE)) {
+            additionalClaims = extractClaimsFromVerifiableCredential(verifiableCredential, additionalParameters);
+            additionalClaims.forEach(idTokenClaimsBuilder::claim);
+        }
+
+        JWTClaimsSet idTokenClaims = idTokenClaimsBuilder.build();
+
+        // Use JWTService to generate the ID Token (JWT)
+        return jwtService.generateJWT(idTokenClaims.toString());
+    }
+
+    private Map<String, Object> extractClaimsFromVerifiableCredential(Object verifiableCredential, Map<String, Object> additionalParameters) {
+        Set<String> requestedScopes = new HashSet<>(Arrays.asList(additionalParameters.get(OAuth2ParameterNames.SCOPE).toString().split(" ")));
+        Map<String, Object> claims = new HashMap<>();
+
+        if (verifiableCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
+            // Check if "profile" scope is requested and add profile-related claims
+            if (requestedScopes.contains("profile")) {
+                String name = learCredentialEmployee.credentialSubject().mandate().mandatee().firstName() + " " + learCredentialEmployee.credentialSubject().mandate().mandatee().lastName();
+                claims.put("name", name);
+                claims.put("given_name", learCredentialEmployee.credentialSubject().mandate().mandatee().firstName());
+                claims.put("family_name", learCredentialEmployee.credentialSubject().mandate().mandatee().lastName());
+            }
+
+            // Check if "email" scope is requested and add email-related claims
+            if (requestedScopes.contains("email")) {
+                claims.put("email", learCredentialEmployee.credentialSubject().mandate().mandatee().email());
+                claims.put("email_verified", true);
+            }
+        }
+        return claims;
+    }
+
 
     private String getScope(Object verifiableCredential){
         if (verifiableCredential instanceof LEARCredentialEmployee) {

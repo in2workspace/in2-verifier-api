@@ -55,6 +55,9 @@ security:
     accessToken:
       expiration: "1"
       cronUnit: "DAYS"
+    idToken:
+      expiration: "5"
+      cronUnit: "MINUTES"
 
 trustFramework:
   trustedIssuerList:
