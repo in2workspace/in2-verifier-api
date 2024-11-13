@@ -76,6 +76,11 @@ dependencies {
 	implementation 'org.json:json:20230227'
 	// QR GENERATOR
 	implementation 'com.github.kenglxn.QRGen:javase:3.0.1'
+	// Persistence
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	runtimeOnly 'org.postgresql:postgresql'
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
 	// DevTools
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

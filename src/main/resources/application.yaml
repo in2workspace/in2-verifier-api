@@ -1,3 +1,28 @@
+spring:
+  application:
+    name: IN2 Verifier
+  jpa:
+    database: POSTGRESQL
+    show-sql: true
+    hibernate:
+      ddl-auto: none #update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  datasource:
+    url: jdbc:postgresql://localhost:5432/in2?currentSchema=verifier
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    url: jdbc:postgresql://localhost:5432/in2?currentSchema=verifier
+    locations: classpath:db/migration
+  web:
+    resources:
+      static-locations:
+        - classpath:/static/
+        - classpath:/resources/
+
 server:
   port: 9000
 
@@ -8,16 +33,6 @@ logging:
     org.springframework.web.filter: TRACE
     es.in2: info
 
-spring:
-  application:
-    name: VC Verifier
-  web:
-    resources:
-      static-locations:
-        - classpath:/static/
-        - classpath:/resources/
-
-# Spring Management Configuration - Actuator
 management:
   endpoints:
     enabled-by-default: false
@@ -44,34 +59,3 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
-
-security:
-  authorizationServer: "http://localhost:9000"
-  loginCode:
-    expirationProperties:
-      expiration: "5"
-      cronUnit: "MINUTES"
-  token:
-    accessToken:
-      expiration: "5"
-      cronUnit: "MINUTES"
-
-
-trustFramework:
-  trustedIssuerList:
-    uri: "http://localhost:8085/v4/issuers/"
-  clientsRepository:
-    uri: "https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml"
-  revocationList:
-    uri: "https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/revoked_credential_list.yaml"
-
-crypto:
-  privateKey: "73e509a7681d4a395b1ced75681c4dc4020dbab02da868512276dd766733d5b5" # for test purposes
-
-verifier:
-  ui:
-    login:
-      uris:
-        onboardingUri:
-        supportUri:
-        walletUri:

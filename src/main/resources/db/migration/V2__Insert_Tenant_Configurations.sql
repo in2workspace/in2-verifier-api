@@ -1,0 +1,22 @@
+-- Insert default configuration for IN2 Verifier, this is the default tenant
+INSERT INTO verifier.tenant_configurations (tenant_id, configuration_key, configuration_value)
+VALUES ('265fcba2-1a60-40ed-8565-16d9dc0f41f3', 'private_key',
+        '73e509a7681d4a395b1ced75681c4dc4020dbab02da868512276dd766733d5b5'),
+       ('265fcba2-1a60-40ed-8565-16d9dc0f41f3', 'authorization_server_url',
+        'http://localhost:9000'),
+       ('265fcba2-1a60-40ed-8565-16d9dc0f41f3', 'qr_code_expiration_time_minutes',
+        '5'),
+       ('265fcba2-1a60-40ed-8565-16d9dc0f41f3', 'access_token_expiration_time_minutes',
+        '5'),
+       ('265fcba2-1a60-40ed-8565-16d9dc0f41f3', 'dome_trusted_issuers_list_uri',
+        'http://localhost:8085/v4/issuers/'),
+       ('265fcba2-1a60-40ed-8565-16d9dc0f41f3', 'dome_trusted_services_list_uri',
+        'https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml'),
+       ('265fcba2-1a60-40ed-8565-16d9dc0f41f3', 'dome_revoked_credentials_list_uri',
+        'https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/revoked_credential_list.yaml'),
+       ('265fcba2-1a60-40ed-8565-16d9dc0f41f3', 'login_page_onboarding_guide_url',
+        'https://knowledgebase.dome-marketplace.org/shelves/company-onboarding-process'),
+       ('265fcba2-1a60-40ed-8565-16d9dc0f41f3', 'login_page_user_support_url',
+        'https://ticketing.dome-marketplace.org/#login'),
+       ('265fcba2-1a60-40ed-8565-16d9dc0f41f3', 'login_page_wallet_url',
+        'https://wallet.dome-marketplace-lcl.org/');
