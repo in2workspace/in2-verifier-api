@@ -21,7 +21,7 @@ public class ConfigurationProperties {
     public static final String LOGIN_PAGE_USER_SUPPORT_URL = "login_page_user_support_url";
     public static final String LOGIN_PAGE_WALLET_URL = "login_page_wallet_url";
 
-    private ConfigurationProperties() {
+    ConfigurationProperties() {
         throw new IllegalStateException("Utility class");
     }
 

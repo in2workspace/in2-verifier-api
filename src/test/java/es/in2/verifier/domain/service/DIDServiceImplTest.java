@@ -1,4 +1,4 @@
-package es.in2.verifier.service;
+package es.in2.verifier.domain.service;
 
 import es.in2.verifier.domain.exception.PublicKeyDecodingException;
 import es.in2.verifier.domain.exception.UnsupportedDIDTypeException;
@@ -21,27 +21,27 @@ class DIDServiceImplTest {
     @Test
     void getPublicKeyFromValidDid_Success() {
         String validDid = "did:key:zDnaew7Cz5JbZtVGd93qxAjLB1qZEm1eXLPaWEr775R2BZkoY";
-        PublicKey publicKey = didService.getPublicKeyFromDid(validDid);
+        PublicKey publicKey = didService.retrivePublicKeyFromP256DidKey(validDid);
         assertNotNull(publicKey);
     }
 
     @Test
-    void getPublicKeyFromDid_UnsupportedDIDTypeException() {
+    void retrivePublicKeyFromDid_UnsupportedDIDKeyTypeException() {
         String invalidDid = "did:example:123456";
 
         UnsupportedDIDTypeException thrown = assertThrows(UnsupportedDIDTypeException.class, () -> {
-            didService.getPublicKeyFromDid(invalidDid);
+            didService.retrivePublicKeyFromP256DidKey(invalidDid);
         });
 
         assertEquals("Unsupported DID type. Only did:key is supported for the moment.", thrown.getMessage());
     }
 
     @Test
-    void getPublicKeyFromDid_PublicKeyDecodingException() {
+    void retrivePublicKeyFromDid_PublicKeyDecodingExceptionKey() {
         String invalidDid = "did:key:zInvalidPublicKey";
 
         PublicKeyDecodingException thrown = assertThrows(PublicKeyDecodingException.class, () -> {
-            didService.getPublicKeyFromDid(invalidDid);
+            didService.retrivePublicKeyFromP256DidKey(invalidDid);
         });
 
         assertEquals("JWT signature verification failed.", thrown.getMessage());

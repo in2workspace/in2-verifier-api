@@ -79,7 +79,7 @@ public class CryptoConfig {
     }
 
     // Converts raw public key bytes into a multibase58 string
-    private String convertRawKeyToMultiBase58Btc(byte[] publicKey, int code) {
+    String convertRawKeyToMultiBase58Btc(byte[] publicKey, int code) {
         UVarInt codeVarInt = new UVarInt(code);
         // Calculate the total length of the resulting byte array
         int totalLength = publicKey.length + codeVarInt.getLength();

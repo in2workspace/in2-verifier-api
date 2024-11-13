@@ -1,8 +1,7 @@
-package es.in2.verifier.oid4vp.controller;
+package es.in2.verifier.infrastructure.controller;
 
 import es.in2.verifier.domain.exception.QRCodeGenerationException;
 import es.in2.verifier.infrastructure.config.ApplicationConfig;
-import es.in2.verifier.infrastructure.controller.LoginQrController;
 import net.glxn.qrgen.javase.QRCode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,10 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class LoginQrControllerTest {
+class LoginControllerTest {
 
     @InjectMocks
-    private LoginQrController loginQrController;
+    private LoginController loginController;
 
     @Mock
     private Model model;
@@ -44,7 +43,7 @@ class LoginQrControllerTest {
             qrCodeMock.when(() -> QRCode.from(authRequest)).thenReturn(Mockito.mock(QRCode.class));
             qrCodeMock.when(() -> QRCode.from(authRequest).withSize(250, 250)).thenReturn(Mockito.mock(QRCode.class));
             qrCodeMock.when(() -> QRCode.from(authRequest).withSize(250, 250).stream()).thenReturn(new ByteArrayOutputStream());
-            String viewName = loginQrController.showQrLogin(authRequest, state, model, "homeUri");
+            String viewName = loginController.showQrLogin(authRequest, state, model, "homeUri");
             assertEquals("login", viewName);
             Mockito.verify(model).addAttribute("qrImage", "data:image/png;base64," + Base64.getEncoder().encodeToString(new ByteArrayOutputStream().toByteArray()));
             Mockito.verify(model).addAttribute("authRequest", authRequest);
@@ -64,7 +63,7 @@ class LoginQrControllerTest {
             qrCodeMock.when(() -> QRCode.from(authRequest)).thenThrow(new RuntimeException("QR Code Generation Failed"));
 
             QRCodeGenerationException exception = assertThrows(QRCodeGenerationException.class, () ->
-                    loginQrController.showQrLogin(authRequest, state, model, "homeUri")
+                    loginController.showQrLogin(authRequest, state, model, "homeUri")
             );
 
             assertEquals("QR Code Generation Failed", exception.getMessage());

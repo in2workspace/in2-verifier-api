@@ -1,6 +1,5 @@
-package es.in2.verifier.oid4vp.controller;
+package es.in2.verifier.infrastructure.controller;
 
-import es.in2.verifier.infrastructure.controller.Oid4vpController;
 import es.in2.verifier.domain.exception.ResourceNotFoundException;
 import es.in2.verifier.domain.model.dto.AuthorizationRequestJWT;
 import es.in2.verifier.domain.service.AuthorizationResponseProcessorService;

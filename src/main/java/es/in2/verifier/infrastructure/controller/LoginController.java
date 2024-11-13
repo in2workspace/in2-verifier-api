@@ -17,14 +17,14 @@ import java.util.concurrent.TimeUnit;
 
 @Controller
 @RequiredArgsConstructor
-public class LoginQrController {
+public class LoginController {
 
     private final ApplicationConfig applicationConfig;
 
     @GetMapping("/login")
     @ResponseStatus(HttpStatus.OK)
-    public String showQrLogin(@RequestParam("authRequest") String authRequest, @RequestParam("state") String state, Model model, @RequestParam("homeUri") String homeUri) {
-        try {
+    public String showQrLogin(@RequestParam("authRequest") String authRequest, @RequestParam("state") String state,
+                              Model model, @RequestParam("homeUri") String homeUri) {
             // Generar la imagen QR en base64
             String qrImageBase64 = generateQRCodeImageBase64(authRequest);
             // Pasar el QR en base64 y el authRequest en texto al modelo
@@ -38,19 +38,20 @@ public class LoginQrController {
             model.addAttribute("walletUri", applicationConfig.getLoginPageWalletUrl());
             model.addAttribute("cronUnit", String.valueOf(TimeUnit.MINUTES));
             model.addAttribute("expiration", String.valueOf(applicationConfig.getQRCodeExpiration()));
-        } catch (Exception e) {
-            throw new QRCodeGenerationException(e.getMessage());
-        }
         return "login";
     }
 
     private String generateQRCodeImageBase64(String barcodeText) {
-        ByteArrayOutputStream stream = QRCode
-                .from(barcodeText)
-                .withSize(250, 250)
-                .stream();
-        byte[] imageBytes = stream.toByteArray();
-        return Base64.getEncoder().encodeToString(imageBytes);
+        try {
+            ByteArrayOutputStream stream = QRCode
+                    .from(barcodeText)
+                    .withSize(250, 250)
+                    .stream();
+            byte[] imageBytes = stream.toByteArray();
+            return Base64.getEncoder().encodeToString(imageBytes);
+        } catch (Exception e) {
+            throw new QRCodeGenerationException(e.getMessage());
+        }
     }
 
 }

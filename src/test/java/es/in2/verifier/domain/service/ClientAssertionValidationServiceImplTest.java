@@ -1,9 +1,8 @@
-package es.in2.verifier.service;
+package es.in2.verifier.domain.service;
 
 import com.nimbusds.jose.Payload;
 import es.in2.verifier.infrastructure.config.ApplicationConfig;
 import es.in2.verifier.infrastructure.repository.JtiTokenCache;
-import es.in2.verifier.domain.service.JWTService;
 import es.in2.verifier.domain.service.impl.ClientAssertionValidationServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

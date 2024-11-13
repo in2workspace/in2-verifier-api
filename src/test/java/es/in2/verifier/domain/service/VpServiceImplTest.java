@@ -1,4 +1,4 @@
-package es.in2.verifier.service;
+package es.in2.verifier.domain.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -6,10 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.verifier.domain.exception.JsonConversionException;
-import es.in2.verifier.domain.service.CertificateValidationService;
-import es.in2.verifier.domain.service.DIDService;
-import es.in2.verifier.domain.service.JWTService;
-import es.in2.verifier.domain.service.TrustFrameworkService;
 import es.in2.verifier.domain.service.impl.VpServiceImpl;
 import org.assertj.core.api.Assertions;
 import org.json.JSONObject;
@@ -19,11 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.interfaces.ECPublicKey;
-import java.security.spec.ECGenParameterSpec;
 import java.util.HashMap;
 import java.util.Map;
 

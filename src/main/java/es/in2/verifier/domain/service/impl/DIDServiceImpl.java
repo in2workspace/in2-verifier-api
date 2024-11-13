@@ -26,7 +26,7 @@ import java.util.Arrays;
 public class DIDServiceImpl implements DIDService {
 
     @Override
-    public PublicKey getPublicKeyFromDid(String did) {
+    public PublicKey retrivePublicKeyFromP256DidKey(String did) {
         log.info("Attempting to retrieve public key from DID: {}", did);
         if (!did.startsWith("did:key:")) {
             log.error("DIDServiceImpl -- getPublicKeyFromDid -- Unsupported DID format detected: {}", did);

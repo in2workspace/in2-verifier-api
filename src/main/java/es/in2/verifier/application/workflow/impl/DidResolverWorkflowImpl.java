@@ -1,45 +1,49 @@
-package es.in2.verifier.infrastructure.controller;
+package es.in2.verifier.application.workflow.impl;
 
+import es.in2.verifier.application.workflow.DidResolverWorkflow;
+import es.in2.verifier.domain.exception.NotSupportedDidException;
 import es.in2.verifier.domain.model.dto.CustomJWK;
 import es.in2.verifier.domain.model.dto.CustomJWKS;
 import es.in2.verifier.domain.service.DIDService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Service;
 
-import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECPoint;
 import java.util.Base64;
 import java.util.List;
 
 @Slf4j
-@RestController
-@RequestMapping("/oidc/did")
+@Service
 @RequiredArgsConstructor
-public class ResolverController {
+public class DidResolverWorkflowImpl implements DidResolverWorkflow {
 
     private final DIDService didService;
 
-    @GetMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public CustomJWKS resolveDid(@PathVariable String id) {
-        PublicKey publicKey = didService.getPublicKeyFromDid(id);
-        ECPublicKey ecPublicKey = (ECPublicKey) publicKey;
+    @Override
+    public CustomJWKS resolveDid(String did) {
+        checkDidValidity(did);
+        ECPublicKey ecPublicKey = (ECPublicKey) didService.retrivePublicKeyFromP256DidKey(did);
         ECPoint point = ecPublicKey.getW();
         CustomJWKS customJWKS = CustomJWKS.builder()
                 .keys(List.of(CustomJWK.builder()
                         .kty("EC")
                         .crv("P-256")
-                        .kid(id)
+                        .kid(did)
                         .x(Base64.getUrlEncoder().withoutPadding().encodeToString(point.getAffineX().toByteArray()))
                         .y(Base64.getUrlEncoder().withoutPadding().encodeToString(point.getAffineY().toByteArray()))
                         .build()
                 ))
                 .build();
-        log.info("Resolved DID {} to JWK {}", id, customJWKS);
+        log.info("DID {} resolved. JWK Data: {}", did, customJWKS);
         return customJWKS;
+    }
+
+    private void checkDidValidity(String did) {
+        if (!did.startsWith("did:key:zDn")) {
+            throw new NotSupportedDidException("Only did:key which starts with 'zDn' are supported");
+        }
     }
 
 }

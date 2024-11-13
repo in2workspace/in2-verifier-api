@@ -31,7 +31,7 @@ public class DomeTrustFrameworkConfig {
         return new InMemoryRegisteredClientRepository(clients); // Pasar los clientes al repositorio
     }
 
-    private List<RegisteredClient> loadClients() {
+    List<RegisteredClient> loadClients() {
         try {
             // Leer el archivo YAML
             ExternalTrustedListYamlData clientsYamlData = trustFrameworkService.fetchAllowedClient();

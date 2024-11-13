@@ -1,9 +1,6 @@
 package es.in2.verifier.infrastructure.controller;
 
-import es.in2.verifier.domain.exception.CredentialRevokedException;
-import es.in2.verifier.domain.exception.MismatchOrganizationIdentifierException;
-import es.in2.verifier.domain.exception.QRCodeGenerationException;
-import es.in2.verifier.domain.exception.ResourceNotFoundException;
+import es.in2.verifier.domain.exception.*;
 import es.in2.verifier.domain.model.dto.GlobalErrorMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -18,45 +15,54 @@ import java.util.NoSuchElementException;
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
+    @ExceptionHandler(NotSupportedDidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public void handleNotSupportedDidException(NotSupportedDidException e) {
+        log.error("Resource not found", e);
+    }
+
+
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public GlobalErrorMessage handleResourceNotFoundException(ResourceNotFoundException ex) {
-        log.error("Resource not found", ex);
-        return new GlobalErrorMessage("","","");
+    public GlobalErrorMessage handleResourceNotFoundException(ResourceNotFoundException e) {
+        log.error("Resource not found", e);
+        return new GlobalErrorMessage("", "", "");
     }
 
     @ExceptionHandler(NoSuchElementException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public GlobalErrorMessage handleNoSuchElementException(NoSuchElementException ex) {
-        log.error("Element not found", ex);
-        return new GlobalErrorMessage("","","");
+    public GlobalErrorMessage handleNoSuchElementException(NoSuchElementException e) {
+        log.error("Element not found", e);
+        return new GlobalErrorMessage("", "", "");
     }
 
     @ExceptionHandler(QRCodeGenerationException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public GlobalErrorMessage handleQRCodeGenerationException(QRCodeGenerationException ex) {
-        log.error("QR Code Generation Failed", ex);
-        return new GlobalErrorMessage("QR Code Generation Failed","","");
+    public GlobalErrorMessage handleQRCodeGenerationException(QRCodeGenerationException e) {
+        log.error("QR Code Generation Failed", e);
+        return new GlobalErrorMessage("QR Code Generation Failed", "", "");
     }
 
     @ExceptionHandler(CredentialRevokedException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public GlobalErrorMessage handleException(CredentialRevokedException ex) {
-        log.error("The credential has been revoked: ", ex);
-        return new GlobalErrorMessage("Verifiable presentation failed","","");
+    public GlobalErrorMessage handleException(CredentialRevokedException e) {
+        log.error("The credential has been revoked: ", e);
+        return new GlobalErrorMessage("Verifiable presentation failed", "", "");
     }
 
     @ExceptionHandler(MismatchOrganizationIdentifierException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public GlobalErrorMessage handleException(MismatchOrganizationIdentifierException ex) {
-        log.error("The organization identifier of the cert does not match the organization identifier from the credential payload: ", ex);
-        return new GlobalErrorMessage("","","");
+    public GlobalErrorMessage handleException(MismatchOrganizationIdentifierException e) {
+        log.error("The organization identifier of the cert does not match the organization identifier from the credential payload: ", e);
+        return new GlobalErrorMessage("", "", "");
     }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public GlobalErrorMessage handleException(Exception ex) {
-        log.error("An unexpected error occurred: ", ex);
-        return new GlobalErrorMessage("","","");
+    public GlobalErrorMessage handleException(Exception e) {
+        log.error("An unexpected error occurred: ", e);
+        return new GlobalErrorMessage("", "", "");
     }
+
 }
 

@@ -1,4 +1,4 @@
-package es.in2.verifier.service;
+package es.in2.verifier.domain.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -59,7 +59,7 @@ class JWTServiceImplTest {
     private JWTServiceImpl jwtService;
 
     @Test
-    void generateJWT_succes() throws Exception {
+    void generateJWT_success() throws Exception {
 
         String privateKeyJson = "{\"kty\":\"EC\",\"d\":\"MDtaBGOjN0SY0NtX2hFvv4uJNLrUGUWHvquqNZHwi5s\",\"use\":\"sig\",\"crv\":\"P-256\",\"kid\":\"75bb28ac9f4247248c73348f890e050c\",\"x\":\"E9pfJi7I29gtdofnJJBvC_DK3KH1eTialAMOoX6CfZw\",\"y\":\"hDfdnEyabkB-9Hf1PFYaYomSdYVwJ0NSM5CzxhOUIr0\",\"alg\":\"ES256\"}";
         String did = "did:example:1234";
@@ -315,7 +315,7 @@ class JWTServiceImplTest {
             when(signedJWT.verify(any(JWSVerifier.class))).thenReturn(false);
 
             JWTVerificationException exception = assertThrows(JWTVerificationException.class, () -> jwtService.verifyJWTWithECKey(jwt, publicKey));
-            assertEquals("JWT signature verification failed due to unexpected error: es.in2.vcverifier.exception.JWTVerificationException: Invalid JWT signature for EC key", exception.getMessage());
+            assertEquals("JWT signature verification failed due to unexpected error: es.in2.verifier.domain.exception.JWTVerificationException: Invalid JWT signature for EC key", exception.getMessage());
         }
     }
 
