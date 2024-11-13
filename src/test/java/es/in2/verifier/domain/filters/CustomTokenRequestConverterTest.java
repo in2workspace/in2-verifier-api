@@ -1,4 +1,4 @@
-package es.in2.verifier.security.filters;
+package es.in2.verifier.domain.filters;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

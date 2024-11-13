@@ -10,7 +10,7 @@ plugins {
 }
 
 group = 'es.in2'
-version = '1.0.4'
+version = '1.1.0'
 
 java {
 	toolchain {
@@ -46,12 +46,7 @@ sonar {
 		property "sonar.organization", "in2workspace"
 		property "sonar.host.url", "https://sonarcloud.io"
 		property 'sonar.coverage.exclusions',
-				"src/main/java/es/in2/vcverifier/VcVerifierApplication.java, " +
-						"src/main/java/es/in2/vcverifier/service/impl/ClientAssertionValidationServiceImpl.java, " +
-						"src/main/java/es/in2/vcverifier/security/filters/CustomAuthorizationRequestConverter.java, " +
-						"src/main/java/es/in2/vcverifier/service/impl/TrustFrameworkServiceImpl.java, " +
-						"src/main/java/es/in2/vcverifier/service/impl/CertificateValidationServiceImpl.java, " +
-						"src/main/java/es/in2/vcverifier/exception/MismatchOrganizationIdentifierException.java"
+				"src/main/java/es/in2/vcverifier/VcVerifierApplication.java, "
 	}
 }
 
@@ -73,7 +68,7 @@ dependencies {
 	//Jackson
 	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.2'
 	// JSON
-	implementation 'org.json:json:20230227'
+	implementation 'org.json:json:20231013'
 	// QR GENERATOR
 	implementation 'com.github.kenglxn.QRGen:javase:3.0.1'
 	// Persistence
@@ -128,11 +123,7 @@ tasks.jacocoTestReport {
 	}
 	classDirectories.setFrom(files(classDirectories.files.collect {
 		fileTree(dir: it, exclude: [
-				"**/AuthorizationResponseProcessorServiceImpl.class",
-				"**/CustomAuthorizationRequestConverter.class",
-				"**/TrustFrameworkServiceImpl.class",
-				"**/CertificateValidationServiceImpl.class",
-				"**/MismatchOrganizationIdentifierException.class",
+				"**/VerifierApplication.class",
 		])
 	}))
 }

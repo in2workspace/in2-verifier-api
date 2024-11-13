@@ -1,4 +1,4 @@
-package es.in2.verifier.security.filters;
+package es.in2.verifier.domain.filters;
 
 import es.in2.verifier.domain.filters.CustomErrorResponseHandler;
 import jakarta.servlet.http.HttpServletRequest;
