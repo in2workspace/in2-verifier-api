@@ -133,15 +133,15 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
      */
     private String retrieveJwtFromRequestUriOrRequest(String requestUri, HttpServletRequest request) {
         if (requestUri != null) {
-            log.info("Retrieving JWT from request_uri: {}", requestUri);
-            // Retrieve the JWT from the request_uri via HTTP GET
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(requestUri))
-                    .GET()
-                    .build();
-            HttpResponse<String> httpResponse;
             try {
+                log.info("Retrieving JWT from request_uri: {}", requestUri);
+                // Retrieve the JWT from the request_uri via HTTP GET
+                HttpClient client = HttpClient.newHttpClient();
+                HttpRequest httpRequest = HttpRequest.newBuilder()
+                        .uri(URI.create(requestUri))
+                        .GET()
+                        .build();
+                HttpResponse<String> httpResponse;
                 httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
                 log.debug("CustomAuthorizationRequestConverter -- convert -- JWT successfully retrieved from request_uri.");
                 return httpResponse.body();
