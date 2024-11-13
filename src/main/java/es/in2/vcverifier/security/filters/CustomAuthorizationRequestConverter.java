@@ -76,6 +76,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
 
         if (registeredClient == null) {
+            log.error("CustomAuthorizationRequestConverter -- convert -- Unauthorized client: Client with ID {} not found.", clientId);
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
         }
 
