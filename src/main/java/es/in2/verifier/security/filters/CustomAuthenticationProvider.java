@@ -172,7 +172,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .issueTime(Date.from(issueTime))
                 .expirationTime(Date.from(expirationTime))
                 .claim(OAuth2ParameterNames.SCOPE, getScope(verifiableCredential))
-                .claim("verifiableCredential", verifiableCredential)
+                .claim("vc", verifiableCredential)
                 .build();
         return jwtService.generateJWT(payload.toString());
     }
