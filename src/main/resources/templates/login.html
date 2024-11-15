@@ -9,38 +9,32 @@
     <!-- Load external fonts and styles -->
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Blinker:wght@100;200;300;400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="https://i.postimg.cc/TYvysX9v/dome-logo-favicon.png" type="image/png">
 
     <!-- Integrated CSS styles -->
     <style>
+
         :root {
-            --fore-color-primary: white !important;
-            --bg-color-primary: #0c1c38 !important;
-            --fore-color-medium: white !important;
-            --bg-color-medium: #20295b !important;
-            --fore-color-light: black !important;
-            --bg-color-light: #f3f4fb !important;
-            --text-color-primary: #20295b !important;
-            --text-color-medium: #3f51b5 !important;
-            --fore-color-secondary: #04FF00 !important;
-            --bg-color-secondary: #102a3a !important;
-            --border-color-primary: #20295b !important;
-            --border-color-medium: #3f51b5 !important;
-            --background-color-card: #0A1128 !important;
-            --border-color-card: #00FFFF !important;
-            --text-color-link: #00FFFF !important;
+            --fore-color-primary: white;
+            --bg-color-primary: #14274A !important;
+            --light-blue-primary: #00ADD3 !important;
         }
 
         body {
             background-color: var(--bg-color-primary);
             color: var(--fore-color-primary);
-            font-family: 'Barlow', sans-serif;
+            font-family: 'Blinker', sans-serif;
             font-size: medium;
             margin: 0;
             padding: 0;
         }
 
         .qr-image {
-            background-color: white;
             padding: 8px;
             box-sizing: border-box;
         }
@@ -49,29 +43,30 @@
             display: flex;
             align-items: center;
             padding: 20px;
-            justify-content: space-between;
         }
 
         .header img {
+            display:block;
             max-width: 300px;
-            height: auto;
-            margin-right: 20px;
+            width:100%;
         }
 
         h1, h2, h3, h4, h5, h6 {
-            font-family: "Segoe UI", Arial, sans-serif;
             font-weight: 600 !important;
-            margin: 10px 0;
+            margin: 0;
         }
 
-        .container {
+        .page {
+            min-height: 100vh;
+        }
+
+        .container{
             display: flex;
             justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
+            /* align-items: flex-start; */
+            /* height:100%; */
             padding: 20px;
             gap: 20px;
-            flex-wrap: wrap;
         }
 
         .left-column, .right-column {
@@ -87,25 +82,24 @@
 
         .right-column {
             flex: 2;
-            max-width: 600px;
+            max-width: 680px;
         }
 
         .card {
-            background-color: #0c1c38;
-            border: 3px solid #1faad0;
-            border-radius: 8px;
-            color: white;
-            text-align: center;
+            padding: 20px;
             display: flex;
-            flex-direction: column;
             flex-grow: 1;
+            flex-direction: column;
+            border: 3px solid var(--light-blue-primary);
+            border-radius: 8px;
+            background-color: var(--bg-color-primary);
+            text-align: center;
         }
 
         .registration-card {
-            background-color: #0c1c38;
-            border: 3px solid #1faad0;
+            background-color: var(--bg-color-primary);
+            border: 3px solid var(--light-blue-primary);
             border-radius: 8px;
-            color: white;
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -114,11 +108,11 @@
         }
 
         .registration-card button {
-            background-color: #2e58a8;
+            background-color: var(--fore-color-primary);
             border: none;
             border-radius: 8px;
             padding: 10px 20px;
-            color: white;
+            color: var(--bg-color-primary);
             font-size: 16px;
             cursor: pointer;
             display: flex;
@@ -129,14 +123,15 @@
             margin-top: 20px;
             width: auto;
             font-weight: bold;
+            transition: color 0.3s ease, transform 0.3s ease;
         }
 
         .qr-container button {
-            background-color: #2e58a8;
+            background-color: var(--fore-color-primary); 
             border: none;
             border-radius: 8px;
             padding: 10px 20px;
-            color: white;
+            color: var(--bg-color-primary);
             font-size: 16px;
             cursor: pointer;
             display: flex;
@@ -150,55 +145,87 @@
         }
 
         .registration-card button:hover, .qr-container button:hover {
-            background-color: #24478d;
+            background-color: var(--fore-color-primary);
+            color: var(--light-blue-primary);
             transform: scale(1.05);
-            transition: background-color 0.3s ease, transform 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
+        }
+
+        .card p{
+            font-weight: 600;
+
+        }
+        .card p.help{
+                font-size: 20px;
+        }
+
+        .card a{
+            font-weight: bold;
+            text-decoration: underline;
+            color: var(--text-color-link);
+            transition: text-decoration 200ms ease-in-out, color 200ms ease-in-out;
+            cursor: auto;
         }
 
         .card a:hover {
+            color: var(--light-blue-primary);
+            font-weight: bold;
             text-decoration: underline;
+            transition: text-decoration 200ms ease-in-out, color 200ms ease-in-out;
+            cursor:pointer;
         }
 
         h3 {
-            color: white;
-            font-size: medium !important;
-        }
-
-        h4 {
-            color: white;
+            font-size: large;
         }
 
         .qr-card-content {
             display: flex;
             justify-content: space-between;
+            gap: 20px;
             width: 100%;
-            padding-bottom: 10px;
+            height:100%;
         }
 
         .qr-container {
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            margin-inline: 20px;
+            min-width:230px;
             text-align: left;
-            justify-content: center;
             flex-grow: 1;
+            gap: 20px;
         }
 
         .qr-card img {
             max-width: 100%;
             height: auto;
+            background-color: var(--fore-color-primary);
         }
 
         .instructions {
+            display:flex;
+            flex-direction: column;
+            gap: 20px;
             text-align: left;
             max-width: 50%;
+
+            ol{
+                margin:0;
+                padding: 0;
+                list-style-position: inside;
+
+                li{
+                    margin-bottom: 12px;
+                }
+            }
         }
 
+        /* currently section with this class is commented; use color variable */
         .grey-section {
             background-color: #3a4a5b;
             border-radius: 10px;
-            color: white;
             width: 100%;
             align-self: center;
             margin-top: 5px;
@@ -208,23 +235,34 @@
             margin-right: 8px;
         }
 
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-                align-items: center;
+        @media (max-width: 1025px){
+            .page{
+                display:flex;
+                justify-content:center;
+            }
+            .container{
+                flex-direction:column;
+                align-items: stretch;
+                gap: 20px;
+                max-width: 700px;
             }
 
             .left-column, .right-column {
                 max-width: 100%;
                 flex: none;
             }
+        }
 
-            .right-column {
+        @media (max-width: 768px) {
+            .page {
+                flex-direction: column;
                 align-items: center;
             }
 
             .qr-card-content {
                 flex-direction: column;
+                align-items: center;
+                gap:0;
             }
 
             .qr-card .qr-container, .qr-card img, .instructions, .grey-section {
@@ -232,22 +270,24 @@
                 margin-right: 0;
             }
             .qr-container{
-                margin-inline: 2px;
                 padding-inline:20px;
             }
+            .instructions{
+                max-width: 400px;
+                text-align:center;
+                padding-top:20px;
+            }
+            
         }
 
         @media (max-width: 480px) {
-            .container {
-                padding: 10px;
-            }
 
             .card {
                 padding: 10px;
             }
 
-            .qr-card-content {
-                flex-direction: column;
+            .qr-container{
+                padding-inline:0;
             }
 
             .qr-card .qr-container, .qr-card img, .instructions, .grey-section {
@@ -260,50 +300,54 @@
 <div class="header">
     <img src="https://i.postimg.cc/BbjrWQG2/DOME-Logo-White.png" alt="DOME White Logo" th:attr="onclick='window.location.href = \'' + ${homeUri} + '\''" style="cursor: pointer;">
 </div>
-<div class="container">
-    <div class="left-column">
-        <div class="registration-card">
-            <h3>Your organization must be registered in the marketplace before you log in.</h3>
-            <button th:attr="onclick='window.location.href = \'' + ${onboardingUri} + '\''">
-                <i class="fa-solid fa-laptop"></i>
-                Registration
-            </button>
-        </div>
-        <div class="card">
-            <h3>Having trouble logging in?</h3>
-            <p>Get help from <a th:href="${supportUri}">Customer Support</a></p>
-        </div>
-    </div>
-    <div class="right-column">
-        <div class="card qr-card">
-            <div class="qr-card-content">
-                <div class="qr-container">
-                    <div id="qr-title" class="additional-element">
-                        <h3>Scan the QR with your Wallet to log in</h3>
-                    </div>
-                    <!-- Uso de Thymeleaf para insertar el QR generado -->
-                    <div id="qr-frame">
-                        <img id="qr-code" class="qr-image" th:src="${qrImage}" alt="QR Code">
-                    </div>
-                    <div id="same-device-title" class="additional-element" style="display: none;">
-                        <h3>Login from the same device</h3>
-                    </div>
-                    <button id="dome-wallet-button" class="action-button" style="display: none;">
-                        <i class="fa-solid fa-wallet"></i>
-                        DOME Wallet
-                    </button>
-                </div>
-                <div class="instructions">
-                    <h3>Login instructions</h3>
-                    <h4>1. You must register or log in to a Wallet using your phone. You may use the <a
-                            th:href="${walletUri}">DOME Wallet</a>.</h4>
-                    <h4>2. Scan the QR code.</h4>
-                    <h4>3. Select the credential.</h4>
-                </div>
+<div class="page">
+    <div class="container">
+        <div class="left-column">
+            <div class="registration-card">
+                <h3>Your organization must be registered in the marketplace before you log in.</h3>
+                <button th:attr="onclick='window.location.href = \'' + ${onboardingUri} + '\''">
+                    <i class="fa-solid fa-laptop"></i>
+                    Registration
+                </button>
             </div>
-            <!--<div class="grey-section">
-                <p id="grey-section-text">Unable to scan the QR code? You may log in from the <a href="#" onclick="switchToSameDeviceLogin()">same device</a></p>
-            </div>-->
+            <div class="card">
+                <h3>Having trouble logging in?</h3>
+                <p class="help">Get help from <a th:href="${supportUri}">Customer Support</a></p>
+            </div>
+        </div>
+        <div class="right-column">
+            <div class="card qr-card">
+                <div class="qr-card-content">
+                    <div class="qr-container">
+                        <div id="qr-title" class="additional-element">
+                            <h3 class="scan-title">Scan the QR with your Wallet to log in</h3>
+                        </div>
+                        <!-- Uso de Thymeleaf para insertar el QR generado -->
+                        <div id="qr-frame">
+                            <img id="qr-code" class="qr-image" th:src="${qrImage}" alt="QR Code">
+                        </div>
+                        <div id="same-device-title" class="additional-element" style="display: none;">
+                            <h3>Login from the same device</h3>
+                        </div>
+                        <button id="dome-wallet-button" class="action-button" style="display: none;">
+                            <i class="fa-solid fa-wallet"></i>
+                            DOME Wallet
+                        </button>
+                    </div>
+                    <div class="instructions">
+                        <h3 class="instructions-title">Login instructions</h3>
+                        <ol>
+                            <li>You must register or log in to a Wallet using your phone. You may use the <a
+                                    th:href="${walletUri}">DOME Wallet</a>.</li>
+                            <li>Scan the QR code.</li>
+                            <li>Select the credential.</li>
+                        </ol>
+                    </div>
+                </div>
+                <!--<div class="grey-section">
+                    <p id="grey-section-text">Unable to scan the QR code? You may log in from the <a href="#" onclick="switchToSameDeviceLogin()">same device</a></p>
+                </div>-->
+            </div>
         </div>
     </div>
 </div>
