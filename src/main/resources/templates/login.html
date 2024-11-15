@@ -20,7 +20,7 @@
     <style>
 
         :root {
-            --fore-color-primary: #DDE6F6 !important;
+            --fore-color-primary: white;
             --bg-color-primary: #14274A !important;
             --light-blue-primary: #00ADD3 !important;
         }
@@ -123,6 +123,7 @@
             margin-top: 20px;
             width: auto;
             font-weight: bold;
+            transition: color 0.3s ease, transform 0.3s ease;
         }
 
         .qr-container button {
@@ -147,7 +148,7 @@
             background-color: var(--fore-color-primary);
             color: var(--light-blue-primary);
             transform: scale(1.05);
-            transition: background-color 0.3s ease, transform 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
         }
 
         .card p{
@@ -162,15 +163,15 @@
             font-weight: bold;
             text-decoration: underline;
             color: var(--text-color-link);
-            transition: text-decoration 200ms ease-in-out;
+            transition: text-decoration 200ms ease-in-out, color 200ms ease-in-out;
             cursor: auto;
         }
 
         .card a:hover {
-            color: white;
+            color: var(--light-blue-primary);
             font-weight: bold;
             text-decoration: underline;
-            transition: text-decoration 200ms ease-in-out;
+            transition: text-decoration 200ms ease-in-out, color 200ms ease-in-out;
             cursor:pointer;
         }
 
@@ -200,7 +201,7 @@
         .qr-card img {
             max-width: 100%;
             height: auto;
-            background-color: white;
+            background-color: var(--fore-color-primary);
         }
 
         .instructions {
