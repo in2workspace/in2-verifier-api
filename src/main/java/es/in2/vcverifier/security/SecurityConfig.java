@@ -23,6 +23,7 @@ public class SecurityConfig {
                         .requestMatchers("/login").permitAll()
                         .requestMatchers("/oidc/did/*").permitAll()
                         .requestMatchers("/qr-socket/**").permitAll()
+                        .requestMatchers("/img/**").permitAll()
                         .anyRequest().authenticated()
 
                 )
