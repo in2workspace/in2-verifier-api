@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Blinker:wght@100;200;300;400;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Favicon -->
-    <link rel="icon" href="https://i.postimg.cc/TYvysX9v/dome-logo-favicon.png" type="image/png">
+    <link rel="icon" th:href="@{img/dome_logo_favicon.png}" type="image/png">
 
     <!-- Integrated CSS styles -->
     <style>
@@ -296,7 +296,7 @@
 </head>
 <body>
 <div class="header">
-    <img src="https://i.postimg.cc/BbjrWQG2/DOME-Logo-White.png" alt="DOME White Logo" th:attr="onclick='window.location.href = \'' + ${homeUri} + '\''" style="cursor: pointer;">
+    <img th:src="@{img/dome_logo_favicon.png}" alt="DOME White Logo" th:attr="onclick='window.location.href = \'' + ${homeUri} + '\''" style="cursor: pointer;">
 </div>
 <div class="page">
     <div class="container">
