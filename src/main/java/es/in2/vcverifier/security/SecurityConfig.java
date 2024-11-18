@@ -21,6 +21,7 @@ public class SecurityConfig {
                         .requestMatchers("/oid4vp/auth-request/*").permitAll()
                         .requestMatchers("/oid4vp/auth-response").permitAll()
                         .requestMatchers("/login").permitAll()
+                        .requestMatchers("/client-error").permitAll()
                         .requestMatchers("/oidc/did/*").permitAll()
                         .requestMatchers("/qr-socket/**").permitAll()
                         .requestMatchers("/img/**").permitAll()

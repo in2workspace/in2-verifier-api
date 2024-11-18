@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Error during Client Authentication Request</title>
+    <!-- Import Blinker font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Blinker&display=swap" rel="stylesheet">
+    <style>
+        /* Ensure full height for html and body */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        /* General body styling */
+        body {
+            font-family: 'Blinker', Arial, sans-serif; /* Use Blinker font or fallback to Arial */
+            background-color: #DDE6F6; /* Light blue background for better readability */
+            color: #14274A; /* Dark blue for text */
+            display: flex; /* Use flexbox for centering content */
+            justify-content: center; /* Center content horizontally */
+            align-items: center; /* Center content vertically */
+        }
+        /* Styles for the container wrapping all content */
+        .container {
+            text-align: center; /* Center-align text inside the container */
+            padding: 3rem; /* Add padding for spacing */
+        }
+        /* Styles for the title */
+        .title {
+            font-size: 4rem; /* Approximately 64px */
+            font-weight: bold; /* Make the title bold */
+            color: #2D58A7; /* Match theme color */
+            margin-bottom: 2rem; /* Add spacing below */
+        }
+        /* Styles for the error code */
+        .error-code {
+            font-size: 2.5rem; /* Approximately 40px */
+            color: #2D58A7; /* Highlight error code in a dark blue */
+        }
+        /* Styles for the error message */
+        .error-message {
+            font-size: 2rem; /* Approximately 32px for readability */
+            color: #00ADD3; /* Cyan color for contrast */
+            margin: 2rem 0; /* Add spacing around the message */
+        }
+        /* Styles for the client URL */
+        .client-url {
+            font-size: 1.75rem; /* Approximately 28px */
+            color: #14274A; /* Match the dark blue theme */
+            margin-bottom: 1.25rem; /* Add spacing below */
+        }
+        /* Styles for the help section */
+        .help {
+            font-size: 1.5rem; /* Approximately 24px */
+            color: #000000; /* Black text for emphasis */
+            margin-top: 2.5rem; /* Add spacing above */
+        }
+        /* Style for the help link */
+        .help a {
+            color: #2D58A7; /* Match the dark blue theme */
+            text-decoration: none; /* Remove underline for a clean look */
+        }
+        /* Hover effect for the help link */
+        .help a:hover {
+            text-decoration: underline; /* Add underline on hover for better UX */
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Display the title -->
+    <div class="title">Authentication Error</div>
+    <!-- Display the error code dynamically using Thymeleaf -->
+    <div class="error-code" th:text="'Error Code: ' + ${errorCode}">Error Code: 12345</div>
+    <!-- Display the error message dynamically -->
+    <div class="error-message" th:text="${errorMessage}">An unexpected error has occurred.</div>
+    <!-- Display the client URL dynamically -->
+    <div class="client-url" th:text="'Client: ' + ${clientUrl}">Client: https://example.com/request</div>
+    <!-- Help section with a dynamic link to the contact page -->
+    <div class="help">
+        Need help? <a th:href="@{/contact-us}">Contact us</a> and provide us with the error code, so we can assist you.
+    </div>
+</div>
+</body>
+</html>
