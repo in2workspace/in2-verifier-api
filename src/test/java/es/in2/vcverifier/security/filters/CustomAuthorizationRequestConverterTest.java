@@ -449,4 +449,60 @@ class CustomAuthorizationRequestConverterTest {
         verify(cacheStoreForOAuth2AuthorizationRequest).add(eq(state), any(OAuth2AuthorizationRequest.class));
     }
 
+    @Test
+    void convert_requestUriResponseNot200_shouldThrowInvalidClientAuthenticationException() throws Exception {
+        // Arrange
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        String clientId = "test-client-id";
+        String state = "test-state";
+        String scope = "learcredential";
+        String redirectUri = "https://client.example.com/callback";
+        String requestUri = "https://client.example.com/request.jwt";
+        String clientName = "Test Client";
+        List<String> authorizationGrantTypes = List.of("authorization_code");
+
+        when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
+        when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
+        when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
+        when(request.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+        when(request.getParameter(REQUEST_URI)).thenReturn(requestUri);
+
+        RegisteredClient registeredClient = RegisteredClient.withId("1234")
+                .clientId(clientId)
+                .clientName(clientName)
+                .authorizationGrantTypes(grantTypes -> authorizationGrantTypes.forEach(grantType -> grantTypes.add(new AuthorizationGrantType(grantType))))
+                .redirectUris(uris -> uris.add(redirectUri))
+                .build();
+
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+
+        // Mock del HttpClient y HttpResponse
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockHttpResponse = mock(HttpResponse.class);
+
+        try (MockedStatic<HttpClient> httpClientMockedStatic = Mockito.mockStatic(HttpClient.class)) {
+            httpClientMockedStatic.when(HttpClient::newHttpClient).thenReturn(mockHttpClient);
+
+            // Simulamos la respuesta de client.send()
+            when(mockHttpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(mockHttpResponse);
+
+            // Act & Assert
+            OAuth2AuthorizationCodeRequestAuthenticationException exception = assertThrows(
+                    OAuth2AuthorizationCodeRequestAuthenticationException.class,
+                    () -> converter.convert(request)
+            );
+
+            OAuth2Error error = exception.getError();
+            assertEquals("invalid_client_authentication", error.getErrorCode());
+            assertTrue(error.getDescription().contains("Failed to retrieve JWT from request_uri: Invalid response."));
+
+            String redirectUrl = error.getUri();
+            assertNotNull(redirectUrl);
+            assertTrue(redirectUrl.contains(CLIENT_ERROR_ENDPOINT));
+            assertTrue(redirectUrl.contains("errorCode="));
+            assertTrue(redirectUrl.contains("errorMessage="));
+            assertTrue(redirectUrl.contains("clientUrl="));
+        }
+    }
+
 }
