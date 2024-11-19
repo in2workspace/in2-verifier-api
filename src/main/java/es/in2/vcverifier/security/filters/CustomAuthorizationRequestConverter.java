@@ -271,7 +271,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         return UUID.randomUUID().toString();
     }
 
-    // Método refactorizado para cachear la solicitud de autorización
+    // Refactor the method to cache the authorization request
     private void cacheAuthorizationRequest(String state, String clientId, String redirectUri, String scope) {
         OAuth2AuthorizationRequest authorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
                 .state(state)
