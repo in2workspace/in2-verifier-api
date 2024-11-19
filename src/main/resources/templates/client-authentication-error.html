@@ -44,30 +44,34 @@
             margin-bottom: 2rem;
         }
 
-        .error-code {
-            font-size: 2.5rem;
-            color: var(--fore-color-primary);
-            margin-bottom: 1rem;
-        }
-
         .error-message {
             font-size: 1.75rem;
             color: var(--error-text-color);
-            margin: 2rem 0;
+            margin-bottom: 2rem;
             text-align: justify;
             text-justify: inter-word;
         }
 
-        .client-url {
-            font-size: 1.5rem;
+        .info-box {
+            display: inline-block;
+            padding: 1.5rem;
+            border: 2px solid var(--highlight-color);
+            border-radius: 8px;
+            background-color: #1E3A60; /* Un tono más oscuro para diferenciar la caja */
+            text-align: left;
+            max-width: 90%;
+        }
+
+        .info-box-item {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
             color: var(--fore-color-primary);
-            margin-bottom: 1.5rem;
         }
 
         .help {
             font-size: 1.25rem;
             color: var(--fore-color-primary);
-            margin-top: 2.5rem;
+            margin-top: 2rem;
         }
 
         .help a {
@@ -83,14 +87,19 @@
 <body>
 <div class="container">
     <div class="title">Authentication Error</div>
-    <div class="error-code" th:text="'Error Code: ' + ${errorCode}">Error Code: 12345</div>
     <div class="error-message" th:text="${errorMessage}">
         The requested scope does not contain 'learcredential'. Currently, we only support this scope and 'email', 'profile' as optional.
     </div>
-    <div class="client-url" th:text="'Client: ' + ${clientUrl}">Client: f6a24636-c933-4869-8ee3-55ad5c1eaf47</div>
+    <div class="info-box">
+        <div class="info-box-item error-code" th:text="'Error Code: ' + ${errorCode}">Error Code: 627d4af8-2ea8-4069-b3c2-b3fdaae3958d</div>
+        <div class="info-box-item client-url" th:text="'Client: ' + ${clientUrl}">Client: a2ef4ab9-737d-485f-85bb-278764e7088b</div>
+        <div class="info-box-item original-request" th:text="'Original Request: ' + ${originalRequest}">Original Request: https://example.com/request</div>
+    </div>
     <div class="help">
-        Need help? <a th:href="@{/contact-us}">Contact us</a> and provide us with the error code, so we can assist you.
+        Need help? <a th:href="@{/contact-us}">Contact us</a> and provide us with the information above, so we can assist you.
     </div>
 </div>
 </body>
 </html>
+
+

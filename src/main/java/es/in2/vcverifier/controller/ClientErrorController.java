@@ -19,12 +19,14 @@ public class ClientErrorController {
     public String showErrorPage(@RequestParam("errorCode") String errorCode,
                                 @RequestParam("errorMessage") String errorMessage,
                                 @RequestParam("clientUrl") String clientUrl,
+                                @RequestParam("originalRequestURL") String originalRequestURL,
                                 Model model) {
         // Add attributes to the model
         model.addAttribute("errorCode", errorCode);
         model.addAttribute("errorMessage", errorMessage);
         model.addAttribute("clientUrl", clientUrl);
         model.addAttribute("supportUri", verifierUiLoginUrisProperties.supportUri());
+        model.addAttribute("originalRequestURL", originalRequestURL);
 
         return "client-authentication-error"; // Return the view name
     }

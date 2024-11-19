@@ -74,6 +74,8 @@ class CustomAuthorizationRequestConverterTest {
         List<String> authorizationGrantTypes = List.of("authorization_code");
         Set<String> redirectUris = Set.of(redirectUri);
 
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
         when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
@@ -126,6 +128,8 @@ class CustomAuthorizationRequestConverterTest {
         String clientName = "Test Client";
         List<String> authorizationGrantTypes = List.of("authorization_code");
 
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
         when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
@@ -164,6 +168,7 @@ class CustomAuthorizationRequestConverterTest {
         assertTrue(redirectUrl.contains("errorCode="));
         assertTrue(redirectUrl.contains("errorMessage="));
         assertTrue(redirectUrl.contains("clientUrl="));
+        assertTrue(redirectUrl.contains("originalRequestURL="));
     }
 
 
@@ -180,6 +185,8 @@ class CustomAuthorizationRequestConverterTest {
         String clientName = "Test Client";
         List<String> authorizationGrantTypes = List.of("authorization_code");
 
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
         when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
@@ -222,6 +229,7 @@ class CustomAuthorizationRequestConverterTest {
         assertTrue(redirectUrl.contains("errorCode="));
         assertTrue(redirectUrl.contains("errorMessage="));
         assertTrue(redirectUrl.contains("clientUrl="));
+        assertTrue(redirectUrl.contains("originalRequestURL="));
     }
 
     @Test
@@ -237,6 +245,8 @@ class CustomAuthorizationRequestConverterTest {
         String clientName = "Test Client";
         List<String> authorizationGrantTypes = List.of("authorization_code");
 
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
         when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
@@ -316,6 +326,8 @@ class CustomAuthorizationRequestConverterTest {
         String scope = "openid learcredential";
         String redirectUri = "https://client.example.com/callback";
 
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
         when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
@@ -343,6 +355,8 @@ class CustomAuthorizationRequestConverterTest {
         String clientName = "Test Client";
         List<String> authorizationGrantTypes = List.of("authorization_code");
 
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
         when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
@@ -390,6 +404,8 @@ class CustomAuthorizationRequestConverterTest {
         String clientName = "Test Client";
         List<String> authorizationGrantTypes = List.of("authorization_code");
 
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
         when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
@@ -461,11 +477,14 @@ class CustomAuthorizationRequestConverterTest {
         String clientName = "Test Client";
         List<String> authorizationGrantTypes = List.of("authorization_code");
 
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
         when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
         when(request.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
         when(request.getParameter(REQUEST_URI)).thenReturn(requestUri);
+
 
         RegisteredClient registeredClient = RegisteredClient.withId("1234")
                 .clientId(clientId)

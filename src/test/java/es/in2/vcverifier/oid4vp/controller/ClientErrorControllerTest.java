@@ -31,11 +31,12 @@ class ClientErrorControllerTest {
         String errorMessage = "An error occurred during client authentication.";
         String clientUrl = "https://client.example.com";
         String supportUri = "https://support.example.com";
+        String originalRequestURL = "https://original.example.com";
 
         when(verifierUiLoginUrisProperties.supportUri()).thenReturn(supportUri);
 
         // Act
-        String viewName = clientErrorController.showErrorPage(errorCode, errorMessage, clientUrl, model);
+        String viewName = clientErrorController.showErrorPage(errorCode, errorMessage, clientUrl, originalRequestURL ,model);
 
         // Assert
         assertEquals("client-authentication-error", viewName);
@@ -44,6 +45,7 @@ class ClientErrorControllerTest {
         verify(model).addAttribute("errorMessage", errorMessage);
         verify(model).addAttribute("clientUrl", clientUrl);
         verify(model).addAttribute("supportUri", supportUri);
+        verify(model).addAttribute("originalRequestURL", originalRequestURL);
     }
 
     @Test
@@ -52,12 +54,11 @@ class ClientErrorControllerTest {
         String errorCode = "ERROR_CODE_456";
         String errorMessage = "Another error occurred.";
         String clientUrl = "https://client.example.com";
-        String supportUri = null;
-
-        when(verifierUiLoginUrisProperties.supportUri()).thenReturn(supportUri);
+        String originalRequestURL = "https://original.example.com";
+        when(verifierUiLoginUrisProperties.supportUri()).thenReturn(null);
 
         // Act
-        String viewName = clientErrorController.showErrorPage(errorCode, errorMessage, clientUrl, model);
+        String viewName = clientErrorController.showErrorPage(errorCode, errorMessage, clientUrl, originalRequestURL, model);
 
         // Assert
         assertEquals("client-authentication-error", viewName);
@@ -65,21 +66,19 @@ class ClientErrorControllerTest {
         verify(model).addAttribute("errorCode", errorCode);
         verify(model).addAttribute("errorMessage", errorMessage);
         verify(model).addAttribute("clientUrl", clientUrl);
-        verify(model).addAttribute("supportUri", supportUri);
+        verify(model).addAttribute("supportUri", null);
+        verify(model).addAttribute("originalRequestURL", originalRequestURL);
     }
 
     @Test
     void showErrorPage_withNullParameters_shouldAddNullValuesToModel() {
         // Arrange
-        String errorCode = null;
-        String errorMessage = null;
-        String clientUrl = null;
         String supportUri = "https://support.example.com";
 
         when(verifierUiLoginUrisProperties.supportUri()).thenReturn(supportUri);
 
         // Act
-        String viewName = clientErrorController.showErrorPage(errorCode, errorMessage, clientUrl, model);
+        String viewName = clientErrorController.showErrorPage(null, null, null, null,model);
 
         // Assert
         assertEquals("client-authentication-error", viewName);
@@ -87,6 +86,7 @@ class ClientErrorControllerTest {
         verify(model).addAttribute("errorCode", null);
         verify(model).addAttribute("errorMessage", null);
         verify(model).addAttribute("clientUrl", null);
+        verify(model).addAttribute("originalRequestURL", null);
         verify(model).addAttribute("supportUri", supportUri);
     }
 }
