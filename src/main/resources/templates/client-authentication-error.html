@@ -80,11 +80,12 @@
         }
 
         .shortened-url {
+            display: inline-block;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             max-width: 400px;
-            flex: 1;
+            vertical-align: middle;
         }
 
         .copy-button {
@@ -145,7 +146,7 @@
                 <p><strong>Client</strong>: <span th:text="${clientUrl}">a2ef4ab9-737d-485f-85bb-278764e7088b</span></p>
             </div>
             <div class="info-box-item">
-                <p><strong>Original Request</strong>: <span class="shortened-url" th:text="${originalRequestURL}">http://localhost:9000/oidc/authorize?...</span></p>
+                <p><strong>Original Request</strong>: <span class="shortened-url" th:utext="${originalRequestURL}">http://localhost:9000/oidc/authorize?...</span></p>
             </div>
         </div>
         <div class="copy-button" onclick="copyInfoBoxToClipboard()">
