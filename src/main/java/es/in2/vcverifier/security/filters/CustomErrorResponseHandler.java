@@ -9,6 +9,9 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 
 import java.io.IOException;
 
+import static es.in2.vcverifier.util.Constants.INVALID_CLIENT_AUTHENTICATION;
+import static es.in2.vcverifier.util.Constants.REQUIRED_EXTERNAL_USER_AUTHENTICATION;
+
 public class CustomErrorResponseHandler implements AuthenticationFailureHandler {
 
     @Override
@@ -16,15 +19,14 @@ public class CustomErrorResponseHandler implements AuthenticationFailureHandler 
                                         AuthenticationException exception) throws IOException {
         if (exception instanceof OAuth2AuthorizationCodeRequestAuthenticationException oAuth2Exception) {
             OAuth2Error error = oAuth2Exception.getError();
-
-            // Redirigir a la URI contenida en el error, si está presente
-            if (error.getUri() != null) {
+            // Redirect to the URI contained, if the error code is required_external_user_authentication or invalid_client_authentication
+            if (error.getErrorCode().equals(REQUIRED_EXTERNAL_USER_AUTHENTICATION) || error.getErrorCode().equals(INVALID_CLIENT_AUTHENTICATION)) {
                 response.sendRedirect(error.getUri());
                 return;
             }
         }
 
-        // Manejar otros errores si es necesario
+        // Handle other unexpected errors
         response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Authentication failed");
     }
 }
