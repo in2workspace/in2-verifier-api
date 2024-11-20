@@ -2,6 +2,7 @@ package es.in2.vcverifier.service.impl;
 
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.properties.SecurityProperties;
+import es.in2.vcverifier.exception.InvalidVPtokenException;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.service.AuthorizationResponseProcessorService;
 import es.in2.vcverifier.service.VpService;
@@ -62,7 +63,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         boolean isValid = vpService.validateVerifiablePresentation(decodedVpToken);
         if (!isValid) {
             log.error("VP Token is invalid");
-            throw new IllegalArgumentException("Invalid VP Token");
+            throw new InvalidVPtokenException("Invalid VP Token");
         }
         log.info("VP Token validated successfully");
 

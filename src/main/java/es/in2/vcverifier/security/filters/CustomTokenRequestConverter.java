@@ -6,6 +6,7 @@ import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidCredentialTypeException;
+import es.in2.vcverifier.exception.InvalidVPtokenException;
 import es.in2.vcverifier.exception.UnsupportedGrantTypeException;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.model.credentials.machine.LEARCredentialMachine;
@@ -124,7 +125,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         isValid = vpService.validateVerifiablePresentation(vpToken);
         if (!isValid) {
             log.error("CustomTokenRequestConverter -- handleM2MGrant -- VP Token is invalid");
-            throw new IllegalArgumentException("Invalid VP Token");
+            throw new InvalidVPtokenException("Invalid VP Token");
         }
         log.info("VP Token validated successfully");
 

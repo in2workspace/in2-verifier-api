@@ -1,9 +1,6 @@
 package es.in2.vcverifier.exception.handler;
 
-import es.in2.vcverifier.exception.CredentialRevokedException;
-import es.in2.vcverifier.exception.MismatchOrganizationIdentifierException;
-import es.in2.vcverifier.exception.QRCodeGenerationException;
-import es.in2.vcverifier.exception.ResourceNotFoundException;
+import es.in2.vcverifier.exception.*;
 import es.in2.vcverifier.model.GlobalErrorMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -52,10 +49,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("The organization identifier of the cert does not match the organization identifier from the credential payload: ", ex);
         return new GlobalErrorMessage("","","");
     }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public GlobalErrorMessage handleException(Exception ex) {
         log.error("An unexpected error occurred: ", ex);
+        return new GlobalErrorMessage("","","");
+    }
+
+    @ExceptionHandler(InvalidVPtokenException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public GlobalErrorMessage handleException(InvalidVPtokenException ex) {
+        log.error("VP token is not valid: ", ex);
         return new GlobalErrorMessage("","","");
     }
 }
