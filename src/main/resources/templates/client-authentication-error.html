@@ -163,23 +163,17 @@
 </script>
 
 <script>
-    function copyInfoBoxToClipboard() {
-        // Obtener el contenido completo del originalRequestURL desde la variable originalUrl
-        const errorCode = document.querySelector('.error-code').innerText;
+    function copyInfoBoxToClipboard() {const errorCode = document.querySelector('.error-code').innerText;
         const clientUrl = document.querySelector('.client-url').innerText;
 
-        // Concatenar todo el contenido
         const fullText = `${errorCode}\n${clientUrl}\nOriginal Request: ${originalUrl}`;
 
-        // Copiar el contenido al portapapeles
         navigator.clipboard.writeText(fullText).then(() => {
-            // Cambiar el color del botón para indicar éxito
             const copyButton = document.querySelector('.copy-button');
             copyButton.style.backgroundColor = 'var(--dark-highlight-color)';
             copyButton.style.color = 'var(--fore-color-primary)';
 
             setTimeout(() => {
-                // Revertir los colores después de 2 segundos
                 copyButton.style.backgroundColor = 'var(--highlight-color)';
                 copyButton.style.color = 'var(--bg-color-primary)';
             }, 2000);
