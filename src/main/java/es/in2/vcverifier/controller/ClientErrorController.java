@@ -14,6 +14,7 @@ import org.springframework.ui.Model;
 public class ClientErrorController {
 
     private final VerifierUiLoginUrisProperties verifierUiLoginUrisProperties;
+
     @GetMapping("/client-error")
     @ResponseStatus(HttpStatus.OK)
     public String showErrorPage(@RequestParam("errorCode") String errorCode,
@@ -27,8 +28,8 @@ public class ClientErrorController {
         model.addAttribute("clientUrl", clientUrl);
         model.addAttribute("supportUri", verifierUiLoginUrisProperties.supportUri());
         model.addAttribute("originalRequestURL", originalRequestURL);
-
-        return "client-authentication-error"; // Return the view name
+        // Return the view name
+        return "client-authentication-error";
     }
-}
 
+}
