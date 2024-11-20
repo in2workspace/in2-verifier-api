@@ -61,7 +61,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public GlobalErrorMessage handleException(InvalidVPtokenException ex) {
         log.error("VP token is not valid: ", ex);
-        return new GlobalErrorMessage("","","");
+        return new GlobalErrorMessage("VP token is not valid", ex.getMessage(),"");
     }
 }
 
