@@ -18,9 +18,9 @@ public class CorsConfig {
         // Allow all origins
         configuration.setAllowedOrigins(List.of("*"));
         // Allow all HTTP methods
-        configuration.addAllowedMethod("*");
+        configuration.setAllowedMethods(List.of("GET", "POST"));
         // Allow all headers
-        configuration.addAllowedHeader("*");
+        configuration.setAllowedHeaders(List.of("Content-Type"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/health", configuration);
