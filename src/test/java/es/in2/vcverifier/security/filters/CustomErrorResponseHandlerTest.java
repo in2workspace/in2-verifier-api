@@ -29,19 +29,39 @@ class CustomErrorResponseHandlerTest {
     private CustomErrorResponseHandler customErrorResponseHandler;
 
     @Test
-    void testOnAuthenticationFailure_WithOAuth2Exception_AndUriPresent() throws IOException {
-        String redirectUri = "https://example.com/error";
-        OAuth2Error oauth2Error = new OAuth2Error("invalid_request", "Invalid request", redirectUri);
+    void testOnAuthenticationFailure_WithRequiredExternalUserAuthenticationError_ShouldRedirect() throws IOException {
+        String redirectUri = "https://example.com/login";
+        OAuth2Error oauth2Error = new OAuth2Error(
+                "required_external_user_authentication",
+                "Redirection required",
+                redirectUri
+        );
         AuthenticationException exception = new OAuth2AuthorizationCodeRequestAuthenticationException(oauth2Error, null);
 
         customErrorResponseHandler.onAuthenticationFailure(request, response, exception);
 
         verify(response).sendRedirect(redirectUri);
-        verify(response, never()).sendError(HttpServletResponse.SC_BAD_REQUEST, "Authentication failed");
+        verify(response, never()).sendError(anyInt(), anyString());
     }
 
     @Test
-    void testOnAuthenticationFailure_WithOAuth2Exception_WithoutUri() throws IOException {
+    void testOnAuthenticationFailure_WithInvalidClientAuthenticationError_ShouldRedirect() throws IOException {
+        String redirectUri = "https://example.com/error";
+        OAuth2Error oauth2Error = new OAuth2Error(
+                "invalid_client_authentication",
+                "Invalid client authentication",
+                redirectUri
+        );
+        AuthenticationException exception = new OAuth2AuthorizationCodeRequestAuthenticationException(oauth2Error, null);
+
+        customErrorResponseHandler.onAuthenticationFailure(request, response, exception);
+
+        verify(response).sendRedirect(redirectUri);
+        verify(response, never()).sendError(anyInt(), anyString());
+    }
+
+    @Test
+    void testOnAuthenticationFailure_WithOAuth2Exception_OtherErrorCode_ShouldSendError() throws IOException {
         OAuth2Error oauth2Error = new OAuth2Error("invalid_request", "Invalid request", null);
         AuthenticationException exception = new OAuth2AuthorizationCodeRequestAuthenticationException(oauth2Error, null);
 
@@ -52,7 +72,7 @@ class CustomErrorResponseHandlerTest {
     }
 
     @Test
-    void testOnAuthenticationFailure_WithOtherAuthenticationException() throws IOException {
+    void testOnAuthenticationFailure_WithOtherAuthenticationException_ShouldSendError() throws IOException {
         AuthenticationException exception = mock(AuthenticationException.class);
 
         customErrorResponseHandler.onAuthenticationFailure(request, response, exception);

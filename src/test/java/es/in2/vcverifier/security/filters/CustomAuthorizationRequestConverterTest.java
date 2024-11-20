@@ -6,7 +6,6 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.component.CryptoComponent;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.properties.SecurityProperties;
-import es.in2.vcverifier.exception.UnsupportedScopeException;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -25,10 +26,14 @@ import org.springframework.security.oauth2.server.authorization.authentication.O
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.PublicKey;
 import java.util.List;
 import java.util.Set;
 
+import static es.in2.vcverifier.util.Constants.CLIENT_ERROR_ENDPOINT;
 import static es.in2.vcverifier.util.Constants.REQUEST_URI;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -58,16 +63,19 @@ class CustomAuthorizationRequestConverterTest {
     private CustomAuthorizationRequestConverter converter;
 
     @Test
-    void convert_validStandardRequest_shouldReturnAuthentication() {
+    void convert_validStandardRequest_shouldThrowRedirectionException() {
         // Arrange
         HttpServletRequest request = mock(HttpServletRequest.class);
         String clientId = "test-client-id";
         String state = "test-state";
-        String scope = "openid learcredential";
+        String scope = "learcredential";
         String redirectUri = "https://client.example.com/callback";
-        List<String> authorizationGrantTypes = List.of("code");
-        List<String> redirectUris = List.of(redirectUri);
+        String clientName = "Test Client";
+        List<String> authorizationGrantTypes = List.of("authorization_code");
+        Set<String> redirectUris = Set.of(redirectUri);
 
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
         when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
@@ -76,8 +84,8 @@ class CustomAuthorizationRequestConverterTest {
         when(request.getParameter("request")).thenReturn(null);
 
         RegisteredClient registeredClient = RegisteredClient.withId("1234")
-                .clientId("1234")
-                .clientName("https://client.example.com")
+                .clientId(clientId)
+                .clientName(clientName)
                 .authorizationGrantTypes(grantTypes -> authorizationGrantTypes.forEach(grantType -> grantTypes.add(new AuthorizationGrantType(grantType))))
                 .redirectUris(uris -> uris.addAll(redirectUris))
                 .build();
@@ -99,14 +107,216 @@ class CustomAuthorizationRequestConverterTest {
         );
 
         OAuth2Error error = exception.getError();
-        assertEquals("custom_error", error.getErrorCode());
+        assertEquals("required_external_user_authentication", error.getErrorCode());
 
         String redirectUrl = error.getUri();
+        assertNotNull(redirectUrl);
+        assertTrue(redirectUrl.contains("/login?"));
         assertTrue(redirectUrl.contains("authRequest="));
         assertTrue(redirectUrl.contains("state="));
         assertTrue(redirectUrl.contains("homeUri="));
     }
+    @Test
+    void convert_fapiRequestWithMismatchedClientId_shouldThrowInvalidClientAuthenticationException() {
+        // Arrange
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        String clientId = "test-client-id";
+        String state = "test-state";
+        String scope = "learcredential";
+        String redirectUri = "https://client.example.com/callback";
+        String jwt = "mock-jwt-token";
+        String clientName = "Test Client";
+        List<String> authorizationGrantTypes = List.of("authorization_code");
 
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
+        when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
+        when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
+        when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
+        when(request.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+        when(request.getParameter(REQUEST_URI)).thenReturn(null);
+        when(request.getParameter("request")).thenReturn(jwt);
+
+        RegisteredClient registeredClient = RegisteredClient.withId("1234")
+                .clientId(clientId)
+                .clientName(clientName)
+                .authorizationGrantTypes(grantTypes -> authorizationGrantTypes.forEach(grantType -> grantTypes.add(new AuthorizationGrantType(grantType))))
+                .redirectUris(uris -> uris.add(redirectUri))
+                .build();
+
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+
+        // Mock del JWT
+        SignedJWT signedJWT = mock(SignedJWT.class);
+        Payload payload = mock(Payload.class);
+        when(signedJWT.getPayload()).thenReturn(payload);
+        when(jwtService.parseJWT(jwt)).thenReturn(signedJWT);
+
+        // Act & Assert
+        OAuth2AuthorizationCodeRequestAuthenticationException exception = assertThrows(
+                OAuth2AuthorizationCodeRequestAuthenticationException.class,
+                () -> converter.convert(request)
+        );
+
+        OAuth2Error error = exception.getError();
+        assertEquals("invalid_client_authentication", error.getErrorCode());
+        assertTrue(error.getDescription().contains("The OAuth 2.0 parameters do not match the JWT claims."));
+
+        String redirectUrl = error.getUri();
+        assertNotNull(redirectUrl);
+        assertTrue(redirectUrl.contains("/client-error"));
+        assertTrue(redirectUrl.contains("errorCode="));
+        assertTrue(redirectUrl.contains("errorMessage="));
+        assertTrue(redirectUrl.contains("clientUrl="));
+        assertTrue(redirectUrl.contains("originalRequestURL="));
+    }
+
+
+    @Test
+    void convert_fapiRequestWithInvalidRedirectUri_shouldThrowInvalidClientAuthenticationException() {
+        // Arrange
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        String clientId = "test-client-id";
+        String state = "test-state";
+        String scope = "learcredential";
+        String redirectUri = "https://client.example.com/callback";
+        String jwtRedirectUri = "https://malicious.example.com/callback";
+        String jwt = "mock-jwt-token";
+        String clientName = "Test Client";
+        List<String> authorizationGrantTypes = List.of("authorization_code");
+
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
+        when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
+        when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
+        when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
+        when(request.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+        when(request.getParameter(REQUEST_URI)).thenReturn(null);
+        when(request.getParameter("request")).thenReturn(jwt);
+
+        RegisteredClient registeredClient = RegisteredClient.withId("1234")
+                .clientId(clientId)
+                .clientName(clientName)
+                .authorizationGrantTypes(grantTypes -> authorizationGrantTypes.forEach(grantType -> grantTypes.add(new AuthorizationGrantType(grantType))))
+                .redirectUris(uris -> uris.add(redirectUri))
+                .build();
+
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+
+        // Mock del JWT
+        SignedJWT signedJWT = mock(SignedJWT.class);
+        Payload payload = mock(Payload.class);
+        when(signedJWT.getPayload()).thenReturn(payload);
+        when(jwtService.parseJWT(jwt)).thenReturn(signedJWT);
+        when(jwtService.getClaimFromPayload(payload, OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
+        when(jwtService.getClaimFromPayload(payload, OAuth2ParameterNames.SCOPE)).thenReturn(scope);
+
+        when(jwtService.getClaimFromPayload(payload, OAuth2ParameterNames.REDIRECT_URI)).thenReturn(jwtRedirectUri);
+
+        // Act & Assert
+        OAuth2AuthorizationCodeRequestAuthenticationException exception = assertThrows(
+                OAuth2AuthorizationCodeRequestAuthenticationException.class,
+                () -> converter.convert(request)
+        );
+
+        OAuth2Error error = exception.getError();
+        assertEquals("invalid_client_authentication", error.getErrorCode());
+        assertTrue(error.getDescription().contains("The redirect_uri does not match any of the registered client's redirect_uris."));
+
+        String redirectUrl = error.getUri();
+        assertNotNull(redirectUrl);
+        assertTrue(redirectUrl.contains("/client-error"));
+        assertTrue(redirectUrl.contains("errorCode="));
+        assertTrue(redirectUrl.contains("errorMessage="));
+        assertTrue(redirectUrl.contains("clientUrl="));
+        assertTrue(redirectUrl.contains("originalRequestURL="));
+    }
+
+    @Test
+    void convert_fapiRequestWithRequestUri_shouldProcessSuccessfully() throws Exception {
+        // Arrange
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        String clientId = "test-client-id";
+        String state = "test-state";
+        String scope = "learcredential";
+        String redirectUri = "https://client.example.com/callback";
+        String requestUri = "https://client.example.com/request.jwt";
+        String jwt = "mock-jwt-token";
+        String clientName = "Test Client";
+        List<String> authorizationGrantTypes = List.of("authorization_code");
+
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
+        when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
+        when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
+        when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
+        when(request.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+        when(request.getParameter(REQUEST_URI)).thenReturn(requestUri);
+
+        RegisteredClient registeredClient = RegisteredClient.withId("1234")
+                .clientId(clientId)
+                .clientName(clientName)
+                .authorizationGrantTypes(grantTypes -> authorizationGrantTypes.forEach(grantType -> grantTypes.add(new AuthorizationGrantType(grantType))))
+                .redirectUris(uris -> uris.add(redirectUri))
+                .build();
+
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+
+        // Mock del HttpClient y HttpResponse
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockHttpResponse = mock(HttpResponse.class);
+
+        try (MockedStatic<HttpClient> httpClientMockedStatic = Mockito.mockStatic(HttpClient.class)) {
+            httpClientMockedStatic.when(HttpClient::newHttpClient).thenReturn(mockHttpClient);
+
+            // Simulamos la respuesta de client.send()
+            when(mockHttpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(mockHttpResponse);
+            when(mockHttpResponse.statusCode()).thenReturn(200);
+            when(mockHttpResponse.body()).thenReturn(jwt);
+
+            // Mock del JWT
+            SignedJWT signedJWT = mock(SignedJWT.class);
+            Payload payload = mock(Payload.class);
+            when(signedJWT.getPayload()).thenReturn(payload);
+            when(jwtService.parseJWT(jwt)).thenReturn(signedJWT);
+            when(jwtService.getClaimFromPayload(payload, OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
+            when(jwtService.getClaimFromPayload(payload, OAuth2ParameterNames.SCOPE)).thenReturn(scope);
+            when(jwtService.getClaimFromPayload(payload, OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+
+            // Mock de la verificación del JWT
+            PublicKey publicKey = mock(PublicKey.class);
+            when(didService.getPublicKeyFromDid(clientId)).thenReturn(publicKey);
+            when(signedJWT.serialize()).thenReturn("serialized-jwt");
+            doNothing().when(jwtService).verifyJWTWithECKey(anyString(), eq(publicKey));
+
+            // Mock de la generación del JWT
+            ECKey ecKey = mock(ECKey.class);
+            when(ecKey.getKeyID()).thenReturn("key-id");
+            when(cryptoComponent.getECKey()).thenReturn(ecKey);
+            when(jwtService.generateJWT(anyString())).thenReturn("signed-auth-request");
+
+            when(securityProperties.authorizationServer()).thenReturn("https://auth.server.com");
+
+            // Act & Assert
+            OAuth2AuthorizationCodeRequestAuthenticationException exception = assertThrows(
+                    OAuth2AuthorizationCodeRequestAuthenticationException.class,
+                    () -> converter.convert(request)
+            );
+
+            OAuth2Error error = exception.getError();
+            assertEquals("required_external_user_authentication", error.getErrorCode());
+
+            String redirectUrl = error.getUri();
+            assertNotNull(redirectUrl);
+            assertTrue(redirectUrl.contains("/login?"));
+            assertTrue(redirectUrl.contains("authRequest="));
+            assertTrue(redirectUrl.contains("state="));
+            assertTrue(redirectUrl.contains("homeUri="));
+
+            // Verificamos que se almacenó la solicitud de autorización
+            verify(cacheStoreForOAuth2AuthorizationRequest).add(eq(state), any(OAuth2AuthorizationRequest.class));
+        }
+    }
     @Test
     void convert_standardRequest_missingRedirectUri_shouldThrowException() {
         // Arrange
@@ -116,6 +326,8 @@ class CustomAuthorizationRequestConverterTest {
         String scope = "openid learcredential";
         String redirectUri = "https://client.example.com/callback";
 
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
         when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
@@ -133,15 +345,18 @@ class CustomAuthorizationRequestConverterTest {
     }
 
     @Test
-    void convert_standardRequest_unsupportedScope_shouldThrowException() {
+    void convert_standardRequest_unsupportedScope_shouldThrowInvalidClientAuthenticationException() {
         // Arrange
         HttpServletRequest request = mock(HttpServletRequest.class);
         String clientId = "test-client-id";
         String state = "test-state";
         String scope = "unsupported_scope";
         String redirectUri = "https://client.example.com/callback";
-        RegisteredClient registeredClient = mock(RegisteredClient.class);
+        String clientName = "Test Client";
+        List<String> authorizationGrantTypes = List.of("authorization_code");
 
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
         when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
@@ -149,32 +364,48 @@ class CustomAuthorizationRequestConverterTest {
         when(request.getParameter(REQUEST_URI)).thenReturn(null);
         when(request.getParameter("request")).thenReturn(null);
 
-        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
-        when(registeredClient.getRedirectUris()).thenReturn(Set.of(redirectUri));
+        RegisteredClient registeredClient = RegisteredClient.withId("1234")
+                .clientId(clientId)
+                .clientName(clientName)
+                .authorizationGrantTypes(grantTypes -> authorizationGrantTypes.forEach(grantType -> grantTypes.add(new AuthorizationGrantType(grantType))))
+                .redirectUris(uris -> uris.add(redirectUri))
+                .build();
 
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
         when(securityProperties.authorizationServer()).thenReturn("https://auth.server.com");
 
         // Act & Assert
-        UnsupportedScopeException exception = assertThrows(
-                UnsupportedScopeException.class,
+        OAuth2AuthorizationCodeRequestAuthenticationException exception = assertThrows(
+                OAuth2AuthorizationCodeRequestAuthenticationException.class,
                 () -> converter.convert(request)
         );
 
-        assertEquals("Unsupported scope: " + scope, exception.getMessage());
+        OAuth2Error error = exception.getError();
+        assertEquals("invalid_client_authentication", error.getErrorCode());
+        assertTrue(error.getDescription().contains("The requested scope does not contain"));
+
+        String redirectUrl = error.getUri();
+        assertNotNull(redirectUrl);
+        assertTrue(redirectUrl.contains(CLIENT_ERROR_ENDPOINT));
+        assertTrue(redirectUrl.contains("errorCode="));
+        assertTrue(redirectUrl.contains("errorMessage="));
+        assertTrue(redirectUrl.contains("clientUrl="));
     }
 
     @Test
-    void convert_validFAPIRequestWithRequestParameter_shouldProcessSuccessfully(){
+    void convert_validFAPIRequestWithRequestParameter_shouldProcessSuccessfully() {
         // Arrange
         HttpServletRequest request = mock(HttpServletRequest.class);
         String clientId = "test-client-id";
         String state = "test-state";
-        String scope = "openid learcredential";
+        String scope = "learcredential";
         String redirectUri = "https://client.example.com/callback";
-        String jwt = "mock-jwt-token"; // Este es el JWT pasado en el parámetro 'request'
+        String jwt = "mock-jwt-token"; // The JWT passed in the 'request' parameter
+        String clientName = "Test Client";
+        List<String> authorizationGrantTypes = List.of("authorization_code");
 
-        RegisteredClient registeredClient = mock(RegisteredClient.class);
-
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
         when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
@@ -182,9 +413,14 @@ class CustomAuthorizationRequestConverterTest {
         when(request.getParameter(REQUEST_URI)).thenReturn(null);
         when(request.getParameter("request")).thenReturn(jwt);
 
+        RegisteredClient registeredClient = RegisteredClient.withId("1234")
+                .clientId(clientId)
+                .clientName(clientName)
+                .authorizationGrantTypes(grantTypes -> authorizationGrantTypes.forEach(grantType -> grantTypes.add(new AuthorizationGrantType(grantType))))
+                .redirectUris(uris -> uris.add(redirectUri))
+                .build();
+
         when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
-        when(registeredClient.getRedirectUris()).thenReturn(Set.of(redirectUri));
-        when(registeredClient.getClientName()).thenReturn("Test Client");
 
         // Mock JWT parsing and validation
         SignedJWT signedJWT = mock(SignedJWT.class);
@@ -216,9 +452,11 @@ class CustomAuthorizationRequestConverterTest {
         );
 
         OAuth2Error error = exception.getError();
-        assertEquals("custom_error", error.getErrorCode());
+        assertEquals("required_external_user_authentication", error.getErrorCode());
 
         String redirectUrl = error.getUri();
+        assertNotNull(redirectUrl);
+        assertTrue(redirectUrl.contains("/login?"));
         assertTrue(redirectUrl.contains("authRequest="));
         assertTrue(redirectUrl.contains("state="));
         assertTrue(redirectUrl.contains("homeUri="));
@@ -227,5 +465,63 @@ class CustomAuthorizationRequestConverterTest {
         verify(cacheStoreForOAuth2AuthorizationRequest).add(eq(state), any(OAuth2AuthorizationRequest.class));
     }
 
+    @Test
+    void convert_requestUriResponseNot200_shouldThrowInvalidClientAuthenticationException() throws Exception {
+        // Arrange
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        String clientId = "test-client-id";
+        String state = "test-state";
+        String scope = "learcredential";
+        String redirectUri = "https://client.example.com/callback";
+        String requestUri = "https://client.example.com/request.jwt";
+        String clientName = "Test Client";
+        List<String> authorizationGrantTypes = List.of("authorization_code");
+
+        when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
+        when(request.getQueryString()).thenReturn("client_id=test-client-id&scope=learcredential&state=test-state");
+        when(request.getParameter(OAuth2ParameterNames.CLIENT_ID)).thenReturn(clientId);
+        when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
+        when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
+        when(request.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+        when(request.getParameter(REQUEST_URI)).thenReturn(requestUri);
+
+
+        RegisteredClient registeredClient = RegisteredClient.withId("1234")
+                .clientId(clientId)
+                .clientName(clientName)
+                .authorizationGrantTypes(grantTypes -> authorizationGrantTypes.forEach(grantType -> grantTypes.add(new AuthorizationGrantType(grantType))))
+                .redirectUris(uris -> uris.add(redirectUri))
+                .build();
+
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+
+        // Mock del HttpClient y HttpResponse
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        HttpResponse<String> mockHttpResponse = mock(HttpResponse.class);
+
+        try (MockedStatic<HttpClient> httpClientMockedStatic = Mockito.mockStatic(HttpClient.class)) {
+            httpClientMockedStatic.when(HttpClient::newHttpClient).thenReturn(mockHttpClient);
+
+            // Simulamos la respuesta de client.send()
+            when(mockHttpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(mockHttpResponse);
+
+            // Act & Assert
+            OAuth2AuthorizationCodeRequestAuthenticationException exception = assertThrows(
+                    OAuth2AuthorizationCodeRequestAuthenticationException.class,
+                    () -> converter.convert(request)
+            );
+
+            OAuth2Error error = exception.getError();
+            assertEquals("invalid_client_authentication", error.getErrorCode());
+            assertTrue(error.getDescription().contains("Failed to retrieve JWT from request_uri: Invalid response."));
+
+            String redirectUrl = error.getUri();
+            assertNotNull(redirectUrl);
+            assertTrue(redirectUrl.contains(CLIENT_ERROR_ENDPOINT));
+            assertTrue(redirectUrl.contains("errorCode="));
+            assertTrue(redirectUrl.contains("errorMessage="));
+            assertTrue(redirectUrl.contains("clientUrl="));
+        }
+    }
 
 }
