@@ -10,7 +10,7 @@ plugins {
 }
 
 group = 'es.in2'
-version = '1.0.10'
+version = '1.0.11'
 
 java {
 	toolchain {
@@ -67,12 +67,12 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	// Cryptography
 	implementation 'com.nimbusds:nimbus-jose-jwt:9.40'
-	implementation 'org.bitcoinj:bitcoinj-core:0.17-alpha5'
+	implementation 'org.bitcoinj:bitcoinj-core:0.17-beta1'
 	implementation 'io.github.novacrypto:Base58:2022.01.17'
 	//Jackson
 	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.2'
 	// JSON
-	implementation 'org.json:json:20230227'
+	implementation 'org.json:json:20240303'
 	// QR GENERATOR
 	implementation 'com.github.kenglxn.QRGen:javase:3.0.1'
 	// DevTools

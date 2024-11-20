@@ -1,5 +1,6 @@
 package es.in2.vcverifier.security;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,11 +12,15 @@ import org.springframework.security.web.SecurityFilterChain;
 @Slf4j
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final CorsConfig corsConfig;
 
     @Bean
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/health").permitAll()
                         .requestMatchers("/oid4vp/auth-request/*").permitAll()
@@ -26,7 +31,6 @@ public class SecurityConfig {
                         .requestMatchers("/qr-socket/**").permitAll()
                         .requestMatchers("/img/**").permitAll()
                         .anyRequest().authenticated()
-
                 )
                 //TODO Config with Sonar
                 .csrf(AbstractHttpConfigurer::disable)
