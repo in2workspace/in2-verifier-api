@@ -2,12 +2,14 @@ package es.in2.vcverifier.exception.handler;
 
 import es.in2.vcverifier.exception.*;
 import es.in2.vcverifier.model.GlobalErrorMessage;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
 class GlobalExceptionHandlerTest {
 
@@ -88,10 +90,16 @@ class GlobalExceptionHandlerTest {
     void testHandleInvalidVPtokenException() {
         InvalidVPtokenException exception = new InvalidVPtokenException("Invalid VP token");
 
-        GlobalErrorMessage response = globalExceptionHandler.handleException(exception);
+        // Mock HttpServletRequest
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        when(mockRequest.getContextPath()).thenReturn("/test-path");
 
-        assertThat(response.title()).isEqualTo("VP token is not valid");
+        GlobalErrorMessage response = globalExceptionHandler.handleException(exception, mockRequest);
+
+        assertThat(response.title()).isEqualTo("Invalid VP Token");
         assertThat(response.message()).isEqualTo("Invalid VP token");
-        assertThat(response.path()).isEmpty();
+        assertThat(response.path()).isEqualTo("/test-path");
+
+        verify(mockRequest).getContextPath(); // Verify the mock interaction
     }
 }

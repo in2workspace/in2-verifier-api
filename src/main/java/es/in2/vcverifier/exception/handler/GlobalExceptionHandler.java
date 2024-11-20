@@ -2,6 +2,7 @@ package es.in2.vcverifier.exception.handler;
 
 import es.in2.vcverifier.exception.*;
 import es.in2.vcverifier.model.GlobalErrorMessage;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -59,9 +60,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(InvalidVPtokenException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public GlobalErrorMessage handleException(InvalidVPtokenException ex) {
-        log.error("VP token is not valid: ", ex);
-        return new GlobalErrorMessage("VP token is not valid", ex.getMessage(),"");
+    public GlobalErrorMessage handleException(InvalidVPtokenException ex, HttpServletRequest request) {
+        String contextPath = request.getContextPath();
+        log.error("VP token is not valid: {}", ex.getMessage());
+        return new GlobalErrorMessage("Invalid VP Token", ex.getMessage(), contextPath);
     }
 }
 

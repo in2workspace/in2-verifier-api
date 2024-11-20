@@ -63,7 +63,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         boolean isValid = vpService.validateVerifiablePresentation(decodedVpToken);
         if (!isValid) {
             log.error("VP Token is invalid");
-            throw new InvalidVPtokenException("Invalid VP Token");
+            throw new InvalidVPtokenException("VP Token used in H2M flow is invalid");
         }
         log.info("VP Token validated successfully");
 

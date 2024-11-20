@@ -125,7 +125,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         isValid = vpService.validateVerifiablePresentation(vpToken);
         if (!isValid) {
             log.error("CustomTokenRequestConverter -- handleM2MGrant -- VP Token is invalid");
-            throw new InvalidVPtokenException("Invalid VP Token");
+            throw new InvalidVPtokenException("VP Token used in M2M flow is invalid");
         }
         log.info("VP Token validated successfully");
 
