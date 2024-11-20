@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Authentication Error</title>
-    <!-- Import Blinker font from Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Blinker:wght@100;200;300;400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* Define color variables for the design */
         :root {
             --fore-color-primary: #FFFFFF;
             --bg-color-primary: #14274A;
@@ -22,7 +20,6 @@
             padding: 0;
         }
 
-        /* General body styling */
         body {
             font-family: 'Blinker', sans-serif;
             background-color: var(--bg-color-primary);
@@ -32,7 +29,6 @@
             align-items: center;
         }
 
-        /* Container styling for the entire error page */
         .container {
             text-align: center;
             padding: 3rem;
@@ -42,7 +38,6 @@
             max-width: 800px;
         }
 
-        /* Styling for the error title */
         .title {
             font-size: 4rem;
             font-weight: bold;
@@ -50,7 +45,6 @@
             margin-bottom: 2rem;
         }
 
-        /* Styling for the error message */
         .error-message {
             font-size: 1.75rem;
             color: var(--error-text-color);
@@ -59,81 +53,82 @@
             text-justify: inter-word;
         }
 
-        /* Styling for the box containing error details */
         .info-box {
             position: relative;
             display: inline-flex;
             padding: 1.5rem;
             border: 2px solid var(--highlight-color);
             border-radius: 8px;
-            background-color: #1E3A60; /* Darker tone to differentiate the box */
+            background-color: #1E3A60;
             text-align: left;
             max-width: 90%;
         }
 
-        /* Styling for the content inside the info box */
         .info-box-content {
             flex-grow: 1;
         }
 
-        /* Styling for each individual item in the info box */
         .info-box-item {
             font-size: 1.25rem;
             margin-bottom: 1rem;
             color: var(--fore-color-primary);
         }
+
         .info-box-item:last-child {
-            margin-bottom: 0; /* Remove margin from the last item */
+            margin-bottom: 0;
         }
 
-        /* Styling for the copy button */
+        .original-request {
+            display: flex;
+            align-items: center;
+        }
+
+        .shortened-url {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 400px;
+            flex: 1;
+        }
+
         .copy-button {
             position: absolute;
-            top: 0;
-            right: 0;
-            margin: 5px;
+            top: 5px;
+            right: 5px;
             background-color: var(--highlight-color);
             color: var(--bg-color-primary);
-            border: 2px solid var(--highlight-color);
+            border: none;
             padding: 0.3rem;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-            width: 30px;
-            height: 30px;
         }
 
-        /* Styling for the copy button on hover */
         .copy-button:hover {
             background-color: var(--fore-color-primary);
             color: var(--highlight-color);
-            border-color: var(--fore-color-primary);
         }
 
-        /* Styling for the icon inside the copy button */
         .copy-icon {
             margin: 0;
-            font-size: 1rem;
+            font-size: 1.3rem; /* Slightly larger icon size */
         }
 
-        /* Styling for the help section */
         .help {
             font-size: 1.25rem;
             color: var(--fore-color-primary);
             margin-top: 2rem;
         }
 
-        /* Styling for links in the help section */
         .help a {
             color: var(--highlight-color);
             text-decoration: none;
         }
 
-        /* Styling for links in the help section on hover */
         .help a:hover {
             text-decoration: underline;
         }
@@ -150,11 +145,9 @@
             <div class="info-box-item error-code" th:text="'Error Code: ' + ${errorCode}">Error Code: 627d4af8-2ea8-4069-b3c2-b3fdaae3958d</div>
             <div class="info-box-item client-url" th:text="'Client: ' + ${clientUrl}">Client: a2ef4ab9-737d-485f-85bb-278764e7088b</div>
             <div class="info-box-item original-request">
-                <span th:text="'Original Request: ' + ${originalRequestURL}">Original Request: http://localhost:9000/oidc/authorize?...</span>
-            </div>
+                <span class="shortened-url" th:text="'Original Request: ' + ${originalRequestURL}">Original Request: http://localhost:9000/oidc/authorize?...</span>            </div>
         </div>
-        <!-- Copy button positioned in the top-right corner of the info-box -->
-        <div class="copy-button" onclick="copyToClipboard()">
+        <div class="copy-button" onclick="copyInfoBoxToClipboard()">
             <i class="fas fa-clipboard copy-icon"></i>
         </div>
     </div>
@@ -164,27 +157,34 @@
 </div>
 
 <script th:inline="javascript">
-    // Script to copy all the content of the info box to the clipboard
+    /*<![CDATA[*/
     let originalUrl = /*[[${originalRequestURL}]]*/ "";
-    function copyToClipboard() {
-        navigator.clipboard.writeText(
-            "Error Code: " + /*[[${errorCode}]]*/ "" + "\n" +
-            "Client: " + /*[[${clientUrl}]]*/ "" + "\n" +
-            "Original Request: " + originalUrl
-        ).then(() => {
-            // Change the button color and border to indicate success
+    /*]]>*/
+</script>
+
+<script>
+    function copyInfoBoxToClipboard() {
+        // Obtener el contenido completo del originalRequestURL desde la variable originalUrl
+        const errorCode = document.querySelector('.error-code').innerText;
+        const clientUrl = document.querySelector('.client-url').innerText;
+
+        // Concatenar todo el contenido
+        const fullText = `${errorCode}\n${clientUrl}\nOriginal Request: ${originalUrl}`;
+
+        // Copiar el contenido al portapapeles
+        navigator.clipboard.writeText(fullText).then(() => {
+            // Cambiar el color del botón para indicar éxito
             const copyButton = document.querySelector('.copy-button');
             copyButton.style.backgroundColor = 'var(--dark-highlight-color)';
             copyButton.style.color = 'var(--fore-color-primary)';
-            copyButton.style.borderColor = 'var(--dark-highlight-color)';
+
             setTimeout(() => {
-                // Revert the colors after 2 seconds
+                // Revertir los colores después de 2 segundos
                 copyButton.style.backgroundColor = 'var(--highlight-color)';
                 copyButton.style.color = 'var(--bg-color-primary)';
-                copyButton.style.borderColor = 'var(--highlight-color)';
             }, 2000);
         }).catch(err => {
-            console.error('Failed to copy the content: ', err);
+            console.error('Failed to copy the info box: ', err);
         });
     }
 </script>
