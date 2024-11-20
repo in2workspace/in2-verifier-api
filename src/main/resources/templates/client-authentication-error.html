@@ -165,20 +165,24 @@
 </script>
 
 <script>
-    function copyInfoBoxToClipboard() {const errorCode = document.querySelector('.error-code').innerText;
-        const clientUrl = document.querySelector('.client-url').innerText;
+    function copyInfoBoxToClipboard() {
+        // Seleccionando el texto de cada campo
+        const errorCode = document.querySelector('.info-box-item:nth-child(1) span').innerText;
+        const clientUrl = document.querySelector('.info-box-item:nth-child(2) span').innerText;
 
-        const fullText = `${errorCode}\n${clientUrl}\nOriginal Request: ${originalUrl}`;
+        // Concatenando toda la información para copiarla
+        const fullText = `Error Code: ${errorCode}\nClient: ${clientUrl}\nOriginal Request: ${originalUrl}`;
 
+        // Copiar al portapapeles
         navigator.clipboard.writeText(fullText).then(() => {
             const copyButton = document.querySelector('.copy-button');
             copyButton.style.backgroundColor = 'var(--error-box-background)';
             copyButton.style.color = '#333';
-
         }).catch(err => {
             console.error('Failed to copy the info box: ', err);
         });
     }
 </script>
+
 </body>
 </html>
