@@ -10,8 +10,8 @@
             --fore-color-primary: #FFFFFF;
             --bg-color-primary: #14274A;
             --highlight-color: #00ADD3;
-            --error-text-color: #A8D0E6;
             --dark-highlight-color: #001F3F;
+            --error-box-background: #e0e0e0;
         }
 
         html, body {
@@ -47,7 +47,7 @@
 
         .error-message {
             font-size: 1.75rem;
-            color: var(--error-text-color);
+            color: var(--fore-color-primary);
             margin-bottom: 2rem;
             text-align: justify;
             text-justify: inter-word;
@@ -57,9 +57,9 @@
             position: relative;
             display: inline-flex;
             padding: 1.5rem;
-            border: 2px solid var(--highlight-color);
+            border: 2px solid #333;
             border-radius: 8px;
-            background-color: #1E3A60;
+            background-color: var(--error-box-background);
             text-align: left;
             max-width: 90%;
         }
@@ -72,16 +72,11 @@
         .info-box-item {
             font-size: 1.25rem;
             margin-bottom: 1rem;
-            color: var(--fore-color-primary);
+            color: #333;
         }
 
         .info-box-item:last-child {
             margin-bottom: 0;
-        }
-
-        .original-request {
-            display: flex;
-            align-items: center;
         }
 
         .shortened-url {
@@ -96,8 +91,8 @@
             position: absolute;
             top: 5px;
             right: 5px;
-            background-color: var(--highlight-color);
-            color: var(--bg-color-primary);
+            background-color: var(--error-box-background);
+            color: #333;
             border: none;
             padding: 0.3rem;
             border-radius: 4px;
@@ -110,8 +105,8 @@
         }
 
         .copy-button:hover {
-            background-color: var(--fore-color-primary);
-            color: var(--highlight-color);
+            background-color: #333;
+            color: var(--error-box-background);
         }
 
         .copy-icon {
@@ -143,10 +138,15 @@
     </div>
     <div class="info-box">
         <div class="info-box-content">
-            <div class="info-box-item error-code" th:text="'Error Code: ' + ${errorCode}">Error Code: 627d4af8-2ea8-4069-b3c2-b3fdaae3958d</div>
-            <div class="info-box-item client-url" th:text="'Client: ' + ${clientUrl}">Client: a2ef4ab9-737d-485f-85bb-278764e7088b</div>
-            <div class="info-box-item original-request">
-                <span class="shortened-url" th:text="'Original Request: ' + ${originalRequestURL}">Original Request: http://localhost:9000/oidc/authorize?...</span>            </div>
+            <div class="info-box-item">
+                <p><strong>Error Code</strong>: <span th:text="${errorCode}">627d4af8-2ea8-4069-b3c2-b3fdaae3958d</span></p>
+            </div>
+            <div class="info-box-item">
+                <p><strong>Client</strong>: <span th:text="${clientUrl}">a2ef4ab9-737d-485f-85bb-278764e7088b</span></p>
+            </div>
+            <div class="info-box-item">
+                <p><strong>Original Request</strong>: <span class="shortened-url" th:text="${originalRequestURL}">http://localhost:9000/oidc/authorize?...</span></p>
+            </div>
         </div>
         <div class="copy-button" onclick="copyInfoBoxToClipboard()">
             <i class="fas fa-clipboard copy-icon"></i>
@@ -171,13 +171,9 @@
 
         navigator.clipboard.writeText(fullText).then(() => {
             const copyButton = document.querySelector('.copy-button');
-            copyButton.style.backgroundColor = 'var(--dark-highlight-color)';
-            copyButton.style.color = 'var(--fore-color-primary)';
+            copyButton.style.backgroundColor = 'var(--error-box-background)';
+            copyButton.style.color = '#333';
 
-            setTimeout(() => {
-                copyButton.style.backgroundColor = 'var(--highlight-color)';
-                copyButton.style.color = 'var(--bg-color-primary)';
-            }, 2000);
         }).catch(err => {
             console.error('Failed to copy the info box: ', err);
         });
