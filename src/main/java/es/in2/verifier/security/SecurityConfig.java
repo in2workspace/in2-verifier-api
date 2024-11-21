@@ -36,7 +36,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf
-                        // Apply CSRF protection only to the specified routes
+                        // Apply CSRF only to the specified routes
                         .requireCsrfProtectionMatcher(new CsrfProtectionMatcher())
                 )
                 .formLogin(AbstractHttpConfigurer::disable);
@@ -46,19 +46,25 @@ public class SecurityConfig {
 
     private static class CsrfProtectionMatcher implements RequestMatcher {
         private final AntPathRequestMatcher[] requestMatchers = {
+                new AntPathRequestMatcher("/health"),
                 new AntPathRequestMatcher("/oid4vp/auth-request/**"),
                 new AntPathRequestMatcher("/oid4vp/auth-response"),
+                new AntPathRequestMatcher("/login"),
+                new AntPathRequestMatcher("/client-error"),
+                new AntPathRequestMatcher("/oidc/did/**"),
+                new AntPathRequestMatcher("/qr-socket/**"),
+                new AntPathRequestMatcher("/img/**")
         };
 
         @Override
         public boolean matches(HttpServletRequest request) {
-            // Disables CSRF only for the specified routes
+            // Disable CSRF for the specified routes
             for (AntPathRequestMatcher matcher : requestMatchers) {
                 if (matcher.matches(request)) {
                     return false;
                 }
             }
-            // Applies CSRF protection to all other routes
+            // Apply CSRF to all other routes
             return true;
         }
     }
