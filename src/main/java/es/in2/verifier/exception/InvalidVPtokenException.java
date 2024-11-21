@@ -1,4 +1,4 @@
-package es.in2.vcverifier.exception;
+package es.in2.verifier.exception;
 
 public class InvalidVPtokenException extends RuntimeException {
 

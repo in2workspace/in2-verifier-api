@@ -2,6 +2,7 @@ package es.in2.verifier.service;
 
 import es.in2.verifier.config.CacheStore;
 import es.in2.verifier.config.properties.SecurityProperties;
+import es.in2.verifier.exception.InvalidVPtokenException;
 import es.in2.verifier.service.impl.AuthorizationResponseProcessorServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -148,11 +149,11 @@ class AuthorizationResponseProcessorServiceImplTest {
         when(vpService.validateVerifiablePresentation("invalid-vp-token")).thenReturn(false);
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+        InvalidVPtokenException exception = assertThrows(InvalidVPtokenException.class, () ->
                 authorizationResponseProcessorService.processAuthResponse(state, vpToken)
         );
 
-        assertEquals("Invalid VP Token", exception.getMessage());
+        assertEquals("VP Token used in H2M flow is invalid", exception.getMessage());
     }
 
     @Test

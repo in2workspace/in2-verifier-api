@@ -1,5 +1,6 @@
 package es.in2.verifier.exception.handler;
 
+import es.in2.verifier.exception.InvalidVPtokenException;
 import es.in2.verifier.exception.*;
 import es.in2.verifier.model.GlobalErrorMessage;
 import jakarta.servlet.http.HttpServletRequest;

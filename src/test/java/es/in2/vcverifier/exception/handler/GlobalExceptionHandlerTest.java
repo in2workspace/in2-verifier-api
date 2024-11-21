@@ -1,7 +1,12 @@
 package es.in2.vcverifier.exception.handler;
 
-import es.in2.vcverifier.exception.*;
-import es.in2.vcverifier.model.GlobalErrorMessage;
+import es.in2.verifier.exception.InvalidVPtokenException;
+import es.in2.verifier.exception.CredentialRevokedException;
+import es.in2.verifier.exception.MismatchOrganizationIdentifierException;
+import es.in2.verifier.exception.QRCodeGenerationException;
+import es.in2.verifier.exception.ResourceNotFoundException;
+import es.in2.verifier.exception.handler.GlobalExceptionHandler;
+import es.in2.verifier.model.GlobalErrorMessage;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
