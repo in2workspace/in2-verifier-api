@@ -47,7 +47,6 @@ sonar {
 		property "sonar.host.url", "https://sonarcloud.io"
 		property 'sonar.coverage.exclusions',
 				"src/main/java/es/in2/verifier/VerifierApplication.java, " +
-						"src/main/java/es/in2/verifier/service/impl/ClientAssertionValidationServiceImpl.java, " +
 						"src/main/java/es/in2/verifier/service/impl/TrustFrameworkServiceImpl.java, " +
 						"src/main/java/es/in2/verifier/service/impl/CertificateValidationServiceImpl.java, " +
 						"src/main/java/es/in2/verifier/exception/MismatchOrganizationIdentifierException.java"
@@ -122,7 +121,6 @@ tasks.jacocoTestReport {
 	}
 	classDirectories.setFrom(files(classDirectories.files.collect {
 		fileTree(dir: it, exclude: [
-				"**/AuthorizationResponseProcessorServiceImpl.class",
 				"**/TrustFrameworkServiceImpl.class",
 				"**/CertificateValidationServiceImpl.class",
 				"**/MismatchOrganizationIdentifierException.class",
