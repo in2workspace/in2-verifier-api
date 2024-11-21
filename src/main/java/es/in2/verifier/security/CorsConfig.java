@@ -15,12 +15,13 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Allow all origins
-        configuration.setAllowedOrigins(List.of("*"));
-        // Allow all HTTP methods
+        // we need to allow all origins because the service is public and must be accessible from any domain.
+        configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(List.of("GET", "POST"));
-        // Allow all headers
         configuration.setAllowedHeaders(List.of("Content-Type"));
+
+        // We do not allow the sending of credentials to improve security
+        configuration.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/health", configuration);
