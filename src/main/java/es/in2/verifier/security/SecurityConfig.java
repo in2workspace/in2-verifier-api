@@ -32,6 +32,8 @@ public class SecurityConfig {
                         .requestMatchers("/img/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                //TODO Config with Sonar
+                .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable);
         return http.build();
     }
