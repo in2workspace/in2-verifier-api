@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Unauthorized Http response code for failed validation of VP token
 
+## [v1.0.11](https://github.com/in2workspace/in2-verifier-api/releases/tag/v1.0.11)
+### Fixed
+- Add cors configuration to allow requests from external wallets, on the endpoints the wallet use.
+
 ## [v1.0.10](https://github.com/in2workspace/in2-verifier-api/releases/tag/v1.0.10)
 ### Fixed
 - Add an error page for errors during the client authentication request.
