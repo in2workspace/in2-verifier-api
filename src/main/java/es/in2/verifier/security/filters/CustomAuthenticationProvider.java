@@ -1,12 +1,10 @@
 package es.in2.verifier.security.filters;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import es.in2.verifier.config.properties.SecurityProperties;
 import es.in2.verifier.exception.InvalidCredentialTypeException;
-import es.in2.verifier.exception.JsonConversionException;
 import es.in2.verifier.model.credentials.employee.LEARCredentialEmployee;
 import es.in2.verifier.model.credentials.machine.LEARCredentialMachine;
 import es.in2.verifier.service.JWTService;
@@ -184,13 +182,13 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 ChronoUnit.valueOf(securityProperties.token().idToken().cronUnit())
         );
 
-        // Convert the VerifiableCredential to a JSON string
-        String verifiableCredentialJson;
-        try {
-            verifiableCredentialJson = objectMapper.writeValueAsString(verifiableCredential);
-        } catch (JsonProcessingException e) {
-            throw new JsonConversionException("Error converting Verifiable Credential to JSON: " + e.getMessage());
-        }
+//        // Convert the VerifiableCredential to a JSON string
+//        String verifiableCredentialJson;
+//        try {
+//            verifiableCredentialJson = objectMapper.writeValueAsString(verifiableCredential);
+//        } catch (JsonProcessingException e) {
+//            throw new JsonConversionException("Error converting Verifiable Credential to JSON: " + e.getMessage());
+//        }
 
         // Create the JWT payload (claims) for the ID token
         JWTClaimsSet.Builder idTokenClaimsBuilder = new JWTClaimsSet.Builder()
@@ -202,7 +200,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .claim("auth_time", Date.from(issueTime))
                 .claim("acr", "0")
                 // Here is used in json format string to be able to save the VC in json format as Keycloak user attribute
-                .claim("vc", verifiableCredentialJson);
+                .claim("vc", verifiableCredential);
 
         // Add each additional claim to the ID token
         // Extract additional claims from the verifiable credential
