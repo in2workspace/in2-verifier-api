@@ -2,6 +2,7 @@ package es.in2.verifier.service.impl;
 
 import es.in2.verifier.config.CacheStore;
 import es.in2.verifier.config.properties.SecurityProperties;
+import es.in2.verifier.exception.InvalidVPtokenException;
 import es.in2.verifier.model.AuthorizationCodeData;
 import es.in2.verifier.service.AuthorizationResponseProcessorService;
 import es.in2.verifier.service.VpService;
@@ -62,7 +63,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         boolean isValid = vpService.validateVerifiablePresentation(decodedVpToken);
         if (!isValid) {
             log.error("VP Token is invalid");
-            throw new IllegalArgumentException("Invalid VP Token");
+            throw new InvalidVPtokenException("VP Token used in H2M flow is invalid");
         }
         log.info("VP Token validated successfully");
 

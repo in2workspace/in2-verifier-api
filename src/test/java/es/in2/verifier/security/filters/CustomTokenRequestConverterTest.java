@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.verifier.config.CacheStore;
 import es.in2.verifier.exception.InvalidCredentialTypeException;
+import es.in2.verifier.exception.InvalidVPtokenException;
 import es.in2.verifier.exception.UnsupportedGrantTypeException;
 import es.in2.verifier.model.AuthorizationCodeData;
 import es.in2.verifier.model.credentials.machine.LEARCredentialMachine;
@@ -192,7 +193,7 @@ class CustomTokenRequestConverterTest {
         when(clientAssertionValidationService.validateClientAssertionJWTClaims(anyString(), any())).thenReturn(true);
         when(vpService.validateVerifiablePresentation(anyString())).thenReturn(false);
 
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(InvalidVPtokenException.class, () ->
                 customTokenRequestConverter.convert(mockRequest));
     }
 
