@@ -202,7 +202,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .claim("auth_time", Date.from(issueTime))
                 .claim("acr", "0")
                 // Here is used in json format string to be able to save the VC in json format as Keycloak user attribute
-                .claim("vc", verifiableCredentialJson);
+                .claim("vc_json", verifiableCredentialJson);
 
         // Add each additional claim to the ID token
         // Extract additional claims from the verifiable credential
