@@ -154,7 +154,7 @@
         </div>
     </div>
     <div class="help">
-        Need help? <a th:href="@{/contact-us}">Contact us</a> and provide us with the information above, so we can assist you.
+        Need help? <a th:href="${supportUri}">Contact us</a> and provide us with the information above, so we can assist you.
     </div>
 </div>
 
@@ -166,14 +166,14 @@
 
 <script>
     function copyInfoBoxToClipboard() {
-        // Seleccionando el texto de cada campo
+        // Select the text of each field
         const errorCode = document.querySelector('.info-box-item:nth-child(1) span').innerText;
         const clientUrl = document.querySelector('.info-box-item:nth-child(2) span').innerText;
 
-        // Concatenando toda la información para copiarla
+        // Concatenating all the information to copy
         const fullText = `Error Code: ${errorCode}\nClient: ${clientUrl}\nOriginal Request: ${originalUrl}`;
 
-        // Copiar al portapapeles
+        // Copy to clipboard
         navigator.clipboard.writeText(fullText).then(() => {
             const copyButton = document.querySelector('.copy-button');
             copyButton.style.backgroundColor = 'var(--error-box-background)';
