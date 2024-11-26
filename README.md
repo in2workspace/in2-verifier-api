@@ -177,4 +177,4 @@ This ensures the link between the user and their Verifiable Credential (VC) is b
 
 ---
 
-> **Reminder:** Registering the client with the IDP is a critical step for integration to work correctly. Ensure you have completed all the steps in **Section 1** before proceeding with the Keycloak configuration.
+> **Reminder:** Registering the client with the IDP is a critical step for integration to work correctly. Ensure you have completed all the steps.
