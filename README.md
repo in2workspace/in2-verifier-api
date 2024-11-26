@@ -64,9 +64,9 @@ Be sure to complete all the steps outlined in the documentation after obtaining 
 
 ---
 
-## Section 2: Configuring the External Identity Provider in Keycloak
+## Section 2: Configuring the Verifier as an External Identity Provider in Keycloak
 
-### Step 1: Configure the Verifier as an External Identity Provider
+### Step 1: Add a New Provider for ECDSA Keys
 
 Access **Realm Settings** → **Keys** → **Add Providers**, and add a new provider of type **ecdsa-generated** with elliptic curve **P-256**.
 <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f9f9f9;">
