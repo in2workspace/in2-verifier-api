@@ -35,9 +35,9 @@ Images and links to documentation are included to simplify the process.
 
 ---
 
-## Section 1: Registering the Client with the Identity Provider (IDP)
+## Section 1: Registering the Client on the DOME Trust Framework
 
-Before configuring Keycloak, you need to register your client in the Identity Provider's client list. This step is essential for integrating the client with the verifier.
+Before configuring Keycloak, you need to register your client in the DOME trust framework. This step is essential for integrating the client with the verifier.
 
 ### Important Note
 
@@ -54,7 +54,7 @@ Once you have this information, proceed with the steps below.
 
 The registration process involves following specific steps detailed in the Trust Framework documentation. Please refer to the following guide for comprehensive instructions:
 
-**[How to Insert a New Value in the Trusted Lists](https://github.com/DOME-Marketplace/trust-framework/blob/main/README.md#how-to-insert-a-new-value-in-the-trusted-lists)**
+**[How to Insert your client in the Trusted Lists](https://github.com/DOME-Marketplace/trust-framework/blob/main/README.md#how-to-insert-a-new-value-in-the-trusted-lists)**
 
 This guide will walk you through:
 - Adding a new client.
