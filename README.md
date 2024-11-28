@@ -24,6 +24,240 @@ Spring Authorization Server is a framework that provides implementations of the 
 It is built on top of Spring Security to provide a secure, light-weight, 
 and customizable foundation for building OpenID Connect 1.0 Identity Providers and OAuth2 Authorization Server products.
 
+## Verifier Interaction Methods
+
+The verifier interacts with clients in two ways:
+
+1. **Using OpenID Connect Core**  
+   OpenID Connect Core serves as the primary standard for authentication and authorization between clients and the verifier.  
+   [Learn more about OpenID Connect Core](https://openid.net/specs/openid-connect-core-1_0.html)
+
+2. **Using OpenID for Verifiable Presentations (OpenID4VP)**  
+   OpenID4VP enables the verifier to process verifiable presentations (VPs) containing verifiable credentials (VCs) during authentication flows.  
+   [Learn more about OpenID4VP](https://openid.net/specs/openid-4-verifiable-presentations-1_0-20.html)
+
+---
+
+# OpenID Connect Integration
+
+## Client Authentication Flow
+
+The OpenID Connect integration for clients consists of two main steps:
+
+1. **Authorize Request**
+2. **Token Request**
+
+### Step 1: Client Registration
+
+To interact with the verifier, a client must be registered in the verifier's client list.  
+Currently, the **DOME Trust Framework GitHub repository** is used to manage the client registry.  
+You can follow the steps detailed in the repository's README to add a new client:  
+[How to Add a New Client](https://github.com/DOME-Marketplace/trust-framework?tab=readme-ov-file#how-to-guides)
+
+---
+
+### Step 2: Authorization and Token Requests
+
+Once the client is registered, the authentication flow proceeds as follows:
+
+1. **Authorization Request**
+    - The client sends an authorization request to the verifier.
+    - The verifier authenticates the user, presenting a login screen where the user must use their wallet to provide a valid credential.
+    - This process utilizes the **OpenID4VP flow**, where the user presents their verifiable credential (VC) to authenticate.
+    - If the authentication is successful, the verifier sends an **authentication response** to the client's redirection URL (`redirect_uri`).
+
+2. **Token Request**
+    - After receiving the authentication response, the client submits a token request to the verifier.
+    - The client includes its **Client Assertion JWT**, which the verifier uses to validate the request's origin and integrity.
+    - If validated, the verifier issues a **token response**, containing the necessary information for the client to authenticate the user within their platform.
+
+---
+
+## Supported Scopes
+
+The verifier currently supports the following scopes:
+
+1. **Mandatory Scope**:
+    - `openid learcredential`  
+      This scope is required for authentication and for accessing the user's credential data.
+
+2. **Optional Scopes**:
+    - `profile`
+    - `email`
+
+Including the optional scopes ensures that the **ID Token** contains basic user information such as the user's name and email address. This facilitates integration with other Identity Providers.
+> **Note:** The optional scopes (`profile` and `email`) must always be used in combination with the `learcredential` scope.
+
+---
+
+## Token Response Data Model
+
+When a client requests a token with the scopes `openid learcredential profile email`, the **token response** will include the following fields:
+
+### Example Token Response
+
+```
+{
+"access_token": "eyJra...",
+"id_token": "eyJra.....",
+"token_type": "Bearer",
+"expires_in": 18000
+}
+```
+
+### Access Token Payload
+
+The `access_token` payload will have the following structure:
+
+```
+{
+"aud": "did:key:zDn...",
+"sub": "did:key:zDn...",
+"scope": "openid learcredential",
+"iss": "http://localhost:9000",
+"exp": 1732848838,
+"iat": 1732830838,
+"vc": {
+"context": [
+"https://www.w3.org/ns/credentials/v2",
+"https://dome-marketplace.eu/2022/credentials/learcredential/v1"
+],
+"id": "a96f4f04-258f-4367-8a20-d2998e9cc759",
+"type": [
+"LEARCredentialEmployee",
+"VerifiableCredential"
+],
+"credentialSubject": {
+"mandate": {
+"id": "c2965059",
+"lifeSpan": {
+"endDateTime": "2024-10-17T12:20:08.408517084Z",
+"startDateTime": "2024-09-17T12:20:08.408517084Z"
+},
+"mandatee": {
+"id": "",
+"email": "",
+"firstName": "",
+"lastName": "",
+"mobilePhone": ""
+},
+"mandator": {
+"commonName": "",
+"country": "",
+"emailAddress": "",
+"organization": "",
+"organizationIdentifier": "",
+"serialNumber": ""
+},
+"power": [
+{
+"id": "3a7bc001-0cd6-41cc-96bd-650745f3c1c8",
+"tmfAction": "Execute",
+"tmfDomain": "Dome",
+"tmfFunction": "Onboarding",
+"tmfType": "Domain"
+},
+{
+"id": "b187bf28-fda0-494b-a5b6-74933c4e0950",
+"tmfAction": [
+"Create",
+"Update"
+],
+"tmfDomain": "Dome",
+"tmfFunction": "ProductOffering",
+"tmfType": "Domain"
+},
+{
+"id": "caf5ba53-1c63-4f16-8025-f5f9a661db94",
+"tmfAction": [
+"Provider"
+],
+"tmfDomain": "Dome",
+"tmfFunction": "DomePlatform",
+"tmfType": "Domain"
+}
+],
+"signer": {
+"commonName": "",
+"country": "",
+"emailAddress": "",
+"organization": "",
+"organizationIdentifier": "",
+"serialNumber": ""
+}
+}
+},
+"expirationDate": "2024-10-17T12:20:08.408517084Z",
+"issuanceDate": "2024-09-17T12:20:08.408517084Z",
+"issuer": "did:elsi:VAT....",
+"validFrom": "2024-09-17T12:20:08.408517084Z",
+"validUntil": "2024-10-17T12:20:08.408517084Z"
+},
+"jti": "c8a011b6-2a88-418d-840e-68e0b81b39d1"
+}
+```
+
+> **Key Point:** The `vc` claim in the payload contains the user's verifiable credential, which can be used to extract relevant information about the user.
+
+---
+
+### ID Token Payload
+
+The `id_token` includes basic user information and the verifiable credential in JSON string format.
+
+```
+{
+"sub": "did:key:zDn..",
+"vc_json": "{\"@context\":[\"https://www.w3.org/ns/credentials/v2\",\"https://dome-marketplace.eu/2022/credentials/learcredential/v1\"],\"expirationDate\":\"2024-10-17T12:20:08.408517084Z\",\"id\":\"a96f4f04-258f-4367-8a20-d2998e9cc759\",\"issuanceDate\":\"2024-09-17T12:20:08.408517084Z\",\"issuer\":\"did:elsi:VAT...\",\"type\":[\"LEARCredentialEmployee\",\"VerifiableCredential\"],\"validFrom\":\"2024-09-17T12:20:08.408517084Z\"}",
+"email_verified": true,
+"iss": "http://localhost:9000",
+"given_name": "Jhon",
+"aud": "did:key:zDn..",
+"acr": "0",
+"auth_time": 1732830838,
+"name": "Jhon Doe",
+"exp": 1732831138,
+"iat": 1732830838,
+"family_name": "Doe",
+"email": "jhondoe@gmail.es"
+}
+```
+
+> **Key Point:** The `vc_json` attribute contains the Verifiable Credential (VC) as a JSON string. This format simplifies storing the credential in systems like Keycloak or other Identity Providers without requiring custom mappers or extensions.
+
+---
+
+## Supported Features
+
+The verifier implements the **Authentication using the Authorization Code Flow** from OpenID Connect Core. Additionally, it supports key features from the **Financial-grade API (FAPI) Profile**, including:
+
+- **Authorization Request as JWTs**
+
+---
+
+# OpenID4VP Integration
+
+## H2M Flow (Human-to-Machine Login)
+
+Currently, the verifier supports **H2M login flows** where a user authenticates with a verifiable presentation.  
+The following restrictions and configurations are applied in this flow:
+
+1. **VP Token Format**:
+    - The verifier only accepts VP tokens in **JWT_VP format**.
+    - The VP must include a **LEARCredential** in **JWT_VC format**.
+
+2. **Presentation Definition**:
+    - The presentation definition is currently ignored.
+    - Wallets can generate the VP without needing to interpret a presentation definition from the verifier.
+
+3. **Scope for Credential Presentation**:
+    - The verifier uses the scope `dome.credentials.presentation.LEARCredentialEmployee`.
+    - This scope ensures compatibility with different wallets, allowing them to generate the required VP.
+
+4. **Response Mode**:
+    - The verifier uses `direct_post` as the response mode.
+    - This indicates that the authentication response must be sent directly to the verifier's endpoint specified in the `response_uri`.
+
 # Configuring the Verifier as an External Identity Provider on Keycloak
 
 This guide will teach you how to configure an external Identity Provider using **OpenID Connect v1.0**. The guide is divided into two main sections:
