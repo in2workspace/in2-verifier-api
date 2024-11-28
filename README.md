@@ -20,16 +20,16 @@
 
 # Introduction
 
-Spring Authorization Server is a framework that provides implementations of the OAuth 2.1 and OpenID Connect 1.0 specifications and other related specifications. 
+Spring Authentication Server is a framework that provides implementations of the OAuth 2.1 and OpenID Connect 1.0 specifications and other related specifications. 
 It is built on top of Spring Security to provide a secure, light-weight, 
-and customizable foundation for building OpenID Connect 1.0 Identity Providers and OAuth2 Authorization Server products.
+and customizable foundation for building OpenID Connect 1.0 Identity Providers and OAuth2 Authentication Server products.
 
 ## Verifier Interaction Methods
 
 The verifier interacts with clients in two ways:
 
 1. **Using OpenID Connect Core**  
-   OpenID Connect Core serves as the primary standard for authentication and authorization between clients and the verifier.  
+   OpenID Connect Core serves as the primary standard for authentication and Authentication between clients and the verifier.  
    [Learn more about OpenID Connect Core](https://openid.net/specs/openid-connect-core-1_0.html)
 
 2. **Using OpenID for Verifiable Presentations (OpenID4VP)**  
@@ -44,7 +44,7 @@ The verifier interacts with clients in two ways:
 
 The OpenID Connect integration for clients consists of two main steps:
 
-1. **Authorize Request**
+1. **Authentication Request**
 2. **Token Request**
 
 ### Step 1: Client Registration
@@ -56,12 +56,12 @@ You can follow the steps detailed in the repository's README to add a new client
 
 ---
 
-### Step 2: Authorization and Token Requests
+### Step 2: Authentication and Token Requests
 
 Once the client is registered, the authentication flow proceeds as follows:
 
-1. **Authorization Request**
-    - The client sends an authorization request to the verifier.
+1. **Authentication Request**
+    - The client sends an Authentication request to the verifier.
     - The verifier authenticates the user, presenting a login screen where the user must use their wallet to provide a valid credential.
     - This process utilizes the **OpenID4VP flow**, where the user presents their verifiable credential (VC) to authenticate.
     - If the authentication is successful, the verifier sends an **authentication response** to the client's redirection URL (`redirect_uri`).
@@ -78,8 +78,7 @@ Once the client is registered, the authentication flow proceeds as follows:
 The verifier currently supports the following scopes:
 
 1. **Mandatory Scope**:
-    - `openid learcredential`  
-      This scope is required for authentication and for accessing the user's credential data.
+    - `openid learcredential` this scope is required for authentication and for accessing the user's credential data.
 
 2. **Optional Scopes**:
     - `profile`
@@ -107,7 +106,7 @@ When a client requests a token with the scopes `openid learcredential profile em
 
 ### Access Token Payload
 
-The `access_token` payload will have the following structure:
+The `access_token` payload will have a similar structure:
 
 ```
 {
@@ -229,9 +228,9 @@ The `id_token` includes basic user information and the verifiable credential in 
 
 ## Supported Features
 
-The verifier implements the **Authentication using the Authorization Code Flow** from OpenID Connect Core. Additionally, it supports key features from the **Financial-grade API (FAPI) Profile**, including:
+The verifier implements the **Authentication using the Authentication Code Flow** from OpenID Connect Core. Additionally, it supports key features from the **Financial-grade API (FAPI) Profile**, including:
 
-- **Authorization Request as JWTs**
+- **Authentication Request as JWTs**
 
 ---
 
@@ -239,7 +238,7 @@ The verifier implements the **Authentication using the Authorization Code Flow**
 
 ## H2M Flow (Human-to-Machine Login)
 
-Currently, the verifier supports **H2M login flows** where a user authenticates with a verifiable presentation.  
+Currently, the verifier supports **H2M login flow** where a user authenticates with a verifiable presentation.  
 The following restrictions and configurations are applied in this flow:
 
 1. **VP Token Format**:
