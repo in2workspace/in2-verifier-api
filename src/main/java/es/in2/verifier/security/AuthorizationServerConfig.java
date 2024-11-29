@@ -62,7 +62,7 @@ public class AuthorizationServerConfig {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
         http
-                .cors(cors -> cors.configurationSource(registeredClientsCorsConfig.registeredCorsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(registeredClientsCorsConfig.registeredClientsCorsConfigurationSource()))
                 .getConfigurer(OAuth2AuthorizationServerConfigurer.class)
                 .authorizationEndpoint(authorizationEndpoint ->
                         authorizationEndpoint

@@ -18,7 +18,7 @@ public class RegisteredClientsCorsConfig {
     private final Set<String> allowedClientsOrigins;
 
     @Bean
-    public CorsConfigurationSource registeredCorsConfigurationSource() {
+    public CorsConfigurationSource registeredClientsCorsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
         // Configure endpoints for clients that used the OIDC protocol
