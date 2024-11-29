@@ -54,6 +54,7 @@ public class AuthorizationServerConfig {
     private final RegisteredClientRepository registeredClientRepository;
     private final CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
     private final ObjectMapper objectMapper;
+    private final RegisteredClientsCorsConfig registeredClientsCorsConfig;
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -61,6 +62,7 @@ public class AuthorizationServerConfig {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
         http
+                .cors(cors -> cors.configurationSource(registeredClientsCorsConfig.registeredCorsConfigurationSource()))
                 .getConfigurer(OAuth2AuthorizationServerConfigurer.class)
                 .authorizationEndpoint(authorizationEndpoint ->
                         authorizationEndpoint

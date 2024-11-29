@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +39,10 @@ public class CacheStoreConfig {
     @Bean
     public Set<String> jtiCache() {
         return new HashSet<>();
+    }
+    @Bean
+    public Set<String> allowedClientsOrigins() {
+        return Collections.synchronizedSet(new HashSet<>());
     }
 
 }
