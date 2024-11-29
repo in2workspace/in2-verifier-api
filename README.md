@@ -20,9 +20,20 @@
 
 # Introduction
 
-Spring Authentication Server is a framework that provides implementations of the OAuth 2.1 and OpenID Connect 1.0 specifications and other related specifications. 
-It is built on top of Spring Security to provide a secure, light-weight, 
-and customizable foundation for building OpenID Connect 1.0 Identity Providers and OAuth2 Authentication Server products.
+# Introduction
+
+Spring Authentication Server is a framework that provides implementations of the **OAuth 2.0** and **OpenID Connect 1.0** specifications, as well as other related standards.  
+It is built on top of **Spring Security** to provide a secure, lightweight, and customizable foundation for building **OpenID Connect 1.0 Identity Providers** and **OAuth 2 Authentication Server** products.
+
+Our **Verifier** builds upon this robust foundation, extending it with additional functionalities from **OpenID Connect Core** and **OpenID for Verifiable Presentations (OpenID4VP)**.
+
+This enhancement enables the Verifier to support authentication workflows between clients and users based on **Verifiable Credentials (VCs)**. By combining these standards, the Verifier creates a robust and secure system for managing digital identities, allowing users to authenticate seamlessly while ensuring the integrity and verifiability of their credentials.
+
+With the Verifier, organizations can leverage:
+- **OpenID Connect Core** for traditional client-user authentication.
+- **OpenID4VP** for presenting and validating tamper-proof digital credentials.  
+  This unique combination positions the Verifier as a versatile and modern solution for both centralized and decentralized authentication scenarios.
+
 
 ## Verifier Interaction Methods
 
@@ -411,3 +422,23 @@ This ensures the link between the user and their Verifiable Credential (VC) is b
 ---
 
 > **Reminder:** Registering the client with the IDP is a critical step for integration to work correctly. Ensure you have completed all the steps.
+
+---
+
+## Contribution
+
+### How to contribute
+If you want to contribute to this project, please read the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+
+## License
+This project is licensed under the Apache License 2.0 — see the [LICENSE](LICENSE) file for details.
+
+## Contact
+For any inquiries or further information, feel free to reach out to us:
+
+- **Email:** [In2 Dome Support](mailto:dome@in2.es)
+- **Name:** IN2, Ingeniería de la Información
+- **Website:** [https://in2.es](https://in2.es)
+
+## Acknowledgments
+This project is part of the IN2 strategic R&D, which has received funding from the [DOME](https://dome-marketplace.eu/) project within the European Union’s Horizon Europe Research and Innovation program under the Grant Agreement No. 101084071.
