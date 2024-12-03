@@ -9,7 +9,7 @@ import es.in2.verifier.exception.InvalidCredentialTypeException;
 import es.in2.verifier.exception.InvalidVPtokenException;
 import es.in2.verifier.exception.UnsupportedGrantTypeException;
 import es.in2.verifier.model.AuthorizationCodeData;
-import es.in2.verifier.model.credentials.machine.LEARCredentialMachine;
+import es.in2.verifier.model.credentials.dome.machine.MachineCredentialAdapter;
 import es.in2.verifier.model.enums.LEARCredentialType;
 import es.in2.verifier.service.ClientAssertionValidationService;
 import es.in2.verifier.service.JWTService;
@@ -107,8 +107,8 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
 
         // Check if VC is LEARCredentialMachine Type
         JsonNode vc = vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(vpToken);
-        LEARCredentialMachine learCredentialMachine = objectMapper.convertValue(vc, LEARCredentialMachine.class);
-        List<String> types = learCredentialMachine.type();
+        MachineCredentialAdapter machineCredentialAdapter = new MachineCredentialAdapter(vc, objectMapper);
+        List<String> types = machineCredentialAdapter.getType();
         if (!types.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())){
             log.error("CustomTokenRequestConverter -- handleM2MGrant -- LEARCredentialType Expected: {}", LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue());
             throw new InvalidCredentialTypeException("Invalid LEARCredentialType. Expected LEARCredentialMachine");
