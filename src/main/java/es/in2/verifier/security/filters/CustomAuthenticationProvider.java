@@ -190,14 +190,10 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 ChronoUnit.valueOf(securityProperties.token().idToken().cronUnit())
         );
 
-        // Convert the VerifiableCredential to a JSON node
-        JsonNode vcJsonNode = convertCredentialToJsonNode(verifiableCredential);
-        Map<String, Object> vcMap = jsonNodeToMap(vcJsonNode);
-
         // Convert the VerifiableCredential to a JSON string
         String verifiableCredentialJson;
         try {
-            verifiableCredentialJson = objectMapper.writeValueAsString(vcMap);
+            verifiableCredentialJson = objectMapper.writeValueAsString(verifiableCredential);
         } catch (JsonProcessingException e) {
             throw new JsonConversionException("Error converting Verifiable Credential to JSON: " + e.getMessage());
         }
