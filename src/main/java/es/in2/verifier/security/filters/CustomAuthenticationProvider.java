@@ -1,6 +1,7 @@
 package es.in2.verifier.security.filters;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -164,15 +165,20 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     private String generateAccessTokenWithVc(Object verifiableCredential, Instant issueTime, Instant expirationTime, String subject, String audience) {
         log.info("Generating access token with verifiableCredential");
+
+        // Convert the VerifiableCredential to a JSON node
+        JsonNode vcJsonNode = convertCredentialToJsonNode(verifiableCredential);
+        Map<String, Object> vcMap = jsonNodeToMap(vcJsonNode);
+
         JWTClaimsSet payload = new JWTClaimsSet.Builder()
                 .issuer(securityProperties.authorizationServer())
-                .audience(audience) // Utiliza el valor de "audience" calculado
+                .audience(audience)
                 .subject(subject)
                 .jwtID(UUID.randomUUID().toString())
                 .issueTime(Date.from(issueTime))
                 .expirationTime(Date.from(expirationTime))
                 .claim(OAuth2ParameterNames.SCOPE, getScope(verifiableCredential))
-                .claim("vc", verifiableCredential)
+                .claim("vc", vcMap)
                 .build();
         return jwtService.generateJWT(payload.toString());
     }
@@ -184,10 +190,14 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 ChronoUnit.valueOf(securityProperties.token().idToken().cronUnit())
         );
 
+        // Convert the VerifiableCredential to a JSON node
+        JsonNode vcJsonNode = convertCredentialToJsonNode(verifiableCredential);
+        Map<String, Object> vcMap = jsonNodeToMap(vcJsonNode);
+
         // Convert the VerifiableCredential to a JSON string
         String verifiableCredentialJson;
         try {
-            verifiableCredentialJson = objectMapper.writeValueAsString(verifiableCredential);
+            verifiableCredentialJson = objectMapper.writeValueAsString(vcMap);
         } catch (JsonProcessingException e) {
             throw new JsonConversionException("Error converting Verifiable Credential to JSON: " + e.getMessage());
         }
@@ -219,6 +229,28 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         return jwtService.generateJWT(idTokenClaims.toString());
     }
 
+    private JsonNode convertCredentialToJsonNode(Object verifiableCredential) {
+        try {
+            if (verifiableCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
+                return objectMapper.valueToTree(learCredentialEmployee);
+            } else if (verifiableCredential instanceof LEARCredentialMachine learCredentialMachine) {
+                return objectMapper.valueToTree(learCredentialMachine);
+            } else {
+                log.error("Unsupported verifiable credential type: {}", verifiableCredential.getClass().getName());
+                throw new InvalidCredentialTypeException("Unsupported verifiable credential type: " + verifiableCredential.getClass().getName());
+            }
+        } catch (Exception e) {
+            log.error("Error converting verifiable credential to JsonNode", e);
+            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
+        }
+    }
+
+    private Map<String, Object> jsonNodeToMap(JsonNode jsonNode) {
+        return objectMapper.convertValue(jsonNode, new TypeReference<>() {
+        });
+    }
+
+
     private Map<String, Object> extractClaimsFromVerifiableCredential(Object verifiableCredential, Map<String, Object> additionalParameters) {
         Set<String> requestedScopes = new HashSet<>(Arrays.asList(additionalParameters.get(OAuth2ParameterNames.SCOPE).toString().split(" ")));
         Map<String, Object> claims = new HashMap<>();
@@ -226,10 +258,12 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         if (verifiableCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
             // Check if "profile" scope is requested and add profile-related claims
             if (requestedScopes.contains("profile")) {
-                String name = learCredentialEmployee.credentialSubject().mandate().mandatee().firstName() + " " + learCredentialEmployee.credentialSubject().mandate().mandatee().lastName();
+                String firstName = learCredentialEmployee.credentialSubject().mandate().mandatee().firstName();
+                String lastName = learCredentialEmployee.credentialSubject().mandate().mandatee().lastName();
+                String name = firstName + " " + lastName;
                 claims.put("name", name);
-                claims.put("given_name", learCredentialEmployee.credentialSubject().mandate().mandatee().firstName());
-                claims.put("family_name", learCredentialEmployee.credentialSubject().mandate().mandatee().lastName());
+                claims.put("given_name", firstName);
+                claims.put("family_name", lastName);
             }
 
             // Check if "email" scope is requested and add email-related claims
