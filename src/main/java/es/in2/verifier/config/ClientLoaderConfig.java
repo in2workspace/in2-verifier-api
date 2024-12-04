@@ -7,6 +7,7 @@ import es.in2.verifier.service.TrustFrameworkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
@@ -28,7 +29,12 @@ public class ClientLoaderConfig {
     private final Set<String> allowedClientsOrigins;
 
     @Bean
-    public RegisteredClientRepository registeredClientRepository() {
+    public RegisteredClientRepository getRegisteredClientRepository() {
+        return registeredClientRepository();
+    }
+
+    @Scheduled(cron = "0 */30 * * * *")
+    private RegisteredClientRepository registeredClientRepository() {
         List<RegisteredClient> clients = loadClients(); // Cargar los clientes
         return new InMemoryRegisteredClientRepository(clients); // Pasar los clientes al repositorio
     }
