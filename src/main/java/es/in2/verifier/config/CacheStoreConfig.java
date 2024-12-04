@@ -41,6 +41,7 @@ public class CacheStoreConfig {
     public Set<String> jtiCache() {
         return new HashSet<>();
     }
+    
     @Bean
     public Set<String> allowedClientsOrigins() {
         return Collections.synchronizedSet(new HashSet<>());
