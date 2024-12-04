@@ -5,9 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.verifier.exception.*;
-import es.in2.verifier.model.credentials.VerifiableCredential;
-import es.in2.verifier.model.credentials.dome.employee.EmployeeCredentialAdapter;
-import es.in2.verifier.model.credentials.dome.machine.MachineCredentialAdapter;
+import es.in2.verifier.model.credentials.lear.LEARCredential;
+import es.in2.verifier.model.credentials.lear.employee.LEARCredentialEmployee;
+import es.in2.verifier.model.credentials.lear.machine.LEARCredentialMachine;
 import es.in2.verifier.model.enums.LEARCredentialType;
 import es.in2.verifier.model.issuer.IssuerCredentialsCapabilities;
 import es.in2.verifier.service.*;
@@ -57,19 +57,19 @@ public class VpServiceImpl implements VpService {
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Successfully extracted the Verifiable Credential payload");
 
             // Step 1.1: Map the payload to a VerifiableCredential object
-            VerifiableCredential verifiableCredential = mapPayloadToVerifiableCredential(payload);
+            LEARCredential learCredential = mapPayloadToVerifiableCredential(payload);
 
             // Step 2: Validate the credential id is not in the revoked list
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Validating that the credential is not revoked");
-            validateCredentialNotRevoked(verifiableCredential.getId());
+            validateCredentialNotRevoked(learCredential.id());
             log.info("Credential is not revoked");
 
             // Step 3: Validate the issuer
-            String credentialIssuerDid = verifiableCredential.getIssuer();
+            String credentialIssuerDid = learCredential.issuerId();
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Retrieved issuer DID from payload: {}", credentialIssuerDid);
 
             // Step 4: Extract and validate credential types
-            List<String> credentialTypes = verifiableCredential.getType();
+            List<String> credentialTypes = learCredential.type();
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Credential types extracted: {}", credentialTypes);
 
             // Step 5: Retrieve the list of issuer capabilities
@@ -89,7 +89,7 @@ public class VpServiceImpl implements VpService {
             // certificateValidationService.extractAndVerifyCertificate(jwtCredential.serialize(),vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
 
             // Step 8: Extract the mandator organization identifier from the Verifiable Credential
-            String mandatorOrganizationIdentifier = verifiableCredential.getMandatorOrganizationIdentifier();
+            String mandatorOrganizationIdentifier = learCredential.mandatorOrganizationIdentifier();
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Extracted Mandator Organization Identifier from Verifiable Credential: {}", mandatorOrganizationIdentifier);
 
             //TODO this must be validated against the participants list, not the issuer list
@@ -98,7 +98,7 @@ public class VpServiceImpl implements VpService {
             log.info("Mandator OrganizationIdentifier {} is valid and allowed", mandatorOrganizationIdentifier);
 
             // Step 9: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
-            String mandateeId = verifiableCredential.getMandateeId();
+            String mandateeId = learCredential.mandateeId();
             PublicKey holderPublicKey = didService.getPublicKeyFromDid(mandateeId); // Get the holder's public key in bytes
             jwtService.verifyJWTWithECKey(verifiablePresentation, holderPublicKey); // Validate the VP was signed by the holder DID
             log.info("VP's signature is valid, holder DID {} confirmed", mandateeId);
@@ -126,7 +126,7 @@ public class VpServiceImpl implements VpService {
         return convertObjectToJSONNode(getCredentialFromTheVerifiablePresentation(verifiablePresentation));
     }
 
-    private VerifiableCredential mapPayloadToVerifiableCredential(Payload payload) {
+    private LEARCredential mapPayloadToVerifiableCredential(Payload payload) {
         Object vcObject = jwtService.getVCFromPayload(payload);
         try {
             Map<String, Object> vcMap = validateAndCastToMap(vcObject);
@@ -174,11 +174,11 @@ public class VpServiceImpl implements VpService {
                 .toList();
     }
 
-    private VerifiableCredential mapToSpecificCredential(Map<String, Object> vcMap, List<String> types) {
+    private LEARCredential mapToSpecificCredential(Map<String, Object> vcMap, List<String> types) {
         if (types.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
-            return new EmployeeCredentialAdapter(vcMap, objectMapper);
+            return objectMapper.convertValue(vcMap, LEARCredentialEmployee.class);
         } else if (types.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())) {
-            return new MachineCredentialAdapter(vcMap, objectMapper);
+            return objectMapper.convertValue(vcMap, LEARCredentialMachine.class);
         } else {
             throw new InvalidCredentialTypeException("Unsupported credential type: " + types);
         }

@@ -1,4 +1,4 @@
-package es.in2.verifier.model.credentials.dome.machine;
+package es.in2.verifier.model.credentials.lear;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -6,10 +6,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 
 @Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record Contact(
-        @JsonProperty("email") String email,
-        @JsonProperty("phone") String mobilePhone
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public record LifeSpan(
+        @JsonProperty("end_date_time") String endDateTime,
+        @JsonProperty("start_date_time") String startDateTime
 ) {}
 

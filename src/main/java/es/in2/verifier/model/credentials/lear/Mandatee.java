@@ -1,9 +1,9 @@
-package es.in2.verifier.model.credentials.dome;
+package es.in2.verifier.model.credentials.lear;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import es.in2.verifier.model.credentials.dome.machine.Contact;
+import es.in2.verifier.model.credentials.lear.machine.Contact;
 import lombok.Builder;
 
 @Builder

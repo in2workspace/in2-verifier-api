@@ -1,4 +1,4 @@
-package es.in2.verifier.model.credentials.dome;
+package es.in2.verifier.model.credentials.lear.machine;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -6,8 +6,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 
 @Builder
-@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record CredentialSubject(
-        @JsonProperty("mandate") Mandate mandate
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record Contact(
+        @JsonProperty("email") String email,
+        @JsonProperty("phone") String mobilePhone
 ) {}
+

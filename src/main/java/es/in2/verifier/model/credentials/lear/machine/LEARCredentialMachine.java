@@ -1,18 +1,19 @@
-package es.in2.verifier.model.credentials.dome.employee;
+package es.in2.verifier.model.credentials.lear.machine;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import es.in2.verifier.model.credentials.dome.CredentialSubject;
+import es.in2.verifier.model.credentials.Issuer;
+import es.in2.verifier.model.credentials.lear.LEARCredential;
+import es.in2.verifier.model.credentials.lear.CredentialSubject;
 import lombok.Builder;
 
 import java.util.List;
 
 @Builder
-@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record LEARCredentialEmployee(
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record LEARCredentialMachine(
         @JsonProperty("@context")
         List<String> context,
         @JsonProperty("id")
@@ -20,18 +21,29 @@ public record LEARCredentialEmployee(
         @JsonProperty("type")
         List<String> type,
         @JsonProperty("issuer")
-        String issuer,
+        Issuer issuer,
         @JsonProperty("credentialSubject")
         CredentialSubject credentialSubject,
         @JsonProperty("validFrom")
         String validFrom,
-        @JsonProperty
+        @JsonProperty("validUntil")
         String validUntil,
         @JsonProperty("expirationDate")
         String expirationDate,
         @JsonProperty("issuanceDate")
         String issuanceDate
-
-) {
+) implements LEARCredential {
+    @Override
+    public String mandateeId() {
+        return credentialSubject.mandate().mandatee().id();
+    }
+    @Override
+    public String issuerId() {
+            return issuer.id();
+    }
+    @Override
+    public String mandatorOrganizationIdentifier() {
+        return credentialSubject.mandate().mandator().organizationIdentifier();
+    }
 
 }

@@ -1,4 +1,4 @@
-package es.in2.verifier.model.credentials.dome;
+package es.in2.verifier.model.credentials.lear;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
