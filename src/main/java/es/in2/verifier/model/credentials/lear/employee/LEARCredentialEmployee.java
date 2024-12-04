@@ -31,7 +31,6 @@ public record LEARCredentialEmployee(
         String expirationDate,
         @JsonProperty("issuanceDate")
         String issuanceDate
-
 ) implements LEARCredential {
 
         @Override
@@ -60,4 +59,5 @@ public record LEARCredentialEmployee(
         public String mandateeEmail(){
                 return credentialSubject.mandate().mandatee().email();
         }
+        
 }
