@@ -1,14 +1,17 @@
 package es.in2.verifier.security.filters;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import es.in2.verifier.config.properties.SecurityProperties;
 import es.in2.verifier.exception.InvalidCredentialTypeException;
 import es.in2.verifier.exception.JsonConversionException;
-import es.in2.verifier.model.credentials.employee.LEARCredentialEmployee;
-import es.in2.verifier.model.credentials.machine.LEARCredentialMachine;
+import es.in2.verifier.model.credentials.lear.LEARCredential;
+import es.in2.verifier.model.credentials.lear.employee.LEARCredentialEmployee;
+import es.in2.verifier.model.credentials.lear.machine.LEARCredentialMachine;
+import es.in2.verifier.model.enums.LEARCredentialType;
 import es.in2.verifier.service.JWTService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,11 +67,11 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         );
         log.debug("CustomAuthenticationProvider -- handleGrant -- Issue time: {}, Expiration time: {}", issueTime, expirationTime);
 
-        Object credential = getVerifiableCredential(authentication);
-        String subject = getCredentialSubjectFromVerifiableCredential(credential);
+        LEARCredential credential = getVerifiableCredential(authentication);
+        String subject = credential.mandateeId();
         log.debug("CustomAuthenticationProvider -- handleGrant -- Credential subject obtained: {}", subject);
 
-        String audience = getAudience(authentication,credential);
+        String audience = getAudience(authentication, credential);
         log.debug("CustomAuthenticationProvider -- handleGrant -- Audience for credential: {}", audience);
 
         String jwtToken = generateAccessTokenWithVc(credential, issueTime, expirationTime, subject, audience);
@@ -87,7 +90,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         additionalParameters.put("id_token", idToken);
 
         log.info("Authorization grant successfully processed");
-        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken, null,additionalParameters);
+        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken, null, additionalParameters);
     }
 
     private String getClientId(OAuth2AuthorizationGrantAuthenticationToken authentication) {
@@ -110,42 +113,25 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         }
         return registeredClient;
     }
-    private Object getVerifiableCredential(OAuth2AuthorizationGrantAuthenticationToken authentication) {
-        // Obtener el JsonNode de los parámetros adicionales
+
+    private LEARCredential getVerifiableCredential(OAuth2AuthorizationGrantAuthenticationToken authentication) {
         Map<String, Object> additionalParameters = authentication.getAdditionalParameters();
         if (!additionalParameters.containsKey("vc")) {
-            log.error("CustomAuthenticationProvider -- getVerifiableCredential -- Parameter 'vc' not found in request");
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
         }
         JsonNode verifiableCredential = objectMapper.convertValue(additionalParameters.get("vc"), JsonNode.class);
-        log.debug("CustomAuthenticationProvider -- getVerifiableCredential -- Verifiable credential obtained: {}", verifiableCredential);
 
-        // Diferenciar el tipo de credencial basado en la clase concreta de autenticación
         if (authentication instanceof OAuth2AuthorizationCodeAuthenticationToken) {
-            // Retorna la credencial específica para el tipo `LEARCredentialEmployee`
             return objectMapper.convertValue(verifiableCredential, LEARCredentialEmployee.class);
         } else if (authentication instanceof OAuth2ClientCredentialsAuthenticationToken) {
-            // Retorna la credencial específica para el tipo `LEARCredentialMachine`
             return objectMapper.convertValue(verifiableCredential, LEARCredentialMachine.class);
+
         }
-        log.error("CustomAuthenticationProvider -- getVerifiableCredential -- Unsupported authentication type for credential");
+
         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
     }
 
-    private String getCredentialSubjectFromVerifiableCredential(Object verifiableCredential) {
-        log.debug("CustomAuthenticationProvider -- getCredentialSubjectFromVerifiableCredential -- Obtaining subject from verifiable credential");
-        if (verifiableCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
-            // Extrae y retorna el credentialSubject específico para `LEARCredentialEmployee`
-            return learCredentialEmployee.credentialSubject().mandate().mandatee().id();
-        } else if (verifiableCredential instanceof LEARCredentialMachine learCredentialMachine) {
-            // Extrae y retorna el credentialSubject específico para `LEARCredentialMachine`
-            return learCredentialMachine.credentialSubject().mandate().mandatee().id();
-        }
-        log.error("CustomAuthenticationProvider -- getCredentialSubjectFromVerifiableCredential -- Unsupported credential LEARCredentialType: {}", verifiableCredential.getClass().getName());
-        throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
-    }
-
-    private String getAudience(OAuth2AuthorizationGrantAuthenticationToken authentication, Object credential) {
+    private String getAudience(OAuth2AuthorizationGrantAuthenticationToken authentication, LEARCredential credential) {
         // Extraer el audience en función del tipo de credencial
         if (credential instanceof LEARCredentialMachine) {
             return securityProperties.authorizationServer();
@@ -162,22 +148,40 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
     }
 
-    private String generateAccessTokenWithVc(Object verifiableCredential, Instant issueTime, Instant expirationTime, String subject, String audience) {
+    private String generateAccessTokenWithVc(LEARCredential learCredential, Instant issueTime, Instant expirationTime, String subject, String audience) {
         log.info("Generating access token with verifiableCredential");
-        JWTClaimsSet payload = new JWTClaimsSet.Builder()
+
+        // Construir el builder del JWTClaimsSet
+        JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
                 .issuer(securityProperties.authorizationServer())
-                .audience(audience) // Utiliza el valor de "audience" calculado
+                .audience(audience)
                 .subject(subject)
                 .jwtID(UUID.randomUUID().toString())
                 .issueTime(Date.from(issueTime))
                 .expirationTime(Date.from(expirationTime))
-                .claim(OAuth2ParameterNames.SCOPE, getScope(verifiableCredential))
-                .claim("vc", verifiableCredential)
-                .build();
+                .claim(OAuth2ParameterNames.SCOPE, getScope(learCredential));
+
+        List<String> credentialTypes = learCredential.type();
+
+        if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
+            LEARCredentialEmployee credential = (LEARCredentialEmployee) learCredential;
+            Map<String, Object> credentialData = objectMapper.convertValue(credential, new TypeReference<>() {});
+            claimsBuilder.claim("vc", credentialData);
+        } else if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())) {
+            LEARCredentialMachine credential = (LEARCredentialMachine) learCredential;
+            Map<String, Object> credentialData = objectMapper.convertValue(credential, new TypeReference<>() {});
+            claimsBuilder.claim("vc", credentialData);
+        } else {
+            throw new InvalidCredentialTypeException("Unsupported credential type: " + credentialTypes);
+        }
+
+        JWTClaimsSet payload = claimsBuilder.build();
+
         return jwtService.generateJWT(payload.toString());
     }
 
-    private String generateIdToken(Object verifiableCredential, String subject, String audience, Map<String, Object> additionalParameters) {
+
+    private String generateIdToken(LEARCredential learCredential, String subject, String audience, Map<String, Object> additionalParameters) {
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(
                 Long.parseLong(securityProperties.token().idToken().expiration()),
@@ -187,7 +191,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         // Convert the VerifiableCredential to a JSON string
         String verifiableCredentialJson;
         try {
-            verifiableCredentialJson = objectMapper.writeValueAsString(verifiableCredential);
+            verifiableCredentialJson = objectMapper.writeValueAsString(learCredential);
         } catch (JsonProcessingException e) {
             throw new JsonConversionException("Error converting Verifiable Credential to JSON: " + e.getMessage());
         }
@@ -209,7 +213,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         Map<String, Object> additionalClaims;
 
         if (additionalParameters.containsKey(OAuth2ParameterNames.SCOPE)) {
-            additionalClaims = extractClaimsFromVerifiableCredential(verifiableCredential, additionalParameters);
+            additionalClaims = extractClaimsFromVerifiableCredential(learCredential, additionalParameters);
             additionalClaims.forEach(idTokenClaimsBuilder::claim);
         }
 
@@ -219,22 +223,22 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         return jwtService.generateJWT(idTokenClaims.toString());
     }
 
-    private Map<String, Object> extractClaimsFromVerifiableCredential(Object verifiableCredential, Map<String, Object> additionalParameters) {
+    private Map<String, Object> extractClaimsFromVerifiableCredential(LEARCredential learCredential, Map<String, Object> additionalParameters) {
         Set<String> requestedScopes = new HashSet<>(Arrays.asList(additionalParameters.get(OAuth2ParameterNames.SCOPE).toString().split(" ")));
         Map<String, Object> claims = new HashMap<>();
 
-        if (verifiableCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
+        if (learCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
             // Check if "profile" scope is requested and add profile-related claims
             if (requestedScopes.contains("profile")) {
-                String name = learCredentialEmployee.credentialSubject().mandate().mandatee().firstName() + " " + learCredentialEmployee.credentialSubject().mandate().mandatee().lastName();
+                String name = learCredentialEmployee.mandateeFirstName() + " " + learCredentialEmployee.mandateeLastName();
                 claims.put("name", name);
-                claims.put("given_name", learCredentialEmployee.credentialSubject().mandate().mandatee().firstName());
-                claims.put("family_name", learCredentialEmployee.credentialSubject().mandate().mandatee().lastName());
+                claims.put("given_name", learCredentialEmployee.mandateeFirstName());
+                claims.put("family_name", learCredentialEmployee.mandateeLastName());
             }
 
             // Check if "email" scope is requested and add email-related claims
             if (requestedScopes.contains("email")) {
-                claims.put("email", learCredentialEmployee.credentialSubject().mandate().mandatee().email());
+                claims.put("email", learCredentialEmployee.mandateeEmail());
                 claims.put("email_verified", true);
             }
         }
@@ -242,14 +246,13 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     }
 
 
-    private String getScope(Object verifiableCredential){
-        if (verifiableCredential instanceof LEARCredentialEmployee) {
+    private String getScope(LEARCredential learCredential) {
+        if (learCredential instanceof LEARCredentialEmployee) {
             return "openid learcredential";
-        } else if (verifiableCredential instanceof LEARCredentialMachine) {
+        } else if (learCredential instanceof LEARCredentialMachine) {
             return "machine learcredential";
         } else {
-            log.error("CustomAuthenticationProvider -- getScope -- Unsupported credential type: {}", verifiableCredential.getClass().getName());
-            throw new InvalidCredentialTypeException("Credential Type not supported: " + verifiableCredential.getClass().getName());
+            throw new InvalidCredentialTypeException("Credential Type not supported: " + learCredential.getClass().getName());
         }
     }
 

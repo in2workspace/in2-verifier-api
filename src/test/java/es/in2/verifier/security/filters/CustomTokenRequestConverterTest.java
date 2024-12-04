@@ -2,13 +2,14 @@ package es.in2.verifier.security.filters;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.verifier.config.CacheStore;
 import es.in2.verifier.exception.InvalidCredentialTypeException;
 import es.in2.verifier.exception.InvalidVPtokenException;
 import es.in2.verifier.exception.UnsupportedGrantTypeException;
 import es.in2.verifier.model.AuthorizationCodeData;
-import es.in2.verifier.model.credentials.machine.LEARCredentialMachine;
+import es.in2.verifier.model.credentials.lear.machine.LEARCredentialMachine;
 import es.in2.verifier.model.enums.LEARCredentialType;
 import es.in2.verifier.service.ClientAssertionValidationService;
 import es.in2.verifier.service.JWTService;
@@ -34,7 +35,6 @@ import java.util.Map;
 
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -91,45 +91,55 @@ class CustomTokenRequestConverterTest {
         verify(oAuth2AuthorizationService).remove(authorizationCodeData.oAuth2Authorization());
     }
 
-
     @Test
-    void convert_clientCredentialsGrant_shouldReturnOAuth2ClientCredentialsAuthenticationToken() {
+    void convert_clientCredentialsGrant_success(){
+        // Arrange
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         Authentication clientPrincipal = mock(Authentication.class);
         SecurityContextHolder.getContext().setAuthentication(clientPrincipal);
 
+        String clientId = "client-id";
+        String clientAssertion = "client-assertion";
+        String vpToken = "vp-token";
+
         MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
         parameters.add(OAuth2ParameterNames.GRANT_TYPE, "client_credentials");
-        parameters.add(OAuth2ParameterNames.CLIENT_ID, "client-id");
-        parameters.add(OAuth2ParameterNames.CLIENT_ASSERTION, "client-assertion");
+        parameters.add(OAuth2ParameterNames.CLIENT_ID, clientId);
+        parameters.add(OAuth2ParameterNames.CLIENT_ASSERTION, clientAssertion);
 
         when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
 
+        // Mock del JWTService
         SignedJWT signedJWT = mock(SignedJWT.class);
-        when(jwtService.parseJWT("client-assertion")).thenReturn(signedJWT);
+        Payload payload = mock(Payload.class);
 
-        String vpToken = "vp-token";
-        when(jwtService.getClaimFromPayload(any(), eq("vp_token"))).thenReturn(vpToken);
+        when(jwtService.parseJWT(clientAssertion)).thenReturn(signedJWT);
+        when(jwtService.getPayloadFromSignedJWT(signedJWT)).thenReturn(payload);
+        when(jwtService.getClaimFromPayload(payload, "vp_token")).thenReturn(vpToken);
 
         JsonNode mockVC = mock(JsonNode.class);
-        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(anyString())).thenReturn(mockVC);
+
+        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(vpToken)).thenReturn(mockVC);
+
+        when(clientAssertionValidationService.validateClientAssertionJWTClaims(clientId, payload)).thenReturn(true);
+        when(vpService.validateVerifiablePresentation(vpToken)).thenReturn(true);
 
         LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
         when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
         when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
 
-        when(clientAssertionValidationService.validateClientAssertionJWTClaims(anyString(), any())).thenReturn(true);
-        when(vpService.validateVerifiablePresentation(anyString())).thenReturn(true);
+        // Act
+        Authentication result = customTokenRequestConverter.convert(mockRequest);
 
-        OAuth2ClientCredentialsAuthenticationToken result =
-                (OAuth2ClientCredentialsAuthenticationToken) customTokenRequestConverter.convert(mockRequest);
-
+        // Assert
         assertNotNull(result);
-        assertEquals("client-id", result.getAdditionalParameters().get(OAuth2ParameterNames.CLIENT_ID));
-        assertEquals(mockVC, result.getAdditionalParameters().get("vc"));
+        assertInstanceOf(OAuth2ClientCredentialsAuthenticationToken.class, result);
 
-        verify(clientAssertionValidationService, times(1)).validateClientAssertionJWTClaims(anyString(), any());
-        verify(vpService, times(1)).validateVerifiablePresentation(anyString());
+        OAuth2ClientCredentialsAuthenticationToken token = (OAuth2ClientCredentialsAuthenticationToken) result;
+        assertEquals(clientPrincipal, token.getPrincipal());
+
+        Map<String, Object> additionalParameters = token.getAdditionalParameters();
+        assertEquals(clientId, additionalParameters.get(OAuth2ParameterNames.CLIENT_ID));
     }
 
     @Test

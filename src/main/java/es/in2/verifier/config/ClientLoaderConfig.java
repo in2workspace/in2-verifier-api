@@ -7,6 +7,7 @@ import es.in2.verifier.service.TrustFrameworkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
@@ -17,6 +18,7 @@ import org.springframework.security.oauth2.server.authorization.settings.ClientS
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Configuration
@@ -24,9 +26,15 @@ import java.util.UUID;
 public class ClientLoaderConfig {
 
     private final TrustFrameworkService trustFrameworkService;
+    private final Set<String> allowedClientsOrigins;
 
     @Bean
-    public RegisteredClientRepository registeredClientRepository() {
+    public RegisteredClientRepository getRegisteredClientRepository() {
+        return registeredClientRepository();
+    }
+
+    @Scheduled(cron = "0 */30 * * * *")
+    private RegisteredClientRepository registeredClientRepository() {
         List<RegisteredClient> clients = loadClients(); // Cargar los clientes
         return new InMemoryRegisteredClientRepository(clients); // Pasar los clientes al repositorio
     }
@@ -65,6 +73,11 @@ public class ClientLoaderConfig {
                 }
                 registeredClientBuilder.clientSettings(clientSettingsBuilder.build());
                 registeredClients.add(registeredClientBuilder.build());
+
+                // Add the client origin to the allowed clients origins
+                if (clientData.url() != null && !clientData.url().isBlank()) {
+                    allowedClientsOrigins.add(clientData.url());
+                }
             }
             return registeredClients;
         } catch (Exception e) {
