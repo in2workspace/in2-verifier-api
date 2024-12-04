@@ -1,73 +1,67 @@
 package es.in2.verifier.model.credentials.dome.employee;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import es.in2.verifier.exception.JsonConversionException;
-import es.in2.verifier.model.credentials.VerifiableCredential;
+import es.in2.verifier.model.credentials.AbstractCredentialAdapter;
 
 import java.util.List;
 
-public class EmployeeCredentialAdapter implements VerifiableCredential {
-
-    private final LEARCredentialEmployee credential;
+public class EmployeeCredentialAdapter extends AbstractCredentialAdapter<LEARCredentialEmployee> {
 
     public EmployeeCredentialAdapter(Object credential, ObjectMapper objectMapper) {
-        try {
-            this.credential = objectMapper.convertValue(credential, LEARCredentialEmployee.class);
-        } catch (IllegalArgumentException e) {
-            throw new JsonConversionException("Error deserializing LEARCredentialEmployee: " + e);
-        }
+        super(credential, objectMapper, LEARCredentialEmployee.class);
     }
 
     @Override
-    public List<String> getContext() {
+    protected List<String> getCredentialContext() {
         return credential.context();
     }
 
     @Override
-    public String getId() {
+    protected String getCredentialId() {
         return credential.id();
     }
 
     @Override
-    public List<String> getType() {
+    protected List<String> getCredentialType() {
         return credential.type();
     }
 
     @Override
-    public String getIssuer() {
+    protected String getCredentialIssuer() {
         return credential.issuer();
     }
 
     @Override
-    public String getValidFrom() {
+    protected String getCredentialValidFrom() {
         return credential.validFrom();
     }
 
     @Override
-    public String getValidUntil() {return credential.expirationDate();
+    protected String getCredentialValidUntil() {
+        return credential.expirationDate();
     }
+
     @Override
-    public String getMandateeId() {
+    protected String getCredentialMandateeId() {
         return credential.credentialSubject().mandate().mandatee().id();
     }
 
     @Override
-    public String getMandatorOrganizationIdentifier() {
+    protected String getCredentialMandatorOrganizationIdentifier() {
         return credential.credentialSubject().mandate().mandator().organizationIdentifier();
     }
-    @Override
-    public LEARCredentialEmployee getCredential() {
-        return credential;
-    }
+
+    // Additional methods specific to EmployeeCredentialAdapter
     public String getMandateeFirstName() {
         return credential.credentialSubject().mandate().mandatee().firstName();
     }
+
     public String getMandateeLastName() {
         return credential.credentialSubject().mandate().mandatee().lastName();
     }
+
     public String getMandateeEmail() {
         return credential.credentialSubject().mandate().mandatee().email();
     }
-
-
 }
+
