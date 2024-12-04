@@ -10,6 +10,3 @@ public interface LEARCredential {
     String mandateeId();
     String mandatorOrganizationIdentifier();
 }
-
-
-
