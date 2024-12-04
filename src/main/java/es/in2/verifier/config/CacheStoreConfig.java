@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 public class CacheStoreConfig {
 
     private final SecurityProperties securityProperties;
+    
     @Bean
     public CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT() {
         return new CacheStore<>(
