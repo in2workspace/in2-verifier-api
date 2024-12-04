@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v1.0.15](https://github.com/in2workspace/in2-verifier-api/releases/tag/v1.0.15)
 ### Fixed
 - Fix token serialization issue
+- Add cors config for registered clients
 
 ## [v1.0.14](https://github.com/in2workspace/in2-verifier-api/releases/tag/v1.0.14)
 ### Fixed
