@@ -16,19 +16,16 @@ public class PublicCorsConfig {
     @Bean
     public CorsConfigurationSource publicCorsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-
         // Configure public endpoints
         CorsConfiguration publicConfig = new CorsConfiguration();
         publicConfig.setAllowedOriginPatterns(List.of("*"));
         publicConfig.setAllowedMethods(List.of("GET", "POST"));
         publicConfig.setAllowedHeaders(List.of("Content-Type"));
         publicConfig.setAllowCredentials(false);
-
         source.registerCorsConfiguration("/health", publicConfig);
         source.registerCorsConfiguration("/oid4vp/auth-request/**", publicConfig);
         source.registerCorsConfiguration("/oid4vp/auth-response", publicConfig);
-
         return source;
     }
+    
 }
-
