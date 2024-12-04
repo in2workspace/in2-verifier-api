@@ -33,14 +33,17 @@ public record LEARCredentialMachine(
         @JsonProperty("issuanceDate")
         String issuanceDate
 ) implements LEARCredential {
+        
     @Override
     public String mandateeId() {
         return credentialSubject.mandate().mandatee().id();
     }
+        
     @Override
     public String issuerId() {
             return issuer.id();
     }
+        
     @Override
     public String mandatorOrganizationIdentifier() {
         return credentialSubject.mandate().mandator().organizationIdentifier();
