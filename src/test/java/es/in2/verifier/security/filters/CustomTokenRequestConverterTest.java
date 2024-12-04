@@ -2,9 +2,15 @@ package es.in2.verifier.security.filters;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jwt.SignedJWT;
 import es.in2.verifier.config.CacheStore;
+import es.in2.verifier.exception.InvalidCredentialTypeException;
+import es.in2.verifier.exception.InvalidVPtokenException;
 import es.in2.verifier.exception.UnsupportedGrantTypeException;
 import es.in2.verifier.model.AuthorizationCodeData;
+import es.in2.verifier.model.credentials.lear.machine.LEARCredentialMachine;
+import es.in2.verifier.model.enums.LEARCredentialType;
 import es.in2.verifier.service.ClientAssertionValidationService;
 import es.in2.verifier.service.JWTService;
 import es.in2.verifier.service.VpService;
@@ -19,10 +25,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeAuthenticationToken;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientCredentialsAuthenticationToken;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
@@ -83,164 +91,155 @@ class CustomTokenRequestConverterTest {
         verify(oAuth2AuthorizationService).remove(authorizationCodeData.oAuth2Authorization());
     }
 
-//    @Test
-//    void convert_clientCredentialsGrant_success() throws Exception {
-//        // Arrange
-//        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-//        Authentication clientPrincipal = mock(Authentication.class);
-//        SecurityContextHolder.getContext().setAuthentication(clientPrincipal);
-//
-//        String clientId = "client-id";
-//        String clientAssertion = "client-assertion";
-//        String vpToken = "vp-token";
-//
-//        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
-//        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "client_credentials");
-//        parameters.add(OAuth2ParameterNames.CLIENT_ID, clientId);
-//        parameters.add(OAuth2ParameterNames.CLIENT_ASSERTION, clientAssertion);
-//
-//        when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
-//
-//        // Mock del JWTService
-//        SignedJWT signedJWT = mock(SignedJWT.class);
-//        Payload payload = mock(Payload.class);
-//
-//        when(jwtService.parseJWT(clientAssertion)).thenReturn(signedJWT);
-//        when(jwtService.getPayloadFromSignedJWT(signedJWT)).thenReturn(payload);
-//        when(jwtService.getClaimFromPayload(payload, "vp_token")).thenReturn(vpToken);
-//
-//        String vcJson = "{"
-//                + "\"type\": [\"VerifiableCredential\", \"LEARCredentialMachine\"],"
-//                + "\"credentialSubject\": {"
-//                + "   \"mandate\": {"
-//                + "       \"mandatee\": {"
-//                + "           \"id\": \"did:key:machine123\""
-//                + "       }"
-//                + "   }"
-//                + "}"
-//                + "}";
-//
-//        ObjectMapper realObjectMapper = new ObjectMapper();
-//        JsonNode vcNode = realObjectMapper.readTree(vcJson);
-//
-//        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(vpToken)).thenReturn(vcNode);
-//
-//        when(clientAssertionValidationService.validateClientAssertionJWTClaims(eq(clientId), eq(payload))).thenReturn(true);
-//        when(vpService.validateVerifiablePresentation(vpToken)).thenReturn(true);
-//
-//        // Act
-//        Authentication result = customTokenRequestConverter.convert(mockRequest);
-//
-//        // Assert
-//        assertNotNull(result);
-//        assertTrue(result instanceof OAuth2ClientCredentialsAuthenticationToken);
-//
-//        OAuth2ClientCredentialsAuthenticationToken token = (OAuth2ClientCredentialsAuthenticationToken) result;
-//        assertEquals(clientPrincipal, token.getPrincipal());
-//
-//        Map<String, Object> additionalParameters = token.getAdditionalParameters();
-//        assertEquals(clientId, additionalParameters.get(OAuth2ParameterNames.CLIENT_ID));
-//        assertEquals(vcNode, additionalParameters.get("vc"));
-//    }
+    @Test
+    void convert_clientCredentialsGrant_success(){
+        // Arrange
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        Authentication clientPrincipal = mock(Authentication.class);
+        SecurityContextHolder.getContext().setAuthentication(clientPrincipal);
 
-//    @Test
-//    void convert_clientCredentialsGrant_shouldReturnIllegalArgumentException_Invalid_JWT_claims_from_assertion() {
-//        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-//        Authentication clientPrincipal = mock(Authentication.class);
-//        SecurityContextHolder.getContext().setAuthentication(clientPrincipal);
-//
-//        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
-//        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "client_credentials");
-//        parameters.add(OAuth2ParameterNames.CLIENT_ID, "client-id");
-//        parameters.add(OAuth2ParameterNames.CLIENT_ASSERTION, "client-assertion");
-//
-//        when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
-//
-//        SignedJWT signedJWT = mock(SignedJWT.class);
-//        when(jwtService.parseJWT("client-assertion")).thenReturn(signedJWT);
-//
-//        String vpToken = "vp-token";
-//        when(jwtService.getClaimFromPayload(any(), eq("vp_token"))).thenReturn(vpToken);
-//
-//        JsonNode mockVC = mock(JsonNode.class);
-//        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(anyString())).thenReturn(mockVC);
-//
-//        LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
-//        when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
-//        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
-//
-//        when(clientAssertionValidationService.validateClientAssertionJWTClaims(anyString(), any())).thenReturn(false);
-//
-//        assertThrows(IllegalArgumentException.class, () ->
-//                customTokenRequestConverter.convert(mockRequest));
-//    }
-//
-//    @Test
-//    void convert_clientCredentialsGrant_shouldReturnIllegalArgumentException_Invalid_VP_Token() {
-//        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-//        Authentication clientPrincipal = mock(Authentication.class);
-//        SecurityContextHolder.getContext().setAuthentication(clientPrincipal);
-//
-//        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
-//        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "client_credentials");
-//        parameters.add(OAuth2ParameterNames.CLIENT_ID, "client-id");
-//        parameters.add(OAuth2ParameterNames.CLIENT_ASSERTION, "client-assertion");
-//
-//        when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
-//
-//        SignedJWT signedJWT = mock(SignedJWT.class);
-//        when(jwtService.parseJWT("client-assertion")).thenReturn(signedJWT);
-//
-//        String vpToken = "vp-token";
-//        when(jwtService.getClaimFromPayload(any(), eq("vp_token"))).thenReturn(vpToken);
-//
-//        JsonNode mockVC = mock(JsonNode.class);
-//        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(anyString())).thenReturn(mockVC);
-//
-//        LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
-//        when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
-//        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
-//
-//        when(clientAssertionValidationService.validateClientAssertionJWTClaims(anyString(), any())).thenReturn(true);
-//        when(vpService.validateVerifiablePresentation(anyString())).thenReturn(false);
-//
-//        assertThrows(InvalidVPtokenException.class, () ->
-//                customTokenRequestConverter.convert(mockRequest));
-//    }
-//
-//    @Test
-//    void handleM2MGrant_invalidCredentialType_shouldThrowInvalidCredentialTypeException() {
-//        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-//        Authentication clientPrincipal = mock(Authentication.class);
-//        SecurityContextHolder.getContext().setAuthentication(clientPrincipal);
-//
-//        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
-//        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "client_credentials");
-//        parameters.add(OAuth2ParameterNames.CLIENT_ID, "client-id");
-//        parameters.add(OAuth2ParameterNames.CLIENT_ASSERTION, "client-assertion");
-//
-//        when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
-//
-//        SignedJWT signedJWT = mock(SignedJWT.class);
-//        when(jwtService.parseJWT("client-assertion")).thenReturn(signedJWT);
-//
-//        String vpToken = "vp-token";
-//        when(jwtService.getClaimFromPayload(any(), eq("vp_token"))).thenReturn(vpToken);
-//
-//        // Mock the behavior of getCredentialFromTheVerifiablePresentationAsJsonNode with the correct vpToken
-//        JsonNode mockVC = mock(JsonNode.class);
-//        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(vpToken)).thenReturn(mockVC);
-//
-//        LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
-//        when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
-//
-//        // Simulate an invalid LEARCredentialType
-//        when(learCredentialMachine.type()).thenReturn(List.of("InvalidType"));
-//
-//        // Verify the exception is thrown
-//        assertThrows(InvalidCredentialTypeException.class, () ->
-//                customTokenRequestConverter.convert(mockRequest));
-//    }
+        String clientId = "client-id";
+        String clientAssertion = "client-assertion";
+        String vpToken = "vp-token";
+
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "client_credentials");
+        parameters.add(OAuth2ParameterNames.CLIENT_ID, clientId);
+        parameters.add(OAuth2ParameterNames.CLIENT_ASSERTION, clientAssertion);
+
+        when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
+
+        // Mock del JWTService
+        SignedJWT signedJWT = mock(SignedJWT.class);
+        Payload payload = mock(Payload.class);
+
+        when(jwtService.parseJWT(clientAssertion)).thenReturn(signedJWT);
+        when(jwtService.getPayloadFromSignedJWT(signedJWT)).thenReturn(payload);
+        when(jwtService.getClaimFromPayload(payload, "vp_token")).thenReturn(vpToken);
+
+        JsonNode mockVC = mock(JsonNode.class);
+
+        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(vpToken)).thenReturn(mockVC);
+
+        when(clientAssertionValidationService.validateClientAssertionJWTClaims(clientId, payload)).thenReturn(true);
+        when(vpService.validateVerifiablePresentation(vpToken)).thenReturn(true);
+
+        LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
+        when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
+        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
+
+        // Act
+        Authentication result = customTokenRequestConverter.convert(mockRequest);
+
+        // Assert
+        assertNotNull(result);
+        assertInstanceOf(OAuth2ClientCredentialsAuthenticationToken.class, result);
+
+        OAuth2ClientCredentialsAuthenticationToken token = (OAuth2ClientCredentialsAuthenticationToken) result;
+        assertEquals(clientPrincipal, token.getPrincipal());
+
+        Map<String, Object> additionalParameters = token.getAdditionalParameters();
+        assertEquals(clientId, additionalParameters.get(OAuth2ParameterNames.CLIENT_ID));
+    }
+
+    @Test
+    void convert_clientCredentialsGrant_shouldReturnIllegalArgumentException_Invalid_JWT_claims_from_assertion() {
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        Authentication clientPrincipal = mock(Authentication.class);
+        SecurityContextHolder.getContext().setAuthentication(clientPrincipal);
+
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "client_credentials");
+        parameters.add(OAuth2ParameterNames.CLIENT_ID, "client-id");
+        parameters.add(OAuth2ParameterNames.CLIENT_ASSERTION, "client-assertion");
+
+        when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
+
+        SignedJWT signedJWT = mock(SignedJWT.class);
+        when(jwtService.parseJWT("client-assertion")).thenReturn(signedJWT);
+
+        String vpToken = "vp-token";
+        when(jwtService.getClaimFromPayload(any(), eq("vp_token"))).thenReturn(vpToken);
+
+        JsonNode mockVC = mock(JsonNode.class);
+        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(anyString())).thenReturn(mockVC);
+
+        LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
+        when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
+        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
+
+        when(clientAssertionValidationService.validateClientAssertionJWTClaims(anyString(), any())).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () ->
+                customTokenRequestConverter.convert(mockRequest));
+    }
+
+    @Test
+    void convert_clientCredentialsGrant_shouldReturnIllegalArgumentException_Invalid_VP_Token() {
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        Authentication clientPrincipal = mock(Authentication.class);
+        SecurityContextHolder.getContext().setAuthentication(clientPrincipal);
+
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "client_credentials");
+        parameters.add(OAuth2ParameterNames.CLIENT_ID, "client-id");
+        parameters.add(OAuth2ParameterNames.CLIENT_ASSERTION, "client-assertion");
+
+        when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
+
+        SignedJWT signedJWT = mock(SignedJWT.class);
+        when(jwtService.parseJWT("client-assertion")).thenReturn(signedJWT);
+
+        String vpToken = "vp-token";
+        when(jwtService.getClaimFromPayload(any(), eq("vp_token"))).thenReturn(vpToken);
+
+        JsonNode mockVC = mock(JsonNode.class);
+        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(anyString())).thenReturn(mockVC);
+
+        LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
+        when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
+        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
+
+        when(clientAssertionValidationService.validateClientAssertionJWTClaims(anyString(), any())).thenReturn(true);
+        when(vpService.validateVerifiablePresentation(anyString())).thenReturn(false);
+
+        assertThrows(InvalidVPtokenException.class, () ->
+                customTokenRequestConverter.convert(mockRequest));
+    }
+
+    @Test
+    void handleM2MGrant_invalidCredentialType_shouldThrowInvalidCredentialTypeException() {
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        Authentication clientPrincipal = mock(Authentication.class);
+        SecurityContextHolder.getContext().setAuthentication(clientPrincipal);
+
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "client_credentials");
+        parameters.add(OAuth2ParameterNames.CLIENT_ID, "client-id");
+        parameters.add(OAuth2ParameterNames.CLIENT_ASSERTION, "client-assertion");
+
+        when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
+
+        SignedJWT signedJWT = mock(SignedJWT.class);
+        when(jwtService.parseJWT("client-assertion")).thenReturn(signedJWT);
+
+        String vpToken = "vp-token";
+        when(jwtService.getClaimFromPayload(any(), eq("vp_token"))).thenReturn(vpToken);
+
+        // Mock the behavior of getCredentialFromTheVerifiablePresentationAsJsonNode with the correct vpToken
+        JsonNode mockVC = mock(JsonNode.class);
+        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(vpToken)).thenReturn(mockVC);
+
+        LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
+        when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
+
+        // Simulate an invalid LEARCredentialType
+        when(learCredentialMachine.type()).thenReturn(List.of("InvalidType"));
+
+        // Verify the exception is thrown
+        assertThrows(InvalidCredentialTypeException.class, () ->
+                customTokenRequestConverter.convert(mockRequest));
+    }
 
 
     @Test
