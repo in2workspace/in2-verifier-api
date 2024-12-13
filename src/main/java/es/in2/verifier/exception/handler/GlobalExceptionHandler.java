@@ -52,6 +52,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new GlobalErrorMessage("","","");
     }
 
+    @ExceptionHandler(CredentialExpiredException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public GlobalErrorMessage handleException(CredentialExpiredException ex) {
+        log.error("The credential has expired: ", ex);
+        return new GlobalErrorMessage("","","");
+    }
+
+    @ExceptionHandler(CredentialNotActiveException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public GlobalErrorMessage handleException(CredentialNotActiveException ex) {
+        log.error("The credential is not active yet: ", ex);
+        return new GlobalErrorMessage("","","");
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public GlobalErrorMessage handleException(Exception ex) {

@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 
 import java.security.PublicKey;
 import java.text.ParseException;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,36 +61,39 @@ public class VpServiceImpl implements VpService {
             // Step 1.1: Map the payload to a VerifiableCredential object
             LEARCredential learCredential = mapPayloadToVerifiableCredential(payload);
 
-            // Step 2: Validate the credential id is not in the revoked list
+            // Step 2: Validate the time window of the credential
+            log.debug("VpServiceImpl -- validateVerifiablePresentation -- Validating the time window of the credential");
+            validateCredentialTimeWindow(learCredential);
+
+            // Step 3: Validate the credential id is not in the revoked list
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Validating that the credential is not revoked");
             validateCredentialNotRevoked(learCredential.id());
             log.info("Credential is not revoked");
 
-            // Step 3: Validate the issuer
+            // Step 4: Validate the issuer
             String credentialIssuerDid = learCredential.issuerId();
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Retrieved issuer DID from payload: {}", credentialIssuerDid);
 
-            // Step 4: Extract and validate credential types
+            // Step 5: Extract and validate credential types
             List<String> credentialTypes = learCredential.type();
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Credential types extracted: {}", credentialTypes);
 
-            // Step 5: Retrieve the list of issuer capabilities
+            // Step 6: Retrieve the list of issuer capabilities
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Retrieving issuer capabilities for DID {}", credentialIssuerDid);
             List<IssuerCredentialsCapabilities> issuerCapabilitiesList = trustFrameworkService.getTrustedIssuerListData(credentialIssuerDid);
             log.info("Retrieved issuer capabilities");
 
-            // Step 6: Validate credential type against issuer capabilities
+            // Step 7: Validate credential type against issuer capabilities
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Validating credential types against issuer capabilities");
             validateCredentialTypeWithIssuerCapabilities(issuerCapabilitiesList, credentialTypes);
             log.info("Issuer DID {} is a trusted participant", credentialIssuerDid);
 
             // TODO remove step 7 after the advanced certificate validation component is implemented
-            // Step 7: Verify the signature and the organizationId of the credential signature
-            // FIXME: comented. need to be implemented when all users has a valid credentials
-            // Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
-            // certificateValidationService.extractAndVerifyCertificate(jwtCredential.serialize(),vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
+            // Step 8: Verify the signature and the organizationId of the credential signature
+             Map<String, Object> vcHeader = jwtCredential.getHeader().toJSONObject();
+             certificateValidationService.extractAndVerifyCertificate(jwtCredential.serialize(),vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
 
-            // Step 8: Extract the mandator organization identifier from the Verifiable Credential
+            // Step 9: Extract the mandator organization identifier from the Verifiable Credential
             String mandatorOrganizationIdentifier = learCredential.mandatorOrganizationIdentifier();
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Extracted Mandator Organization Identifier from Verifiable Credential: {}", mandatorOrganizationIdentifier);
 
@@ -97,7 +102,7 @@ public class VpServiceImpl implements VpService {
             trustFrameworkService.getTrustedIssuerListData(DID_ELSI_PREFIX + mandatorOrganizationIdentifier);
             log.info("Mandator OrganizationIdentifier {} is valid and allowed", mandatorOrganizationIdentifier);
 
-            // Step 9: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
+            // Step 10: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
             String mandateeId = learCredential.mandateeId();
             PublicKey holderPublicKey = didService.getPublicKeyFromDid(mandateeId); // Get the holder's public key in bytes
             jwtService.verifyJWTWithECKey(verifiablePresentation, holderPublicKey); // Validate the VP was signed by the holder DID
@@ -206,6 +211,28 @@ public class VpServiceImpl implements VpService {
         }
 
     }
+
+    private void validateCredentialTimeWindow(LEARCredential credential) {
+        try {
+            ZonedDateTime validFrom = ZonedDateTime.parse(credential.validFrom());
+            ZonedDateTime validUntil = ZonedDateTime.parse(credential.validUntil());
+            ZonedDateTime now = ZonedDateTime.now();
+
+            // Check if the credential is not yet valid
+            if (now.isBefore(validFrom)) {
+                throw new CredentialNotActiveException("Credential is not yet valid. Valid from: " + validFrom);
+            }
+
+            // Check if the credential has expired
+            if (now.isAfter(validUntil)) {
+                throw new CredentialExpiredException("Credential has expired. Valid until: " + validUntil);
+            }
+
+        } catch (DateTimeParseException e) {
+            throw new CredentialMappingException("Invalid date format in credential: " + e.getMessage());
+        }
+    }
+
 
 
     private JsonNode convertObjectToJSONNode(Object vcObject) throws JsonConversionException {
