@@ -1,10 +1,6 @@
 package es.in2.vcverifier.exception.handler;
 
-import es.in2.verifier.exception.InvalidVPtokenException;
-import es.in2.verifier.exception.CredentialRevokedException;
-import es.in2.verifier.exception.MismatchOrganizationIdentifierException;
-import es.in2.verifier.exception.QRCodeGenerationException;
-import es.in2.verifier.exception.ResourceNotFoundException;
+import es.in2.verifier.exception.*;
 import es.in2.verifier.exception.handler.GlobalExceptionHandler;
 import es.in2.verifier.model.GlobalErrorMessage;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.security.auth.login.CredentialExpiredException;
 import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -106,5 +103,27 @@ class GlobalExceptionHandlerTest {
         assertThat(response.title()).isEqualTo("Invalid VP Token");
         assertThat(response.message()).isEqualTo("Invalid VP token");
         assertThat(response.path()).isEqualTo("/test-path");
+    }
+
+    @Test
+    void testHandleCredentialExpiredException() {
+        CredentialExpiredException exception = new CredentialExpiredException("Credential expired");
+
+        GlobalErrorMessage response = globalExceptionHandler.handleException(exception);
+
+        assertThat(response.title()).isEmpty();
+        assertThat(response.message()).isEmpty();
+        assertThat(response.path()).isEmpty();
+    }
+
+    @Test
+    void testHandleCredentialNotActiveException() {
+        CredentialNotActiveException exception = new CredentialNotActiveException("Credential not active");
+
+        GlobalErrorMessage response = globalExceptionHandler.handleException(exception);
+
+        assertThat(response.title()).isEmpty();
+        assertThat(response.message()).isEmpty();
+        assertThat(response.path()).isEmpty();
     }
 }

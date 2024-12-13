@@ -9,4 +9,6 @@ public interface LEARCredential {
     String issuerId(); // Adjusted to be common
     String mandateeId();
     String mandatorOrganizationIdentifier();
+    String validFrom();
+    String validUntil();
 }

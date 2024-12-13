@@ -3,6 +3,7 @@ package es.in2.verifier.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.shaded.gson.internal.LinkedTreeMap;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -32,6 +33,7 @@ import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -313,6 +315,18 @@ class VpServiceImplTest {
             // Step 7: Validate the mandator with trusted issuer service
             when(trustFrameworkService.getTrustedIssuerListData(DID_ELSI_PREFIX + learCredentialEmployee.mandatorOrganizationIdentifier())).thenReturn(issuerCapabilitiesList);
 
+            // Step 7: Verify the signature and the organizationId of the credential signature
+            Map<String, Object> vcHeader = new HashMap<>();
+            vcHeader.put("x5c", List.of("base64Cert"));
+            JWSHeader header = mock(JWSHeader.class);
+            when(jwtCredential.getHeader()).thenReturn(header);
+            when(header.toJSONObject()).thenReturn(vcHeader);
+
+
+            when(jwtCredential.serialize()).thenReturn(vcJwt);
+
+            doNothing().when(certificateValidationService).extractAndVerifyCertificate(any(), eq(vcHeader),eq("issuer"));
+
             // Step 8: Get the holder's public key
             PublicKey holderPublicKey = generateECPublicKey();
             when(didService.getPublicKeyFromDid(learCredentialEmployee.mandateeId())).thenReturn(holderPublicKey);
@@ -328,6 +342,92 @@ class VpServiceImplTest {
 
             // Verify interactions
             verify(jwtService).verifyJWTWithECKey(verifiablePresentation, holderPublicKey);
+        }
+    }
+
+    @Test
+    void validateVerifiablePresentation_invalidTimeWindowForExpired() throws Exception {
+        // Given
+        String invalidVP = "invalid-time-window.vp.jwt";
+        ZonedDateTime now = ZonedDateTime.now();
+        LEARCredentialEmployee expiredCredential = LEARCredentialEmployee.builder()
+                .validUntil(now.minusDays(1).toString())
+                .validFrom(now.minusDays(2).toString())
+                .build();
+
+        // Mock parsing del VP
+        SignedJWT vpSignedJWT = mock(SignedJWT.class);
+        try (MockedStatic<SignedJWT> mockedSignedJWT = mockStatic(SignedJWT.class)) {
+            mockedSignedJWT.when(() -> SignedJWT.parse(invalidVP)).thenReturn(vpSignedJWT);
+
+            // Configurar claims del VP
+            JWTClaimsSet vpClaimsSet = mock(JWTClaimsSet.class);
+            when(vpSignedJWT.getJWTClaimsSet()).thenReturn(vpClaimsSet);
+
+            Map<String, Object> vcClaimMap = new HashMap<>();
+            String vcJwt = "invalid-time-window.vc.jwt";
+            vcClaimMap.put("verifiableCredential", List.of(vcJwt));
+            when(vpClaimsSet.getClaim("vp")).thenReturn(vcClaimMap);
+
+            // Mock parsing del VC
+            SignedJWT jwtCredential = mock(SignedJWT.class);
+            mockedSignedJWT.when(() -> SignedJWT.parse(vcJwt)).thenReturn(jwtCredential);
+
+            Payload payload = mock(Payload.class);
+            when(jwtService.getPayloadFromSignedJWT(jwtCredential)).thenReturn(payload);
+
+            LinkedTreeMap<String, Object> vcFromPayload = new LinkedTreeMap<>();
+            vcFromPayload.put("type", List.of("LEARCredentialEmployee"));
+            when(jwtService.getVCFromPayload(payload)).thenReturn(vcFromPayload);
+            when(objectMapper.convertValue(vcFromPayload, LEARCredentialEmployee.class)).thenReturn(expiredCredential);
+
+            boolean result = vpServiceImpl.validateVerifiablePresentation(invalidVP);
+
+            Assertions.assertThat(result).isFalse();
+
+        }
+    }
+
+    @Test
+    void validateVerifiablePresentation_invalidTimeWindowForNotValidYet() throws Exception {
+        // Given
+        String invalidVP = "invalid-time-window.vp.jwt";
+        ZonedDateTime now = ZonedDateTime.now();
+        LEARCredentialEmployee expiredCredential = LEARCredentialEmployee.builder()
+                .validUntil(now.plusDays(1).toString())
+                .validFrom(now.plusDays(1).toString())
+                .build();
+
+        // Mock parsing del VP
+        SignedJWT vpSignedJWT = mock(SignedJWT.class);
+        try (MockedStatic<SignedJWT> mockedSignedJWT = mockStatic(SignedJWT.class)) {
+            mockedSignedJWT.when(() -> SignedJWT.parse(invalidVP)).thenReturn(vpSignedJWT);
+
+            // Configurar claims del VP
+            JWTClaimsSet vpClaimsSet = mock(JWTClaimsSet.class);
+            when(vpSignedJWT.getJWTClaimsSet()).thenReturn(vpClaimsSet);
+
+            Map<String, Object> vcClaimMap = new HashMap<>();
+            String vcJwt = "invalid-time-window.vc.jwt";
+            vcClaimMap.put("verifiableCredential", List.of(vcJwt));
+            when(vpClaimsSet.getClaim("vp")).thenReturn(vcClaimMap);
+
+            // Mock parsing del VC
+            SignedJWT jwtCredential = mock(SignedJWT.class);
+            mockedSignedJWT.when(() -> SignedJWT.parse(vcJwt)).thenReturn(jwtCredential);
+
+            Payload payload = mock(Payload.class);
+            when(jwtService.getPayloadFromSignedJWT(jwtCredential)).thenReturn(payload);
+
+            LinkedTreeMap<String, Object> vcFromPayload = new LinkedTreeMap<>();
+            vcFromPayload.put("type", List.of("LEARCredentialEmployee"));
+            when(jwtService.getVCFromPayload(payload)).thenReturn(vcFromPayload);
+            when(objectMapper.convertValue(vcFromPayload, LEARCredentialEmployee.class)).thenReturn(expiredCredential);
+
+            boolean result = vpServiceImpl.validateVerifiablePresentation(invalidVP);
+
+            Assertions.assertThat(result).isFalse();
+
         }
     }
 
@@ -360,6 +460,8 @@ class VpServiceImplTest {
                 .id("urn:uuid:1234")
                 .issuer("did:elsi:issuer")
                 .credentialSubject(credentialSubject)
+                .validUntil(ZonedDateTime.now().plusDays(1).toString())
+                .validFrom(ZonedDateTime.now().toString())
                 .build();
     }
 }
