@@ -208,7 +208,7 @@ class CustomTokenRequestConverterTest {
     }
 
     @Test
-    void handleM2MGrant_invalidCredentialType_shouldThrowInvalidCredentialTypeException() {
+    void handleClientCredentialsGrant_invalidCredentialType_shouldThrowInvalidCredentialTypeException() {
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         Authentication clientPrincipal = mock(Authentication.class);
         SecurityContextHolder.getContext().setAuthentication(clientPrincipal);
