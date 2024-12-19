@@ -4,11 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import es.in2.verifier.component.CryptoComponent;
 import es.in2.verifier.config.CacheStore;
 import es.in2.verifier.config.properties.SecurityProperties;
-import es.in2.verifier.component.CryptoComponent;
 import es.in2.verifier.model.AuthorizationCodeData;
 import es.in2.verifier.model.AuthorizationRequestJWT;
+import es.in2.verifier.model.RefreshTokenDataCache;
 import es.in2.verifier.security.filters.CustomAuthenticationProvider;
 import es.in2.verifier.security.filters.CustomAuthorizationRequestConverter;
 import es.in2.verifier.security.filters.CustomErrorResponseHandler;
@@ -27,16 +28,20 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -55,6 +60,7 @@ public class AuthorizationServerConfig {
     private final CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
     private final ObjectMapper objectMapper;
     private final RegisteredClientsCorsConfig registeredClientsCorsConfig;
+    private final CacheStore<RefreshTokenDataCache> refreshTokenDataCacheCacheStore;
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -74,8 +80,8 @@ public class AuthorizationServerConfig {
                 )
                 .tokenEndpoint(tokenEndpoint ->
                         tokenEndpoint
-                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService, clientAssertionValidationService, vpService, cacheStoreForAuthorizationCodeData,oAuth2AuthorizationService(),objectMapper))
-                                .authenticationProvider(new CustomAuthenticationProvider(jwtService,registeredClientRepository,securityProperties,objectMapper))
+                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService, clientAssertionValidationService, vpService, cacheStoreForAuthorizationCodeData,oAuth2AuthorizationService(),objectMapper, refreshTokenDataCacheCacheStore))
+                                .authenticationProvider(new CustomAuthenticationProvider(jwtService,registeredClientRepository,securityProperties,objectMapper, refreshTokenDataCacheCacheStore, oAuth2AuthorizationService()))
                 )
                 .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
         return http.build();
@@ -95,6 +101,16 @@ public class AuthorizationServerConfig {
         jwtDecoder.setJwtValidator(withAudience);
         return jwtDecoder;
     }
+
+    @Bean
+    public OAuth2TokenCustomizer<JwtEncodingContext> jwtCustomizer() {
+        return context -> {
+            if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
+                context.getJwsHeader().algorithm(SignatureAlgorithm.ES256);
+            }
+        };
+    }
+
     @Bean
     public OAuth2AuthorizationService oAuth2AuthorizationService() {
         return new InMemoryOAuth2AuthorizationService();
