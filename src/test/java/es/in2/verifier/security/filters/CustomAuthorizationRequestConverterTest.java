@@ -37,6 +37,7 @@ import static es.in2.verifier.util.Constants.CLIENT_ERROR_ENDPOINT;
 import static es.in2.verifier.util.Constants.REQUEST_URI;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
 
 @ExtendWith(MockitoExtension.class)
 class CustomAuthorizationRequestConverterTest {
@@ -71,6 +72,7 @@ class CustomAuthorizationRequestConverterTest {
         String scope = "learcredential";
         String redirectUri = "https://client.example.com/callback";
         String clientName = "Test Client";
+        String clientNonce = "test-nonce";
         List<String> authorizationGrantTypes = List.of("authorization_code");
         Set<String> redirectUris = Set.of(redirectUri);
 
@@ -80,6 +82,7 @@ class CustomAuthorizationRequestConverterTest {
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
         when(request.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+        when(request.getParameter(NONCE)).thenReturn(clientNonce);
         when(request.getParameter(REQUEST_URI)).thenReturn(null);
         when(request.getParameter("request")).thenReturn(null);
 
@@ -126,6 +129,7 @@ class CustomAuthorizationRequestConverterTest {
         String redirectUri = "https://client.example.com/callback";
         String jwt = "mock-jwt-token";
         String clientName = "Test Client";
+        String clientNonce = "test-nonce";
         List<String> authorizationGrantTypes = List.of("authorization_code");
 
         when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
@@ -134,6 +138,7 @@ class CustomAuthorizationRequestConverterTest {
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
         when(request.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+        when(request.getParameter(NONCE)).thenReturn(clientNonce);
         when(request.getParameter(REQUEST_URI)).thenReturn(null);
         when(request.getParameter("request")).thenReturn(jwt);
 
@@ -183,6 +188,7 @@ class CustomAuthorizationRequestConverterTest {
         String jwtRedirectUri = "https://malicious.example.com/callback";
         String jwt = "mock-jwt-token";
         String clientName = "Test Client";
+        String clientNonce = "test-nonce";
         List<String> authorizationGrantTypes = List.of("authorization_code");
 
         when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
@@ -191,6 +197,7 @@ class CustomAuthorizationRequestConverterTest {
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
         when(request.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+        when(request.getParameter(NONCE)).thenReturn(clientNonce);
         when(request.getParameter(REQUEST_URI)).thenReturn(null);
         when(request.getParameter("request")).thenReturn(jwt);
 
@@ -243,6 +250,7 @@ class CustomAuthorizationRequestConverterTest {
         String requestUri = "https://client.example.com/request.jwt";
         String jwt = "mock-jwt-token";
         String clientName = "Test Client";
+        String clientNonce = "test-nonce";
         List<String> authorizationGrantTypes = List.of("authorization_code");
 
         when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
@@ -251,6 +259,7 @@ class CustomAuthorizationRequestConverterTest {
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
         when(request.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+        when(request.getParameter(NONCE)).thenReturn(clientNonce);
         when(request.getParameter(REQUEST_URI)).thenReturn(requestUri);
 
         RegisteredClient registeredClient = RegisteredClient.withId("1234")
@@ -353,6 +362,7 @@ class CustomAuthorizationRequestConverterTest {
         String scope = "unsupported_scope";
         String redirectUri = "https://client.example.com/callback";
         String clientName = "Test Client";
+        String clientNonce = "test-nonce";
         List<String> authorizationGrantTypes = List.of("authorization_code");
 
         when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
@@ -361,6 +371,7 @@ class CustomAuthorizationRequestConverterTest {
         when(request.getParameter(OAuth2ParameterNames.STATE)).thenReturn(state);
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
         when(request.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
+        when(request.getParameter(NONCE)).thenReturn(clientNonce);
         when(request.getParameter(REQUEST_URI)).thenReturn(null);
         when(request.getParameter("request")).thenReturn(null);
 
@@ -402,6 +413,7 @@ class CustomAuthorizationRequestConverterTest {
         String redirectUri = "https://client.example.com/callback";
         String jwt = "mock-jwt-token"; // The JWT passed in the 'request' parameter
         String clientName = "Test Client";
+        String clientNonce = "test-nonce";
         List<String> authorizationGrantTypes = List.of("authorization_code");
 
         when(request.getRequestURL()).thenReturn(new StringBuffer("https://client.example.com/authorize"));
@@ -411,6 +423,7 @@ class CustomAuthorizationRequestConverterTest {
         when(request.getParameter(OAuth2ParameterNames.SCOPE)).thenReturn(scope);
         when(request.getParameter(OAuth2ParameterNames.REDIRECT_URI)).thenReturn(redirectUri);
         when(request.getParameter(REQUEST_URI)).thenReturn(null);
+        when(request.getParameter(NONCE)).thenReturn(clientNonce);
         when(request.getParameter("request")).thenReturn(jwt);
 
         RegisteredClient registeredClient = RegisteredClient.withId("1234")
