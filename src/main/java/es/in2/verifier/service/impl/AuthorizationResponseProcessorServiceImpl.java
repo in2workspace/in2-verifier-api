@@ -27,6 +27,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.UUID;
 
+import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -84,18 +86,23 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
                 .id(registeredClient.getId())
                 .principalName(registeredClient.getClientId())
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .token(new OAuth2AuthorizationCode(code, issueTime, expirationTime)) // Generar código aquí
+                .token(new OAuth2AuthorizationCode(code, issueTime, expirationTime))
                 .attribute(OAuth2AuthorizationRequest.class.getName(), oAuth2AuthorizationRequest)
                 .build();
 
         log.info("OAuth2Authorization generated");
 
-        cacheStoreForAuthorizationCodeData.add(code, AuthorizationCodeData.builder()
+
+
+        AuthorizationCodeData authorizationCodeData = AuthorizationCodeData.builder()
                 .state(state)
                 .verifiableCredential(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(decodedVpToken))
                 .oAuth2Authorization(authorization)
                 .requestedScopes(oAuth2AuthorizationRequest.getScopes())
-                .build());
+                .clientNonce(oAuth2AuthorizationRequest.getAdditionalParameters().get(NONCE).toString())
+                .build();
+
+        cacheStoreForAuthorizationCodeData.add(code, authorizationCodeData);
 
         oAuth2AuthorizationService.save(authorization);
 

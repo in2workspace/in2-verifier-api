@@ -6,6 +6,7 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.verifier.component.CryptoComponent;
 import es.in2.verifier.config.CacheStore;
 import es.in2.verifier.config.properties.SecurityProperties;
+import es.in2.verifier.model.AuthorizationContext;
 import es.in2.verifier.model.AuthorizationRequestJWT;
 import es.in2.verifier.service.DIDService;
 import es.in2.verifier.service.JWTService;
@@ -35,6 +36,7 @@ import java.security.PublicKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 import static es.in2.verifier.util.Constants.*;
@@ -72,6 +74,16 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         String state = request.getParameter(OAuth2ParameterNames.STATE);
         String scope = request.getParameter(OAuth2ParameterNames.SCOPE);
         String redirectUri = request.getParameter(OAuth2ParameterNames.REDIRECT_URI);
+        String clientNonce = request.getParameter(NONCE);
+
+        AuthorizationContext authorizationContext = AuthorizationContext.builder()
+                .requestUri(requestUri)
+                .state(state)
+                .originalRequestURL(originalRequestURL)
+                .redirectUri(redirectUri)
+                .clientNonce(clientNonce)
+                .scope(scope)
+                .build();
 
         RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
 
@@ -83,43 +95,49 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         // Case 1: Authorization request OIDC standard without a signed JWT object
         if (requestUri == null && request.getParameter("request") == null) {
             log.info("Processing an authorization request without a signed JWT object.");
-            return handleOIDCStandardRequest(state, scope, redirectUri, registeredClient, originalRequestURL);
+            return handleOIDCStandardRequest(authorizationContext, registeredClient);
         }
 
         // Case 2: Authorization request following FAPI with a signed JWT object
-        return handleFAPIRequest(requestUri, request, state, scope, redirectUri, registeredClient, originalRequestURL);
+        return handleFAPIRequest(authorizationContext, request, registeredClient);
     }
 
-    private Authentication handleFAPIRequest(String requestUri, HttpServletRequest request, String state, String scope, String redirectUri, RegisteredClient registeredClient, String originalRequestURL) {
-        String jwt = retrieveJwtFromRequestUriOrRequest(requestUri, request, registeredClient, originalRequestURL);
+    private Authentication handleFAPIRequest(AuthorizationContext authorizationContext, HttpServletRequest request, RegisteredClient registeredClient) {
+        String jwt = retrieveJwtFromRequestUriOrRequest(authorizationContext.requestUri(), request, registeredClient, authorizationContext.originalRequestURL());
 
         // Parse the JWT using the JWTService
         SignedJWT signedJwt = jwtService.parseJWT(jwt);
 
         // Validate the OAuth 2.0 parameters against JWT claims
-        validateOAuth2Parameters(registeredClient, scope, signedJwt, originalRequestURL);
+        validateOAuth2Parameters(registeredClient, authorizationContext.scope(), signedJwt, authorizationContext.originalRequestURL());
 
         // Validate the redirect_uri with the client repository
-        validateRedirectUri(registeredClient, redirectUri, signedJwt, originalRequestURL);
+        validateRedirectUri(registeredClient, authorizationContext.redirectUri(), signedJwt, authorizationContext.originalRequestURL());
+
+        // Validate the nonce for the FAPI scenario
+        validateNonceRequired(authorizationContext.clientNonce(), registeredClient, authorizationContext.originalRequestURL());
 
         // Process the authorization flow
-        return processAuthorizationFlow(registeredClient.getClientId(), scope, state, signedJwt, registeredClient, originalRequestURL);
+        return processAuthorizationFlow(authorizationContext, signedJwt, registeredClient);
     }
 
     /**
      * Handle authorization requests without a signed JWT object.
      */
-    private Authentication handleOIDCStandardRequest(String state, String scope, String redirectUri, RegisteredClient registeredClient, String originalRequestURL) {
+    private Authentication handleOIDCStandardRequest(AuthorizationContext authorizationContext, RegisteredClient registeredClient) {
         // Validate redirect_uri for non-signed requests
-        validateRedirectUri(registeredClient, redirectUri, null, originalRequestURL);
+        validateRedirectUri(registeredClient, authorizationContext.redirectUri(), null, authorizationContext.originalRequestURL());
+
+        // Validate client nonce for non-signed requests
+        validateNonceRequired(authorizationContext.clientNonce(), registeredClient, authorizationContext.originalRequestURL());
 
         // Cache the OAuth2 authorization request
-        cacheAuthorizationRequest(state, registeredClient.getClientId(), redirectUri, scope);
+        cacheAuthorizationRequest(authorizationContext, registeredClient.getClientId(), authorizationContext.redirectUri());
 
         String nonce = generateNonce();
-        String signedAuthRequest = jwtService.generateJWT(buildAuthorizationRequestJwtPayload(registeredClient, scope, state, originalRequestURL));
+        String signedAuthRequest = jwtService.generateJWT(buildAuthorizationRequestJwtPayload(registeredClient, authorizationContext.scope(), authorizationContext.state(), authorizationContext.originalRequestURL()));
 
-        return getAuthentication(state, signedAuthRequest, nonce, registeredClient);
+        return getAuthentication(authorizationContext.state(), signedAuthRequest, nonce, registeredClient);
     }
 
     private void throwInvalidClientAuthenticationException(String errorMessage, String clientName, String errorCode, String originalRequestURL) {
@@ -199,16 +217,25 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         }
     }
 
-    private Authentication processAuthorizationFlow(String clientId, String scope, String state, SignedJWT signedJwt, RegisteredClient registeredClient, String originalRequestURL) {
-        PublicKey publicKey = didService.getPublicKeyFromDid(clientId);
+    private void validateNonceRequired(String clientNonce, RegisteredClient registeredClient, String originalRequestURL) {
+        if (!StringUtils.isBlank(clientNonce)) {
+            String errorCode = generateNonce();
+            String errorMessage = "The 'nonce' parameter is required but is missing.";
+            log.error(LOG_ERROR_FORMAT, errorCode, errorMessage);
+            throwInvalidClientAuthenticationException(errorMessage, registeredClient.getClientName(), errorCode, originalRequestURL);
+        }
+    }
+
+    private Authentication processAuthorizationFlow(AuthorizationContext authorizationContext, SignedJWT signedJwt, RegisteredClient registeredClient) {
+        PublicKey publicKey = didService.getPublicKeyFromDid(registeredClient.getClientId());
         jwtService.verifyJWTWithECKey(signedJwt.serialize(), publicKey);
 
-        String signedAuthRequest = jwtService.generateJWT(buildAuthorizationRequestJwtPayload(registeredClient, scope, state, originalRequestURL));
+        String signedAuthRequest = jwtService.generateJWT(buildAuthorizationRequestJwtPayload(registeredClient, authorizationContext.scope(), authorizationContext.state(), authorizationContext.originalRequestURL()));
 
-        cacheAuthorizationRequest(state, clientId, jwtService.getClaimFromPayload(signedJwt.getPayload(), OAuth2ParameterNames.REDIRECT_URI), scope);
+        cacheAuthorizationRequest(authorizationContext, registeredClient.getClientId(), jwtService.getClaimFromPayload(signedJwt.getPayload(), OAuth2ParameterNames.REDIRECT_URI));
 
         String nonce = generateNonce();
-        return getAuthentication(state, signedAuthRequest, nonce, registeredClient);
+        return getAuthentication(authorizationContext.state(), signedAuthRequest, nonce, registeredClient);
     }
 
     private Authentication getAuthentication(String state, String signedAuthRequest, String nonce, RegisteredClient registeredClient) {
@@ -274,17 +301,17 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         return UUID.randomUUID().toString();
     }
 
-    // Refactor the method to cache the authorization request
-    private void cacheAuthorizationRequest(String state, String clientId, String redirectUri, String scope) {
-        OAuth2AuthorizationRequest authorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
-                .state(state)
+    private void cacheAuthorizationRequest(AuthorizationContext authorizationContext, String clientId, String redirectUri) {
+        OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
+                .state(authorizationContext.state())
                 .clientId(clientId)
                 .redirectUri(redirectUri)
-                .scope(scope)
+                .scope(authorizationContext.scope())
                 .authorizationUri(securityProperties.authorizationServer())
+                .additionalParameters(Map.of(NONCE, authorizationContext.clientNonce()))
                 .build();
 
-        cacheStoreForOAuth2AuthorizationRequest.add(state, authorizationRequest);
+        cacheStoreForOAuth2AuthorizationRequest.add(authorizationContext.state(), oAuth2AuthorizationRequest);
     }
 
     private String getFullRequestUrl(HttpServletRequest request) {
