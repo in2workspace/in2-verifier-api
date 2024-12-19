@@ -218,7 +218,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     }
 
     private void validateNonceRequired(String clientNonce, RegisteredClient registeredClient, String originalRequestURL) {
-        if (!StringUtils.isBlank(clientNonce)) {
+        if (StringUtils.isBlank(clientNonce)) {
             String errorCode = generateNonce();
             String errorMessage = "The 'nonce' parameter is required but is missing.";
             log.error(LOG_ERROR_FORMAT, errorCode, errorMessage);
