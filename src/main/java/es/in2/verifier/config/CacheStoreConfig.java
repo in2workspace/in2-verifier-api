@@ -3,6 +3,7 @@ package es.in2.verifier.config;
 import es.in2.verifier.config.properties.SecurityProperties;
 import es.in2.verifier.model.AuthorizationCodeData;
 import es.in2.verifier.model.AuthorizationRequestJWT;
+import es.in2.verifier.model.RefreshTokenDataCache;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +25,13 @@ public class CacheStoreConfig {
     public CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT() {
         return new CacheStore<>(
                 Long.parseLong(securityProperties.loginCode().expirationProperties().expiration()),
+                TimeUnit.of(ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit())));
+    }
+
+    @Bean
+    public CacheStore<RefreshTokenDataCache> cacheStoreForRefreshTokenData() {
+        return new CacheStore<>(
+                Long.parseLong(securityProperties.token().accessToken().expiration()),
                 TimeUnit.of(ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit())));
     }
 
