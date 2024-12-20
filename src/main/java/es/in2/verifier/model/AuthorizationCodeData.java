@@ -11,7 +11,8 @@ public record AuthorizationCodeData(
         String state,
         JsonNode verifiableCredential,
         Set<String> requestedScopes,
-        OAuth2Authorization oAuth2Authorization
+        OAuth2Authorization oAuth2Authorization,
+        String clientNonce
 
 ) {
 }
