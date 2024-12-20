@@ -16,6 +16,7 @@ import es.in2.verifier.service.ClientAssertionValidationService;
 import es.in2.verifier.service.JWTService;
 import es.in2.verifier.service.VpService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -56,17 +57,22 @@ class CustomTokenRequestConverterTest {
 
     @Mock
     private CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
+    @Mock
+    private CacheStore<RefreshTokenDataCache> refreshTokenDataCacheCacheStore;
 
     @Mock
     private OAuth2AuthorizationService oAuth2AuthorizationService;
 
     @Mock
     private ObjectMapper objectMapper;
-    @Mock
-    private CacheStore<RefreshTokenDataCache> refreshTokenDataCacheCacheStore;
 
     @InjectMocks
     private CustomTokenRequestConverter customTokenRequestConverter;
+
+    @BeforeEach
+    void setUp() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     void convert_authorizationCodeGrant_shouldReturnOAuth2ClientCredentialsAuthenticationToken() {
@@ -81,7 +87,6 @@ class CustomTokenRequestConverterTest {
         parameters.add(OAuth2ParameterNames.STATE, "state");
 
         when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
-
         AuthorizationCodeData authorizationCodeData = mock(AuthorizationCodeData.class);
         when(cacheStoreForAuthorizationCodeData.get("code")).thenReturn(authorizationCodeData);
         when(authorizationCodeData.state()).thenReturn("state");
@@ -248,26 +253,40 @@ class CustomTokenRequestConverterTest {
                 customTokenRequestConverter.convert(mockRequest));
     }
 
-
     @Test
-    void convert_unsupportedGrantType_shouldThrowUnsupportedGrantTypeException() {
+    void convert_authorizationCodeGrant_withInvalidState_shouldThrowIllegalArgumentException() {
+        // Arrange
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
 
+        String code = "code";
+        String clientId = "client-id";
+        String providedState = "provided-state";
+        String expectedState = "expected-state";
+
         MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
-        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "invalid_grant_type");
+        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "authorization_code");
+        parameters.add(OAuth2ParameterNames.CODE, code);
+        parameters.add(OAuth2ParameterNames.CLIENT_ID, clientId);
+        parameters.add(OAuth2ParameterNames.STATE, providedState);
 
         when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
 
-        assertThrows(UnsupportedGrantTypeException.class, () ->
-                customTokenRequestConverter.convert(mockRequest));
+        AuthorizationCodeData authorizationCodeData = mock(AuthorizationCodeData.class);
+        when(cacheStoreForAuthorizationCodeData.get(code)).thenReturn(authorizationCodeData);
+        when(authorizationCodeData.state()).thenReturn(expectedState);
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                customTokenRequestConverter.convert(mockRequest)
+        );
+
+        assertEquals("Invalid state parameter", exception.getMessage());
     }
 
     @Test
     void convert_refreshTokenGrant_withInvalidToken_shouldThrowOAuth2AuthenticationException() {
         // Arrange
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-        Authentication clientPrincipal = mock(Authentication.class);
-        SecurityContextHolder.getContext().setAuthentication(clientPrincipal);
 
         String refreshTokenValue = "invalid-refresh-token";
         String clientId = "client-id";
@@ -278,8 +297,6 @@ class CustomTokenRequestConverterTest {
         parameters.add(OAuth2ParameterNames.REFRESH_TOKEN, refreshTokenValue);
 
         when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
-
-        when(refreshTokenDataCacheCacheStore.get(refreshTokenValue)).thenReturn(null);
 
         // Act & Assert
         OAuth2AuthenticationException exception = assertThrows(OAuth2AuthenticationException.class, () ->
@@ -331,6 +348,18 @@ class CustomTokenRequestConverterTest {
         assertEquals(vcJsonNode, additionalParams.get("vc"));
     }
 
+    @Test
+    void convert_unsupportedGrantType_shouldThrowUnsupportedGrantTypeException() {
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "invalid_grant_type");
+
+        when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
+
+        assertThrows(UnsupportedGrantTypeException.class, () ->
+                customTokenRequestConverter.convert(mockRequest));
+    }
 
     // Helper method to convert MultiValueMap to a regular Map for the request mock
     private Map<String, String[]> convertToMap(MultiValueMap<String, String> multiValueMap) {
