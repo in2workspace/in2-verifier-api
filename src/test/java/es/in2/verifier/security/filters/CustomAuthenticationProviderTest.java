@@ -2,7 +2,9 @@ package es.in2.verifier.security.filters;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import es.in2.verifier.config.CacheStore;
 import es.in2.verifier.config.properties.SecurityProperties;
+import es.in2.verifier.model.RefreshTokenDataCache;
 import es.in2.verifier.model.credentials.Issuer;
 import es.in2.verifier.model.credentials.lear.CredentialSubject;
 import es.in2.verifier.model.credentials.lear.Mandate;
@@ -16,11 +18,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AccessTokenAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientCredentialsAuthenticationToken;
@@ -51,125 +56,160 @@ class CustomAuthenticationProviderTest {
     @Mock
     private ObjectMapper objectMapper;
 
+    @Mock
+    private CacheStore<RefreshTokenDataCache> cacheStoreForRefreshTokenData;
+    @Mock
+    private OAuth2AuthorizationService oAuth2AuthorizationService;
+
     @InjectMocks
     private CustomAuthenticationProvider customAuthenticationProvider;
 
-//    @Test
-//    void authenticate_validAuthorizationCodeGrant_withEmployeeCredential_success() throws Exception {
-//        // Arrange
-//        String clientId = "test-client-id";
-//        String audience = "test-audience";
-//        Map<String, Object> additionalParameters = new HashMap<>();
-//        additionalParameters.put("client_id", clientId);
-//
-//        // Configure the verifiable credential (VC) map
-//        Map<String, Object> vcMap = new HashMap<>();
-//        vcMap.put("type", List.of("VerifiableCredential", "LEARCredentialEmployee"));
-//
-//
-//
-//        additionalParameters.put("vc", vcMap);
-//        additionalParameters.put(OAuth2ParameterNames.AUDIENCE, audience);
-//        additionalParameters.put(OAuth2ParameterNames.SCOPE, "openid profile email");
-//
-//        OAuth2AuthorizationCodeAuthenticationToken authenticationToken = mock(OAuth2AuthorizationCodeAuthenticationToken.class);
-//        when(authenticationToken.getAdditionalParameters()).thenReturn(additionalParameters);
-//
-//        RegisteredClient registeredClient = mock(RegisteredClient.class);
-//        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
-//
-//        SecurityProperties.TokenProperties tokenProperties = mock(SecurityProperties.TokenProperties.class);
-//        SecurityProperties.TokenProperties.AccessTokenProperties accessTokenProperties = mock(SecurityProperties.TokenProperties.AccessTokenProperties.class);
-//        SecurityProperties.TokenProperties.IdTokenProperties idTokenProperties = mock(SecurityProperties.TokenProperties.IdTokenProperties.class);
-//
-//        when(securityProperties.token()).thenReturn(tokenProperties);
-//        when(tokenProperties.accessToken()).thenReturn(accessTokenProperties);
-//        when(accessTokenProperties.expiration()).thenReturn("3600");
-//        when(accessTokenProperties.cronUnit()).thenReturn("SECONDS");
-//        when(tokenProperties.idToken()).thenReturn(idTokenProperties);
-//        when(idTokenProperties.expiration()).thenReturn("3600");
-//        when(idTokenProperties.cronUnit()).thenReturn("SECONDS");
-//        when(securityProperties.authorizationServer()).thenReturn("https://auth.server");
-//
-//        JsonNode vcJsonNode = mock(JsonNode.class);
-//        when(objectMapper.convertValue(vcMap, JsonNode.class)).thenReturn(vcJsonNode);
-//
-//        LEARCredentialEmployee learCredentialEmployee = getLEARCredentialEmployee();
-//
-//        when(objectMapper.convertValue(vcJsonNode, LEARCredentialEmployee.class)).thenReturn(learCredentialEmployee);
-//
-//        when(objectMapper.writeValueAsString(learCredentialEmployee)).thenReturn("{\"credential\":\"value\"}");
-//
-//        when(jwtService.generateJWT(anyString())).thenReturn("mock-jwt-token");
-//
-//        Authentication result = customAuthenticationProvider.authenticate(authenticationToken);
-//
-//        assertNotNull(result);
-//        assertInstanceOf(OAuth2AccessTokenAuthenticationToken.class, result);
-//
-//        OAuth2AccessTokenAuthenticationToken tokenResult = (OAuth2AccessTokenAuthenticationToken) result;
-//        assertEquals("mock-jwt-token", tokenResult.getAccessToken().getTokenValue());
-//
-//        Map<String, Object> additionalParams = tokenResult.getAdditionalParameters();
-//        assertTrue(additionalParams.containsKey("id_token"));
-//        assertEquals("mock-jwt-token", additionalParams.get("id_token"));
-//
-//        verify(jwtService, times(2)).generateJWT(anyString());
-//    }
+    @Test
+    void authenticate_validAuthorizationCodeGrant_withEmployeeCredential_success() throws Exception {
+        // Arrange
+        String clientId = "test-client-id";
+        String audience = "test-audience";
+        Map<String, Object> additionalParameters = new HashMap<>();
+        additionalParameters.put("client_id", clientId);
+        additionalParameters.put(OAuth2ParameterNames.AUDIENCE, audience);
+        additionalParameters.put(OAuth2ParameterNames.SCOPE, "openid profile email");
+
+        Map<String, Object> vcMap = new HashMap<>();
+        vcMap.put("type", List.of("VerifiableCredential", "LEARCredentialEmployee"));
+        additionalParameters.put("vc", vcMap);
+
+        OAuth2AuthorizationCodeAuthenticationToken authToken = mock(OAuth2AuthorizationCodeAuthenticationToken.class);
+        when(authToken.getAdditionalParameters()).thenReturn(additionalParameters);
+
+        TestingAuthenticationToken principal = new TestingAuthenticationToken("user", null);
+        when(authToken.getPrincipal()).thenReturn(principal);
+
+        RegisteredClient registeredClient = mock(RegisteredClient.class);
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+        when(registeredClient.getClientId()).thenReturn("test-client-id");
+
+        SecurityProperties.TokenProperties tokenProperties = mock(SecurityProperties.TokenProperties.class);
+        SecurityProperties.TokenProperties.AccessTokenProperties accessTokenProperties = mock(SecurityProperties.TokenProperties.AccessTokenProperties.class);
+        SecurityProperties.TokenProperties.IdTokenProperties idTokenProperties = mock(SecurityProperties.TokenProperties.IdTokenProperties.class);
+
+        when(securityProperties.token()).thenReturn(tokenProperties);
+        when(tokenProperties.accessToken()).thenReturn(accessTokenProperties);
+        when(accessTokenProperties.expiration()).thenReturn("3600");
+        when(accessTokenProperties.cronUnit()).thenReturn("SECONDS");
+        when(tokenProperties.idToken()).thenReturn(idTokenProperties);
+        when(idTokenProperties.expiration()).thenReturn("3600");
+        when(idTokenProperties.cronUnit()).thenReturn("SECONDS");
+        when(securityProperties.authorizationServer()).thenReturn("https://auth.server");
+
+        JsonNode vcJsonNode = mock(JsonNode.class);
+        when(objectMapper.convertValue(vcMap, JsonNode.class)).thenReturn(vcJsonNode);
+
+        LEARCredentialEmployee learCredentialEmployee = getLEARCredentialEmployee();
+        when(objectMapper.convertValue(vcJsonNode, LEARCredentialEmployee.class)).thenReturn(learCredentialEmployee);
+
+        when(objectMapper.writeValueAsString(learCredentialEmployee)).thenReturn("{\"credential\":\"value\"}");
+
+        when(jwtService.generateJWT(anyString())).thenReturn("mock-jwt-token");
+
+        // Act
+        Authentication result = customAuthenticationProvider.authenticate(authToken);
+
+        // Assert
+        assertNotNull(result);
+        assertInstanceOf(OAuth2AccessTokenAuthenticationToken.class, result);
+
+        OAuth2AccessTokenAuthenticationToken tokenResult = (OAuth2AccessTokenAuthenticationToken) result;
+        assertEquals("mock-jwt-token", tokenResult.getAccessToken().getTokenValue());
+
+        Map<String, Object> additionalParams = tokenResult.getAdditionalParameters();
+        assertTrue(additionalParams.containsKey("id_token"));
+        assertEquals("mock-jwt-token", additionalParams.get("id_token"));
+
+        verify(jwtService, times(2)).generateJWT(anyString());
+
+        // Verify refresh token data cache
+        ArgumentCaptor<String> refreshTokenCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<RefreshTokenDataCache> refreshTokenDataCaptor = ArgumentCaptor.forClass(RefreshTokenDataCache.class);
+        verify(cacheStoreForRefreshTokenData).add(refreshTokenCaptor.capture(), refreshTokenDataCaptor.capture());
+
+        // Verify OAuth2AuthorizationService saved
+        ArgumentCaptor<OAuth2Authorization> authorizationCaptor = ArgumentCaptor.forClass(OAuth2Authorization.class);
+        verify(oAuth2AuthorizationService).save(authorizationCaptor.capture());
+    }
 
 
-//    @Test
-//    void authenticate_validClientCredentialsGrant_withMachineCredential_success() throws Exception {
-//        // Arrange
-//        String clientId = "test-client-id";
-//        Map<String, Object> additionalParameters = new HashMap<>();
-//        additionalParameters.put("client_id", clientId);
-//
-//        Map<String, Object> vcMap = new HashMap<>();
-//        vcMap.put("type", List.of("VerifiableCredential", "LEARCredentialMachine"));
-//
-//        additionalParameters.put("vc", vcMap);
-//        additionalParameters.put(OAuth2ParameterNames.SCOPE, "machine");
-//
-//        OAuth2ClientCredentialsAuthenticationToken authenticationToken = mock(OAuth2ClientCredentialsAuthenticationToken.class);
-//        when(authenticationToken.getAdditionalParameters()).thenReturn(additionalParameters);
-//
-//        RegisteredClient registeredClient = mock(RegisteredClient.class);
-//        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
-//
-//        SecurityProperties.TokenProperties tokenProperties = mock(SecurityProperties.TokenProperties.class);
-//        SecurityProperties.TokenProperties.AccessTokenProperties accessTokenProperties = mock(SecurityProperties.TokenProperties.AccessTokenProperties.class);
-//        SecurityProperties.TokenProperties.IdTokenProperties idTokenProperties = mock(SecurityProperties.TokenProperties.IdTokenProperties.class);
-//
-//        when(securityProperties.token()).thenReturn(tokenProperties);
-//        when(tokenProperties.accessToken()).thenReturn(accessTokenProperties);
-//        when(accessTokenProperties.expiration()).thenReturn("3600");
-//        when(accessTokenProperties.cronUnit()).thenReturn("SECONDS");
-//        when(tokenProperties.idToken()).thenReturn(idTokenProperties);
-//        when(idTokenProperties.expiration()).thenReturn("3600");
-//        when(idTokenProperties.cronUnit()).thenReturn("SECONDS");
-//        when(securityProperties.authorizationServer()).thenReturn("https://auth.server");
-//
-//        JsonNode vcJsonNode = mock(JsonNode.class);
-//        when(objectMapper.convertValue(vcMap, JsonNode.class)).thenReturn(vcJsonNode);
-//
-//        LEARCredentialMachine credential = getLEARCredentialMachine();
-//        when(objectMapper.convertValue(vcJsonNode, LEARCredentialMachine.class)).thenReturn(credential);
-//
-//        when(jwtService.generateJWT(anyString())).thenReturn("mock-jwt-token");
-//
-//        // Act
-//        Authentication result = customAuthenticationProvider.authenticate(authenticationToken);
-//
-//        // Assert
-//        assertNotNull(result);
-//        assertInstanceOf(OAuth2AccessTokenAuthenticationToken.class, result);
-//
-//        OAuth2AccessTokenAuthenticationToken tokenResult = (OAuth2AccessTokenAuthenticationToken) result;
-//        assertEquals("mock-jwt-token", tokenResult.getAccessToken().getTokenValue());
-//
-//        verify(jwtService, times(2)).generateJWT(anyString());
-//    }
+
+    @Test
+    void authenticate_validClientCredentialsGrant_withMachineCredential_success() throws Exception {
+        // Arrange
+        String clientId = "test-client-id";
+        Map<String, Object> additionalParameters = new HashMap<>();
+        additionalParameters.put("client_id", clientId);
+
+        Map<String, Object> vcMap = new HashMap<>();
+        vcMap.put("type", List.of("VerifiableCredential", "LEARCredentialMachine"));
+
+        additionalParameters.put("vc", vcMap);
+        additionalParameters.put(OAuth2ParameterNames.SCOPE, "machine");
+
+        OAuth2ClientCredentialsAuthenticationToken authenticationToken = mock(OAuth2ClientCredentialsAuthenticationToken.class);
+        when(authenticationToken.getAdditionalParameters()).thenReturn(additionalParameters);
+
+        TestingAuthenticationToken principal = new TestingAuthenticationToken("test-user", null);
+        when(authenticationToken.getPrincipal()).thenReturn(principal);
+
+        RegisteredClient registeredClient = mock(RegisteredClient.class);
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+        when(registeredClient.getClientId()).thenReturn(clientId);
+        when(registeredClient.getId()).thenReturn("registered-client-id");
+
+        SecurityProperties.TokenProperties tokenProperties = mock(SecurityProperties.TokenProperties.class);
+        SecurityProperties.TokenProperties.AccessTokenProperties accessTokenProperties = mock(SecurityProperties.TokenProperties.AccessTokenProperties.class);
+        SecurityProperties.TokenProperties.IdTokenProperties idTokenProperties = mock(SecurityProperties.TokenProperties.IdTokenProperties.class);
+
+        when(securityProperties.token()).thenReturn(tokenProperties);
+        when(tokenProperties.accessToken()).thenReturn(accessTokenProperties);
+        when(accessTokenProperties.expiration()).thenReturn("3600");
+        when(accessTokenProperties.cronUnit()).thenReturn("SECONDS");
+        when(tokenProperties.idToken()).thenReturn(idTokenProperties);
+        when(idTokenProperties.expiration()).thenReturn("3600");
+        when(idTokenProperties.cronUnit()).thenReturn("SECONDS");
+        when(securityProperties.authorizationServer()).thenReturn("https://auth.server");
+
+        JsonNode vcJsonNode = mock(JsonNode.class);
+        when(objectMapper.convertValue(vcMap, JsonNode.class)).thenReturn(vcJsonNode);
+
+        LEARCredentialMachine credential = getLEARCredentialMachine();
+        when(objectMapper.convertValue(vcJsonNode, LEARCredentialMachine.class)).thenReturn(credential);
+
+        when(objectMapper.writeValueAsString(credential)).thenReturn("{\"credential\":\"value\"}");
+
+        when(jwtService.generateJWT(anyString())).thenReturn("mock-jwt-token");
+
+        // Act
+        Authentication result = customAuthenticationProvider.authenticate(authenticationToken);
+
+        // Assert
+        assertNotNull(result);
+        assertInstanceOf(OAuth2AccessTokenAuthenticationToken.class, result);
+
+        OAuth2AccessTokenAuthenticationToken tokenResult = (OAuth2AccessTokenAuthenticationToken) result;
+        assertEquals("mock-jwt-token", tokenResult.getAccessToken().getTokenValue());
+
+        verify(jwtService, times(2)).generateJWT(anyString());
+
+        // Verificar the refresh token data cache
+        ArgumentCaptor<String> refreshTokenCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<RefreshTokenDataCache> refreshTokenDataCaptor = ArgumentCaptor.forClass(RefreshTokenDataCache.class);
+        verify(cacheStoreForRefreshTokenData).add(refreshTokenCaptor.capture(), refreshTokenDataCaptor.capture());
+
+        ArgumentCaptor<OAuth2Authorization> authorizationCaptor = ArgumentCaptor.forClass(OAuth2Authorization.class);
+        verify(oAuth2AuthorizationService).save(authorizationCaptor.capture());
+
+        OAuth2Authorization authorization = authorizationCaptor.getValue();
+        assertEquals(clientId, authorization.getPrincipalName());
+    }
+
 
 
     @Test
@@ -332,90 +372,103 @@ class CustomAuthenticationProviderTest {
         assertEquals(OAuth2ErrorCodes.INVALID_REQUEST, exception.getError().getErrorCode());
     }
 
-//    @Test
-//    void authenticate_withProfileAndEmailScopes_addsCorrespondingClaims() throws Exception {
-//        // Given
-//        String clientId = "test-client-id";
-//        Map<String, Object> additionalParameters = new HashMap<>();
-//        additionalParameters.put("vc", new HashMap<>());
-//        additionalParameters.put("client_id", clientId);
-//        additionalParameters.put("audience", "test-audience");
-//        additionalParameters.put(OAuth2ParameterNames.SCOPE, "openid profile email");
-//
-//        // Mock the authentication token
-//        OAuth2AuthorizationCodeAuthenticationToken auth = mock(OAuth2AuthorizationCodeAuthenticationToken.class);
-//        when(auth.getAdditionalParameters()).thenReturn(additionalParameters);
-//
-//        // Mock the registered client
-//        RegisteredClient registeredClient = mock(RegisteredClient.class);
-//        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
-//
-//        // Mock security properties
-//        SecurityProperties.TokenProperties tokenProperties = mock(SecurityProperties.TokenProperties.class);
-//        SecurityProperties.TokenProperties.AccessTokenProperties accessTokenProperties = mock(SecurityProperties.TokenProperties.AccessTokenProperties.class);
-//        SecurityProperties.TokenProperties.IdTokenProperties idTokenProperties = mock(SecurityProperties.TokenProperties.IdTokenProperties.class);
-//
-//        when(securityProperties.token()).thenReturn(tokenProperties);
-//        when(tokenProperties.accessToken()).thenReturn(accessTokenProperties);
-//        when(accessTokenProperties.expiration()).thenReturn("3600");
-//        when(accessTokenProperties.cronUnit()).thenReturn("SECONDS");
-//        when(tokenProperties.idToken()).thenReturn(idTokenProperties);
-//        when(idTokenProperties.expiration()).thenReturn("3600");
-//        when(idTokenProperties.cronUnit()).thenReturn("SECONDS");
-//        when(securityProperties.authorizationServer()).thenReturn("https://auth.server");
-//
-//        // Mock the verifiable credential
-//        JsonNode jsonNode = mock(JsonNode.class);
-//        when(objectMapper.convertValue(additionalParameters.get("vc"), JsonNode.class)).thenReturn(jsonNode);
-//
-//        LEARCredentialEmployee credential = getLEARCredentialEmployee();
-//        when(objectMapper.convertValue(any(), eq(LEARCredentialEmployee.class))).thenReturn(credential);
-//
-//        // Mock objectMapper.writeValueAsString
-//        when(objectMapper.writeValueAsString(any())).thenReturn("{\"credential\":\"value\"}");
-//
-//        // Capture the arguments passed to jwtService.generateJWT
-//        ArgumentCaptor<String> jwtPayloadCaptor = ArgumentCaptor.forClass(String.class);
-//        when(jwtService.generateJWT(jwtPayloadCaptor.capture())).thenReturn("mock-jwt-token");
-//
-//        // When
-//        Authentication result = customAuthenticationProvider.authenticate(auth);
-//
-//        // Then
-//        assertNotNull(result);
-//        assertInstanceOf(OAuth2AccessTokenAuthenticationToken.class, result);
-//
-//        OAuth2AccessTokenAuthenticationToken tokenResult = (OAuth2AccessTokenAuthenticationToken) result;
-//        assertEquals("mock-jwt-token", tokenResult.getAccessToken().getTokenValue());
-//
-//        Map<String, Object> additionalParams = tokenResult.getAdditionalParameters();
-//        assertTrue(additionalParams.containsKey("id_token"));
-//        assertEquals("mock-jwt-token", additionalParams.get("id_token"));
-//
-//        // Verify that jwtService.generateJWT was called twice (Access Token and ID Token)
-//        verify(jwtService, times(2)).generateJWT(any());
-//
-//        // Parse the captured payload for ID Token
-//        List<String> capturedPayloads = jwtPayloadCaptor.getAllValues();
-//        assertEquals(2, capturedPayloads.size());
-//
-//        String idTokenPayloadString = capturedPayloads.get(1); // Assuming second call is for ID Token
-//        ObjectMapper objectMapperUtil = new ObjectMapper();
-//        Map<String, Object> idTokenClaims = objectMapperUtil.readValue(idTokenPayloadString, Map.class);
-//
-//        // Verify claims based on scopes
-//        assertEquals("did:key:1234", idTokenClaims.get("sub"));
-//        assertEquals("https://auth.server", idTokenClaims.get("iss"));
-//
-//        // Verify profile claims
-//        assertEquals("John Doe", idTokenClaims.get("name"));
-//        assertEquals("John", idTokenClaims.get("given_name"));
-//        assertEquals("Doe", idTokenClaims.get("family_name"));
-//
-//        // Verify email claims
-//        assertEquals("john.doe@example.com", idTokenClaims.get("email"));
-//        assertEquals(true, idTokenClaims.get("email_verified"));
-//    }
+    @Test
+    void authenticate_withProfileAndEmailScopes_addsCorrespondingClaims() throws Exception {
+        // Given
+        String clientId = "test-client-id";
+        String audience = "test-audience";
+        Map<String, Object> additionalParameters = new HashMap<>();
+        additionalParameters.put("vc", new HashMap<>());
+        additionalParameters.put("client_id", clientId);
+        additionalParameters.put("audience", audience);
+        additionalParameters.put(OAuth2ParameterNames.SCOPE, "openid profile email");
+
+        OAuth2AuthorizationCodeAuthenticationToken auth = mock(OAuth2AuthorizationCodeAuthenticationToken.class);
+        when(auth.getAdditionalParameters()).thenReturn(additionalParameters);
+
+        // Mock principal
+        TestingAuthenticationToken principal = new TestingAuthenticationToken("test-user", null);
+        when(auth.getPrincipal()).thenReturn(principal);
+
+        RegisteredClient registeredClient = mock(RegisteredClient.class);
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+        when(registeredClient.getClientId()).thenReturn(clientId);
+        when(registeredClient.getId()).thenReturn("registered-client-id");
+
+        SecurityProperties.TokenProperties tokenProperties = mock(SecurityProperties.TokenProperties.class);
+        SecurityProperties.TokenProperties.AccessTokenProperties accessTokenProperties = mock(SecurityProperties.TokenProperties.AccessTokenProperties.class);
+        SecurityProperties.TokenProperties.IdTokenProperties idTokenProperties = mock(SecurityProperties.TokenProperties.IdTokenProperties.class);
+
+        when(securityProperties.token()).thenReturn(tokenProperties);
+        when(tokenProperties.accessToken()).thenReturn(accessTokenProperties);
+        when(accessTokenProperties.expiration()).thenReturn("3600");
+        when(accessTokenProperties.cronUnit()).thenReturn("SECONDS");
+        when(tokenProperties.idToken()).thenReturn(idTokenProperties);
+        when(idTokenProperties.expiration()).thenReturn("3600");
+        when(idTokenProperties.cronUnit()).thenReturn("SECONDS");
+        when(securityProperties.authorizationServer()).thenReturn("https://auth.server");
+
+        // Mock verifiable credential
+        JsonNode jsonNode = mock(JsonNode.class);
+        when(objectMapper.convertValue(additionalParameters.get("vc"), JsonNode.class)).thenReturn(jsonNode);
+
+        LEARCredentialEmployee credential = getLEARCredentialEmployee();
+        when(objectMapper.convertValue(any(), eq(LEARCredentialEmployee.class))).thenReturn(credential);
+        when(objectMapper.writeValueAsString(any())).thenReturn("{\"credential\":\"value\"}");
+
+        ArgumentCaptor<String> jwtPayloadCaptor = ArgumentCaptor.forClass(String.class);
+        when(jwtService.generateJWT(jwtPayloadCaptor.capture())).thenReturn("mock-jwt-token");
+
+        // When
+        Authentication result = customAuthenticationProvider.authenticate(auth);
+
+        // Then
+        assertNotNull(result);
+        assertInstanceOf(OAuth2AccessTokenAuthenticationToken.class, result);
+
+        OAuth2AccessTokenAuthenticationToken tokenResult = (OAuth2AccessTokenAuthenticationToken) result;
+        assertEquals("mock-jwt-token", tokenResult.getAccessToken().getTokenValue());
+
+        Map<String, Object> additionalParams = tokenResult.getAdditionalParameters();
+        assertTrue(additionalParams.containsKey("id_token"));
+        assertEquals("mock-jwt-token", additionalParams.get("id_token"));
+
+        verify(jwtService, times(2)).generateJWT(any());
+
+        List<String> capturedPayloads = jwtPayloadCaptor.getAllValues();
+        assertEquals(2, capturedPayloads.size());
+
+        String idTokenPayloadString = capturedPayloads.get(1);
+        ObjectMapper objectMapperUtil = new ObjectMapper();
+        Map<String, Object> idTokenClaims = objectMapperUtil.readValue(idTokenPayloadString, Map.class);
+
+        assertEquals("did:key:1234", idTokenClaims.get("sub"));
+        assertEquals("https://auth.server", idTokenClaims.get("iss"));
+        assertEquals(audience, idTokenClaims.get("aud"));
+
+        assertEquals("John Doe", idTokenClaims.get("name"));
+        assertEquals("John", idTokenClaims.get("given_name"));
+        assertEquals("Doe", idTokenClaims.get("family_name"));
+
+        assertEquals("john.doe@example.com", idTokenClaims.get("email"));
+        assertEquals(true, idTokenClaims.get("email_verified"));
+
+        ArgumentCaptor<String> refreshTokenCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<RefreshTokenDataCache> refreshTokenDataCaptor = ArgumentCaptor.forClass(RefreshTokenDataCache.class);
+        verify(cacheStoreForRefreshTokenData).add(refreshTokenCaptor.capture(), refreshTokenDataCaptor.capture());
+
+        ArgumentCaptor<OAuth2Authorization> authorizationCaptor = ArgumentCaptor.forClass(OAuth2Authorization.class);
+        verify(oAuth2AuthorizationService).save(authorizationCaptor.capture());
+
+        OAuth2Authorization authorization = authorizationCaptor.getValue();
+        assertNotNull(authorization);
+        assertEquals(clientId, authorization.getPrincipalName());
+
+        if (additionalParameters.containsKey("nonce")) {
+            assertEquals(additionalParameters.get("nonce"), idTokenClaims.get("nonce"));
+        }
+    }
+
 
 
     @Test
