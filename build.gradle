@@ -124,7 +124,6 @@ tasks.jacocoTestReport {
 	}
 	classDirectories.setFrom(files(classDirectories.files.collect {
 		fileTree(dir: it, exclude: [
-				"**/AuthorizationResponseProcessorServiceImpl.class",
 				"**/TrustFrameworkServiceImpl.class",
 				"**/CertificateValidationServiceImpl.class",
 				"**/MismatchOrganizationIdentifierException.class",
