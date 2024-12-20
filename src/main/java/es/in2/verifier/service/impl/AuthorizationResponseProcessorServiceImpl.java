@@ -51,11 +51,6 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         // Remove the state from cache after retrieving the Object
         cacheStoreForOAuth2AuthorizationRequest.delete(state);
         String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
-        if (redirectUri == null) {
-            log.error("State {} does not exist in cache", state);
-            throw new IllegalStateException("Invalid or expired state");
-        }
-
 
         // Decode vpToken from Base64
         String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
