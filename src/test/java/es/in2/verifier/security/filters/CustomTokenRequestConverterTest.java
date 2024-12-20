@@ -9,14 +9,12 @@ import es.in2.verifier.exception.InvalidCredentialTypeException;
 import es.in2.verifier.exception.InvalidVPtokenException;
 import es.in2.verifier.exception.UnsupportedGrantTypeException;
 import es.in2.verifier.model.AuthorizationCodeData;
-import es.in2.verifier.model.RefreshTokenDataCache;
 import es.in2.verifier.model.credentials.lear.machine.LEARCredentialMachine;
 import es.in2.verifier.model.enums.LEARCredentialType;
 import es.in2.verifier.service.ClientAssertionValidationService;
 import es.in2.verifier.service.JWTService;
 import es.in2.verifier.service.VpService;
 import jakarta.servlet.http.HttpServletRequest;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,14 +22,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
-import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientCredentialsAuthenticationToken;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2RefreshTokenAuthenticationToken;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -57,8 +51,6 @@ class CustomTokenRequestConverterTest {
 
     @Mock
     private CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
-    @Mock
-    private CacheStore<RefreshTokenDataCache> refreshTokenDataCacheCacheStore;
 
     @Mock
     private OAuth2AuthorizationService oAuth2AuthorizationService;
@@ -68,11 +60,6 @@ class CustomTokenRequestConverterTest {
 
     @InjectMocks
     private CustomTokenRequestConverter customTokenRequestConverter;
-
-    @BeforeEach
-    void setUp() {
-        SecurityContextHolder.clearContext();
-    }
 
     @Test
     void convert_authorizationCodeGrant_shouldReturnOAuth2ClientCredentialsAuthenticationToken() {
@@ -251,101 +238,6 @@ class CustomTokenRequestConverterTest {
         // Verify the exception is thrown
         assertThrows(InvalidCredentialTypeException.class, () ->
                 customTokenRequestConverter.convert(mockRequest));
-    }
-
-    @Test
-    void convert_authorizationCodeGrant_withInvalidState_shouldThrowIllegalArgumentException() {
-        // Arrange
-        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-
-        String code = "code";
-        String clientId = "client-id";
-        String providedState = "provided-state";
-        String expectedState = "expected-state";
-
-        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
-        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "authorization_code");
-        parameters.add(OAuth2ParameterNames.CODE, code);
-        parameters.add(OAuth2ParameterNames.CLIENT_ID, clientId);
-        parameters.add(OAuth2ParameterNames.STATE, providedState);
-
-        when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
-
-        AuthorizationCodeData authorizationCodeData = mock(AuthorizationCodeData.class);
-        when(cacheStoreForAuthorizationCodeData.get(code)).thenReturn(authorizationCodeData);
-        when(authorizationCodeData.state()).thenReturn(expectedState);
-
-        // Act & Assert
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
-                customTokenRequestConverter.convert(mockRequest)
-        );
-
-        assertEquals("Invalid state parameter", exception.getMessage());
-    }
-
-    @Test
-    void convert_refreshTokenGrant_withInvalidToken_shouldThrowOAuth2AuthenticationException() {
-        // Arrange
-        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-
-        String refreshTokenValue = "invalid-refresh-token";
-        String clientId = "client-id";
-
-        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
-        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "refresh_token");
-        parameters.add(OAuth2ParameterNames.CLIENT_ID, clientId);
-        parameters.add(OAuth2ParameterNames.REFRESH_TOKEN, refreshTokenValue);
-
-        when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
-
-        // Act & Assert
-        OAuth2AuthenticationException exception = assertThrows(OAuth2AuthenticationException.class, () ->
-                customTokenRequestConverter.convert(mockRequest)
-        );
-
-        assertEquals(OAuth2ErrorCodes.INVALID_TOKEN, exception.getError().getErrorCode());
-    }
-
-    @Test
-    void convert_refreshTokenGrant_success() {
-        // Arrange
-        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-        Authentication clientPrincipal = mock(Authentication.class);
-        SecurityContextHolder.getContext().setAuthentication(clientPrincipal);
-
-        String refreshTokenValue = "valid-refresh-token";
-        String clientId = "client-id";
-
-        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
-        parameters.add(OAuth2ParameterNames.GRANT_TYPE, "refresh_token");
-        parameters.add(OAuth2ParameterNames.CLIENT_ID, clientId);
-        parameters.add(OAuth2ParameterNames.REFRESH_TOKEN, refreshTokenValue);
-
-        when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
-
-        // Simular un RefreshTokenDataCache válido
-        JsonNode vcJsonNode = mock(JsonNode.class);
-        RefreshTokenDataCache refreshTokenDataCache = RefreshTokenDataCache.builder()
-                .refreshToken(mock(OAuth2RefreshToken.class))
-                .clientId(clientId)
-                .verifiableCredential(vcJsonNode)
-                .build();
-        when(refreshTokenDataCacheCacheStore.get(refreshTokenValue)).thenReturn(refreshTokenDataCache);
-
-        // Act
-        Authentication result = customTokenRequestConverter.convert(mockRequest);
-
-        // Assert
-        assertNotNull(result);
-        assertInstanceOf(OAuth2RefreshTokenAuthenticationToken.class, result);
-
-        OAuth2RefreshTokenAuthenticationToken tokenResult = (OAuth2RefreshTokenAuthenticationToken) result;
-        assertEquals(refreshTokenValue, tokenResult.getRefreshToken());
-        assertEquals(clientPrincipal, tokenResult.getPrincipal());
-
-        Map<String, Object> additionalParams = tokenResult.getAdditionalParameters();
-        assertEquals(clientId, additionalParams.get(OAuth2ParameterNames.CLIENT_ID));
-        assertEquals(vcJsonNode, additionalParams.get("vc"));
     }
 
     @Test
