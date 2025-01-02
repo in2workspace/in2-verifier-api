@@ -61,9 +61,81 @@ The OpenID Connect integration for clients consists of two main steps:
 ### Step 1: Client Registration
 
 To interact with the verifier, a client must be registered in the verifier's client list.  
-Currently, the **DOME Trust Framework GitHub repository** is used to manage the client registry.  
-You can follow the steps detailed in the repository's README to add a new client:  
-[How to Add a New Client](https://github.com/DOME-Marketplace/trust-framework?tab=readme-ov-file#how-to-guides)
+Currently, the **[DOME Trust Framework GitHub repository](https://github.com/DOME-Marketplace/trust-framework.git)** is used to manage the client registry.
+
+#### Approaches for Registering Clients
+
+There are two approaches for registering clients, depending on the needs and capabilities of the client application:
+
+1. **Using `did:key` (Required for FAPI Profile)**  
+   This approach is mandatory for clients that need to use the **Financial-grade API (FAPI)** profile of OpenID Connect.
+    - **Client ID**: Use your `did:key` as the `clientId`.
+    - **JWK Set URL**: Use the verifier's endpoint in the format:
+      ```
+      https://<domain>/oidc/did/<did:key:...>
+      ```
+      This endpoint allows the verifier to reconstruct the public key from the `did:key` for signature validation.
+    - **Why Use `did:key`?**: This ensures compliance with FAPI requirements, offering enhanced security and interoperability by eliminating the need for a separate JWKS endpoint.
+
+2. **Using a Unique Identifier (For Non-FAPI Clients)**  
+   This approach is suitable for clients that do not require FAPI compliance or cannot support it, such as Keycloak acting as a broker.
+    - **Client ID**: Use a unique identifier that clearly defines the purpose of the client (e.g., `issuer-dome`).
+    - **JWK Set URL**: Provide the URL where your public keys are exposed for validation.
+    - **Why Use a Unique Identifier?**: This method provides flexibility for clients that do not require the strict security guarantees of FAPI but still need to integrate securely with the verifier.
+
+---
+
+#### Which data is needed to set a new entry into the Trusted Services List?
+
+The trusted services list contains all the verified and authorized services within the DOME ecosystem. These services have met the required standards for secure and trusted interactions. To add a new entry to the trusted services list, specific information must be provided in a YAML file, adhering to the structure outlined below:
+
+| **Field**                                       | **Description**                                                                                                                                                                                                                                                                            |
+|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **clientId**                                    | Should be a `did:key` or a unique identifier for your client. Using a `did:key` allows the verifier to obtain your public keys for signature verification without needing a separate JWKS endpoint.                                                                                        |
+| **url**                                         | The base URL of your service or application.                                                                                                                                                                                                                                               |
+| **redirectUris**                                | Must include all the URLs where you expect to receive authentication responses. These should be HTTPS URLs to ensure secure communication.                                                                                                                                                 |
+| **scopes**                                      | Currently, only `openid_learcredential` is accepted. This scope allows your service to request the necessary credentials.                                                                                                                                                                  |
+| **clientAuthenticationMethods**                 | Must be set to `["client_secret_jwt"]`, as this is the only supported authentication method.                                                                                                                                                                                               |
+| **authorizationGrantTypes**                     | Must be set to `["authorization_code"]`, as this is the only supported grant type.                                                                                                                                                                                                         |
+| **postLogoutRedirectUris**                      | Include URLs where users should be redirected after they log out from your service.                                                                                                                                                                                                        |
+| **requireAuthorizationConsent**                 | Set to `false` because explicit user consent is not required in this flow.                                                                                                                                                                                                                 |
+| **requireProofKey**                             | Set to `false` as PKCE is not utilized.                                                                                                                                                                                                                                                    |
+| **jwkSetUrl**                                   | If you're using a `did:key` for your `clientId`, you do not need to provide a `jwkSetUrl` because the verifier can derive your JWKS directly from the `did:key`. However, if you're not using a unique identifier, you must provide the `jwkSetUrl` where your public keys can be fetched. |
+| **tokenEndpointAuthenticationSigningAlgorithm** | Must be set to `ES256`, as this is the only supported algorithm.                                                                                                                                                                                                                           |
+
+---
+
+#### How to add the client to the Trusted Services List
+
+Once the necessary data is collected, you can proceed to submit a Pull Request (PR) to the **[DOME Trust Framework GitHub repository](https://github.com/DOME-Marketplace/trust-framework.git)** to add the new client to the Trusted Services List. The repository serves as the central place for managing trusted clients within the **DOME** ecosystem.
+
+Follow these steps to submit the PR:
+1. Fork the **[DOME Trust Framework GitHub repository](https://github.com/DOME-Marketplace/trust-framework.git)**.
+2. Add the new client entry (in YAML format) to the `clients` section.
+3. Submit the PR for review and approval.
+
+Once the PR is merged, the new client will be added to the trusted services list and will be able to interact with the verifier.
+
+---
+
+#### Example YAML Entry
+
+Below is an example of how to define a client in the trusted services list:
+
+```yaml
+clients:
+  - clientId: "did:key:zDnaeypyWjzn54GuUP7PmDXiiggCyiG7ksMF7Unm7kjtEKBez"
+    url: "https://dome-marketplace-sbx.org"
+    redirectUris: ["https://dome-marketplace-sbx.org/auth/vc/callback"]
+    scopes: ["openid_learcredential"]
+    clientAuthenticationMethods: ["client_secret_jwt"]
+    authorizationGrantTypes: ["authorization_code"]
+    postLogoutRedirectUris: ["https://dome-marketplace-sbx.org/"]
+    requireAuthorizationConsent: false
+    requireProofKey: false
+    jwkSetUrl: "https://verifier.dome-marketplace-sbx.org/oidc/did/did:key:zDnaeypyWjzn54GuUP7PmDXiiggCyiG7ksMF7Unm7kjtEKBez"
+    tokenEndpointAuthenticationSigningAlgorithm: "ES256"
+```
 
 ---
 
@@ -279,36 +351,22 @@ Images and links to documentation are included to simplify the process.
 
 ---
 
-## Section 1: Registering the Client on the DOME Trust Framework
+# Configuring the Verifier as an External Identity Provider on Keycloak
 
-Before configuring Keycloak, you need to register your client in the DOME trust framework. This step is essential for integrating the client with the verifier.
+This guide will teach you how to configure an external Identity Provider using **OpenID Connect v1.0**. The guide is divided into two main sections:
 
-### Important Note
+1. **Configuring the Verifier as an External Identity Provider in Keycloak**
+2. **Registering the Client on the DOME Trust Framework**
 
-Some of the required information for this registration (such as **Redirect URIs** or **Public Keys**) will need to be obtained from your Keycloak configuration. These steps are detailed in **Section 2: Configuring the External Identity Provider in Keycloak**. It is recommended to complete those specific steps first:
-
-1. Configure the necessary keys in Keycloak under **Realm Settings > Keys**.
-2. Obtain the **Redirect URIs** required for the Identity Provider.
-
-Once you have this information, proceed with the steps below.
+Images and links to documentation are included to simplify the process.
 
 ---
 
-### Steps to Register the Client:
+## Section 1: Configuring the Verifier as an External Identity Provider in Keycloak
 
-The registration process involves following specific steps detailed in the Trust Framework documentation. Please refer to the following guide for comprehensive instructions:
-
-**[How to Insert your client in the Trusted Lists](https://github.com/DOME-Marketplace/trust-framework/blob/main/README.md#how-to-insert-a-new-value-in-the-trusted-lists)**
-
-This guide will walk you through:
-- Adding a new client.
-- Configuring required attributes.
-
-Be sure to complete all the steps outlined in the documentation after obtaining the necessary information from Keycloak.
+Before registering the client on the DOME Trust Framework, you must configure Keycloak. This step is critical for obtaining the necessary details (e.g., **Redirect URIs** and **Public Keys**) required for the client registration process.
 
 ---
-
-## Section 2: Configuring the Verifier as an External Identity Provider in Keycloak
 
 ### Step 1: Add a New Provider for ECDSA Keys
 
@@ -346,9 +404,9 @@ Here is an example of the configuration:
 #### Client Authentication
 
 - **Client Authentication:** Select `JWT signed with private key`.
-- **Client ID:** The client identifier you registered with the IDP (e.g., `in2-issuer`).
+- **Client ID:** Use the unique identifier you will register in the DOME Trust Framework (e.g., `issuer-dome`).
 - **Client Secret:** Not needed since we will use `JWT signed with private key`.
-- **Client Assertion Signature Algorithm:** Select `ES256`, which is supported by the IDP we are configuring.
+- **Client Assertion Signature Algorithm:** Select `ES256`, which is supported by the verifier.
 - **Client Assertion Audience:** Use the equivalent of the issuer obtained in the discovery.
 
 <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f9f9f9;">
@@ -359,21 +417,19 @@ Here is an example of the configuration:
 
 ### Step 3: Configure Advanced Settings
 
-Now, we will configure the advanced settings needed for this integration:
-
 1. Go to **Advanced settings**:
-   - **Access Token is JWT:** Set to `On`.
-   - **Trust Email:** Set to `On`.
+    - **Access Token is JWT:** Set to `On`.
+    - **Trust Email:** Set to `On`.
     <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f9f9f9;">
         <img src="docs/images/advanced-settings.png" alt="Advanced Settings - Access Token and Trust Email">
     </div>
 
 2. Go to **OpenID Connect settings > Advanced**:
-   - **Disable user info:** Set to `On`.
-   - **Disable nonce:** Set to `On`.
-   - **Scopes:** Add `learcredential profile email`.
+    - **Disable user info:** Set to `On`.
+    - **Disable nonce:** Set to `On`.
+    - **Scopes:** Add `learcredential profile email`.
 
-     Including **profile** and **email** in the scopes ensures that the **ID Token** contains the basic user information required to create a user in Keycloak. This includes details such as the user's name and email address, which are essential for creating a basic user profile.
+      Including **profile** and **email** in the scopes ensures that the **ID Token** contains the basic user information required to create a user in Keycloak. This includes details such as the user's name and email address, which are essential for creating a basic user profile.
 
     <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f9f9f9;">
         <img src="docs/images/advanced.png" alt="OpenID Connect Settings - Advanced Configuration">
@@ -421,7 +477,11 @@ This ensures the link between the user and their Verifiable Credential (VC) is b
 
 ---
 
-> **Reminder:** Registering the client with the IDP is a critical step for integration to work correctly. Ensure you have completed all the steps.
+## Section 2: Registering the Client on the DOME Trust Framework
+
+Once you have completed the Keycloak configuration, you must register the client, for this registration, you must follow **Step 1: Client Registration** as outlined in the **[README](https://github.com/in2workspace/in2-verifier-api/blob/main/README.md#step-1-client-registration)**. Specifically, you should follow the **second approach** (using a unique identifier).
+
+This step is essential for enabling the client to interact securely with the verifier.
 
 ---
 
