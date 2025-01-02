@@ -20,8 +20,6 @@
 
 # Introduction
 
-# Introduction
-
 Spring Authentication Server is a framework that provides implementations of the **OAuth 2.0** and **OpenID Connect 1.0** specifications, as well as other related standards.  
 It is built on top of **Spring Security** to provide a secure, lightweight, and customizable foundation for building **OpenID Connect 1.0 Identity Providers** and **OAuth 2 Authentication Server** products.
 
