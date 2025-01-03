@@ -338,15 +338,6 @@ The following restrictions and configurations are applied in this flow:
     - The verifier uses `direct_post` as the response mode.
     - This indicates that the authentication response must be sent directly to the verifier's endpoint specified in the `response_uri`.
 
-# Configuring the Verifier as an External Identity Provider on Keycloak
-
-This guide will teach you how to configure an external Identity Provider using **OpenID Connect v1.0**. The guide is divided into two main sections:
-
-1. **Registering the Client with the Identity Provider (IDP)**
-2. **Configuring the External Identity Provider in Keycloak**
-
-Images and links to documentation are included to simplify the process.
-
 ---
 
 # Configuring the Verifier as an External Identity Provider on Keycloak
