@@ -413,6 +413,16 @@ Here is an example of the configuration:
 
 ---
 
+#### Important Note
+
+**Leave the Logout URL field blank.**
+
+The Logout URL field is automatically completed by Keycloak if it is not left blank. This causes issues that prevent logout functionality from working correctly. To avoid this, ensure the Logout URL field is left **empty**, as shown below:
+
+<div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f9f9f9;">
+    <img src="docs/images/logout-url-empty.png" alt="Logout URL Field Left Blank">
+</div>
+
 ### Step 3: Configure Advanced Settings
 
 1. Go to **Advanced settings**:
