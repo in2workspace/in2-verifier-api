@@ -37,6 +37,7 @@ import java.security.PublicKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -456,17 +457,30 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private void cacheAuthorizationRequest(AuthorizationContext authorizationContext,
                                            String clientId,
                                            String redirectUri) {
-        OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
+        // Create the builder
+        OAuth2AuthorizationRequest.Builder builder = OAuth2AuthorizationRequest
+                .authorizationCode()
                 .state(authorizationContext.state())
                 .clientId(clientId)
                 .redirectUri(redirectUri)
                 .scope(authorizationContext.scope())
-                .authorizationUri(securityProperties.authorizationServer())
-                .additionalParameters(Map.of(NONCE, authorizationContext.clientNonce()))
-                .build();
+                .authorizationUri(securityProperties.authorizationServer());
 
+        // If there's a valid nonce, then add it as an additional parameter
+        String nonce = authorizationContext.clientNonce();
+        if (nonce != null && !nonce.isBlank()) {
+            Map<String, Object> additionalParameters = new HashMap<>();
+            additionalParameters.put(NONCE, nonce);
+            builder.additionalParameters(additionalParameters);
+        }
+
+        // Build the request
+        OAuth2AuthorizationRequest oAuth2AuthorizationRequest = builder.build();
+
+        // Store the request in the cache
         cacheStoreForOAuth2AuthorizationRequest.add(authorizationContext.state(), oAuth2AuthorizationRequest);
     }
+
 
     /**
      * Gets the full request URL from the HttpServletRequest, including the query string if present.
