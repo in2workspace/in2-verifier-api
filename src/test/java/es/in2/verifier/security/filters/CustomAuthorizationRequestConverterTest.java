@@ -5,6 +5,7 @@ import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.verifier.component.CryptoComponent;
 import es.in2.verifier.config.CacheStore;
+import es.in2.verifier.config.properties.FlagsProperties;
 import es.in2.verifier.config.properties.SecurityProperties;
 import es.in2.verifier.service.DIDService;
 import es.in2.verifier.service.JWTService;
@@ -60,6 +61,8 @@ class CustomAuthorizationRequestConverterTest {
 
     @Mock
     private RegisteredClientRepository registeredClientRepository;
+    @Mock
+    private FlagsProperties flagsProperties;
 
     @InjectMocks
     private CustomAuthorizationRequestConverter converter;
@@ -308,6 +311,7 @@ class CustomAuthorizationRequestConverterTest {
 
             when(securityProperties.authorizationServer()).thenReturn("https://auth.server.com");
 
+            when(flagsProperties.isNonceRequiredOnFapiProfile()).thenReturn(true);
             // Act & Assert
             OAuth2AuthorizationCodeRequestAuthenticationException exception = assertThrows(
                     OAuth2AuthorizationCodeRequestAuthenticationException.class,
@@ -460,6 +464,8 @@ class CustomAuthorizationRequestConverterTest {
         when(jwtService.generateJWT(anyString())).thenReturn("signed-auth-request");
 
         when(securityProperties.authorizationServer()).thenReturn("https://auth.server.com");
+
+        when(flagsProperties.isNonceRequiredOnFapiProfile()).thenReturn(true);
 
         // Act & Assert
         OAuth2AuthorizationCodeRequestAuthenticationException exception = assertThrows(

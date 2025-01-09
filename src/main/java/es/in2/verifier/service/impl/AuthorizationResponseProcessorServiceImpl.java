@@ -89,14 +89,23 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
 
 
 
-        AuthorizationCodeData authorizationCodeData = AuthorizationCodeData.builder()
+        // Retrieve nonce from additional parameters
+        String nonceValue = (String) oAuth2AuthorizationRequest.getAdditionalParameters().get(NONCE);
+
+        // Create a builder
+        AuthorizationCodeData.AuthorizationCodeDataBuilder authCodeDataBuilder = AuthorizationCodeData.builder()
                 .state(state)
                 .verifiableCredential(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(decodedVpToken))
                 .oAuth2Authorization(authorization)
-                .requestedScopes(oAuth2AuthorizationRequest.getScopes())
-                .clientNonce(oAuth2AuthorizationRequest.getAdditionalParameters().get(NONCE).toString())
-                .build();
+                .requestedScopes(oAuth2AuthorizationRequest.getScopes());
 
+        // Conditionally add the nonce if it's not null or blank
+        if (nonceValue != null && !nonceValue.isBlank()) {
+            authCodeDataBuilder.clientNonce(nonceValue);
+        }
+
+        // Finally build the object
+        AuthorizationCodeData authorizationCodeData = authCodeDataBuilder.build();
         cacheStoreForAuthorizationCodeData.add(code, authorizationCodeData);
 
         oAuth2AuthorizationService.save(authorization);

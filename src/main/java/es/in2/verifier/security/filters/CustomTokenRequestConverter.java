@@ -65,30 +65,44 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
     }
 
     private Authentication handleAuthorizationCodeGrant(MultiValueMap<String, String> parameters) {
-        log.info("CustomTokenRequestConverter -->  handleAuthorizationCodeGrant -- INIT");
+        log.info("CustomTokenRequestConverter --> handleAuthorizationCodeGrant -- INIT");
+
         String code = parameters.getFirst(OAuth2ParameterNames.CODE);
         String state = parameters.getFirst(OAuth2ParameterNames.STATE);
         String clientId = parameters.getFirst(OAuth2ParameterNames.CLIENT_ID);
+
         AuthorizationCodeData authorizationCodeData = cacheStoreForAuthorizationCodeData.get(code);
-        // Remove the state from cache after retrieving the Object
+
+        // Remove the code from cache after retrieving the object
         cacheStoreForAuthorizationCodeData.delete(code);
+
         // Remove the authorization from the initial request
         oAuth2AuthorizationService.remove(authorizationCodeData.oAuth2Authorization());
+
         // Check state only if it is not null and not blank
         if (state != null && !state.isBlank() && (!authorizationCodeData.state().equals(state))) {
-                log.error("CustomTokenRequestConverter --  handleAuthorizationCodeGrant -- State mismatch. Expected: {}, Actual: {}", authorizationCodeData.state(), state);
-                throw new IllegalArgumentException("Invalid state parameter");
+            log.error("CustomTokenRequestConverter -- handleAuthorizationCodeGrant -- State mismatch. Expected: {}, Actual: {}",
+                    authorizationCodeData.state(), state);
+            throw new IllegalArgumentException("Invalid state parameter");
         }
 
         Authentication clientPrincipal = SecurityContextHolder.getContext().getAuthentication();
-        // 3. Generar un JWT que contenga la VC como un claim
         log.info("Authorization code grant successfully handled");
+
+        // Build the additional parameters
         Map<String, Object> additionalParameters = new HashMap<>();
         additionalParameters.put(OAuth2ParameterNames.CLIENT_ID, clientId);
         additionalParameters.put("vc", authorizationCodeData.verifiableCredential());
         additionalParameters.put(OAuth2ParameterNames.SCOPE, String.join(" ", authorizationCodeData.requestedScopes()));
         additionalParameters.put(OAuth2ParameterNames.AUDIENCE, clientId);
-        additionalParameters.put(NONCE, authorizationCodeData.clientNonce());
+
+        // Conditionally add the nonce only if it is not null or blank
+        String nonce = authorizationCodeData.clientNonce();
+        if (nonce != null && !nonce.isBlank()) {
+            additionalParameters.put(NONCE, nonce);
+        }
+
+        // Return the authentication token
         return new OAuth2AuthorizationCodeAuthenticationToken(code, clientPrincipal, null, additionalParameters);
     }
 

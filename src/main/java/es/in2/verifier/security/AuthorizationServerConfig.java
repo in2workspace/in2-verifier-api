@@ -6,6 +6,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import es.in2.verifier.component.CryptoComponent;
 import es.in2.verifier.config.CacheStore;
+import es.in2.verifier.config.properties.FlagsProperties;
 import es.in2.verifier.config.properties.SecurityProperties;
 import es.in2.verifier.model.AuthorizationCodeData;
 import es.in2.verifier.model.AuthorizationRequestJWT;
@@ -61,6 +62,7 @@ public class AuthorizationServerConfig {
     private final ObjectMapper objectMapper;
     private final RegisteredClientsCorsConfig registeredClientsCorsConfig;
     private final CacheStore<RefreshTokenDataCache> refreshTokenDataCacheCacheStore;
+    private final FlagsProperties flagsProperties;
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -75,7 +77,7 @@ public class AuthorizationServerConfig {
                                 // Adds an AuthenticationConverter (pre-processor) used when attempting to extract
                                 // an OAuth2 authorization request (or consent) from HttpServletRequest to an instance
                                 // of OAuth2AuthorizationCodeRequestAuthenticationToken or OAuth2AuthorizationConsentAuthenticationToken.
-                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStoreForAuthorizationRequestJWT,cacheStoreForOAuth2AuthorizationRequest,securityProperties,registeredClientRepository))
+                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStoreForAuthorizationRequestJWT,cacheStoreForOAuth2AuthorizationRequest,securityProperties,registeredClientRepository, flagsProperties))
                                 .errorResponseHandler(new CustomErrorResponseHandler())
                 )
                 .tokenEndpoint(tokenEndpoint ->
