@@ -10,7 +10,7 @@ plugins {
 }
 
 group = 'es.in2'
-version = '1.0.16'
+version = '1.0.17'
 
 java {
 	toolchain {
@@ -47,10 +47,11 @@ sonar {
 		property "sonar.host.url", "https://sonarcloud.io"
 		property 'sonar.coverage.exclusions',
 				"src/main/java/es/in2/vcverifier/VcVerifierApplication.java, " +
-						"src/main/java/es/in2/vcverifier/service/impl/ClientAssertionValidationServiceImpl.java, " +
-						"src/main/java/es/in2/vcverifier/service/impl/TrustFrameworkServiceImpl.java, " +
-						"src/main/java/es/in2/vcverifier/service/impl/CertificateValidationServiceImpl.java, " +
-						"src/main/java/es/in2/vcverifier/exception/MismatchOrganizationIdentifierException.java"
+						"src/main/java/es/in2/verifier/service/impl/ClientAssertionValidationServiceImpl.java, " +
+						"src/main/java/es/in2/verifier/service/impl/TrustFrameworkServiceImpl.java, " +
+						"src/main/java/es/in2/verifier/service/impl/CertificateValidationServiceImpl.java, " +
+						"src/main/java/es/in2/verifier/controller/ResolverController.java, " +
+						"src/main/java/es/in2/verifier/exception/MismatchOrganizationIdentifierException.java"
 	}
 }
 
