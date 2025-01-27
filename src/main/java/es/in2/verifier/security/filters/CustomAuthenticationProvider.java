@@ -24,10 +24,7 @@ import org.springframework.security.oauth2.core.*;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AccessTokenAuthenticationToken;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeAuthenticationToken;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationGrantAuthenticationToken;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientCredentialsAuthenticationToken;
+import org.springframework.security.oauth2.server.authorization.authentication.*;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
@@ -151,11 +148,10 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     }
 
     private LEARCredential getVerifiableCredential(OAuth2AuthorizationGrantAuthenticationToken authentication, JsonNode verifiableCredential) {
-        if (authentication instanceof OAuth2AuthorizationCodeAuthenticationToken) {
+        if (authentication instanceof OAuth2AuthorizationCodeAuthenticationToken || authentication instanceof OAuth2RefreshTokenAuthenticationToken) {
             return objectMapper.convertValue(verifiableCredential, LEARCredentialEmployee.class);
         } else if (authentication instanceof OAuth2ClientCredentialsAuthenticationToken) {
             return objectMapper.convertValue(verifiableCredential, LEARCredentialMachine.class);
-
         }
 
         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
@@ -313,7 +309,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     @Override
     public boolean supports(Class<?> authentication) {
         return OAuth2AuthorizationCodeAuthenticationToken.class.isAssignableFrom(authentication)
-                || OAuth2ClientCredentialsAuthenticationToken.class.isAssignableFrom(authentication);
+                || OAuth2ClientCredentialsAuthenticationToken.class.isAssignableFrom(authentication)
+                || OAuth2RefreshTokenAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }
 

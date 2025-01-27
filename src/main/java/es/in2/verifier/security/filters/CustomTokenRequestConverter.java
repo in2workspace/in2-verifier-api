@@ -158,7 +158,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         Map<String, Object> additionalParameters = new HashMap<>();
         additionalParameters.put(OAuth2ParameterNames.CLIENT_ID, clientId);
         additionalParameters.put("vc", refreshTokenDataCache.verifiableCredential());
-
+        additionalParameters.put(OAuth2ParameterNames.AUDIENCE, clientId);
         Authentication clientPrincipal = SecurityContextHolder.getContext().getAuthentication();
 
         log.info("Refresh token grant successfully handled");
