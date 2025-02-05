@@ -78,3 +78,11 @@ verifier:
         onboardingUri:
         supportUri:
         walletUri:
+    customizations:
+      colors:
+        primary:
+        primaryContrast:
+        secondary:
+        secondaryContrast:
+      logoSrc: "img/dome_logo_white.png"
+      faviconSrc: "img/dome_logo_favicon.png"

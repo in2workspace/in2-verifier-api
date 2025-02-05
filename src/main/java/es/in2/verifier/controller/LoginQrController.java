@@ -1,5 +1,7 @@
 package es.in2.verifier.controller;
 
+import es.in2.verifier.config.CustomizationConfig;
+import es.in2.verifier.config.impl.CustomizationConfigImpl;
 import es.in2.verifier.config.properties.SecurityProperties;
 import es.in2.verifier.config.properties.VerifierUiLoginUrisProperties;
 import es.in2.verifier.exception.QRCodeGenerationException;
@@ -21,6 +23,7 @@ public class LoginQrController {
 
     private final VerifierUiLoginUrisProperties verifierUiLoginUrisProperties;
     private final SecurityProperties securityProperties;
+    private final CustomizationConfig customizationConfig;
 
     @GetMapping("/login")
     @ResponseStatus(HttpStatus.OK)
@@ -37,6 +40,12 @@ public class LoginQrController {
             model.addAttribute("onboardingUri", verifierUiLoginUrisProperties.onboardingUri());
             model.addAttribute("supportUri", verifierUiLoginUrisProperties.supportUri());
             model.addAttribute("walletUri", verifierUiLoginUrisProperties.walletUri());
+            model.addAttribute("primary", customizationConfig.getPrimaryColor());
+            model.addAttribute("primaryContrast", customizationConfig.getPrimaryContrastColor());
+            model.addAttribute("secondary", customizationConfig.getSecondaryColor());
+            model.addAttribute("secondaryContrast", customizationConfig.getSecondaryContrastColor());
+            model.addAttribute("logoSrc", customizationConfig.getLogoSrc());
+            model.addAttribute("faviconSrc", customizationConfig.getFaviconSrc());
             model.addAttribute("cronUnit", securityProperties.loginCode().expirationProperties().cronUnit());
             model.addAttribute("expiration", securityProperties.loginCode().expirationProperties().expiration());
         } catch (Exception e) {

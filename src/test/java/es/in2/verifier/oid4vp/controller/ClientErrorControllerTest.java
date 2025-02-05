@@ -1,5 +1,6 @@
 package es.in2.verifier.oid4vp.controller;
 
+import es.in2.verifier.config.CustomizationConfig;
 import es.in2.verifier.config.properties.VerifierUiLoginUrisProperties;
 import es.in2.verifier.controller.ClientErrorController;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,17 @@ class ClientErrorControllerTest {
     private VerifierUiLoginUrisProperties verifierUiLoginUrisProperties;
 
     @Mock
+    private CustomizationConfig customizationConfig;
+
+    @Mock
     private Model model;
+
+    private static final String PRIMARY_COLOR = "#14274A";
+    private static final String PRIMARY_CONTRAST_COLOR = "#ffffff";
+    private static final String SECONDARY_COLOR = "#00ADD3";
+    private static final String SECONDARY_CONTRAST_COLOR = "#000000";
+    private static final String FAVICON_SRC = "faviconSrcValue";
+
 
     @Test
     void showErrorPage_withValidParameters_shouldReturnViewNameAndAddAttributesToModel() {
@@ -33,7 +44,13 @@ class ClientErrorControllerTest {
         String supportUri = "https://support.example.com";
         String originalRequestURL = "https://original.example.com";
 
+
         when(verifierUiLoginUrisProperties.supportUri()).thenReturn(supportUri);
+        when(customizationConfig.getPrimaryColor()).thenReturn(PRIMARY_COLOR);
+        when(customizationConfig.getPrimaryContrastColor()).thenReturn(PRIMARY_CONTRAST_COLOR);
+        when(customizationConfig.getSecondaryColor()).thenReturn(SECONDARY_COLOR);
+        when(customizationConfig.getSecondaryContrastColor()).thenReturn(SECONDARY_CONTRAST_COLOR);
+        when(customizationConfig.getFaviconSrc()).thenReturn(FAVICON_SRC);
 
         // Act
         String viewName = clientErrorController.showErrorPage(errorCode, errorMessage, clientUrl, originalRequestURL ,model);
@@ -46,6 +63,12 @@ class ClientErrorControllerTest {
         verify(model).addAttribute("clientUrl", clientUrl);
         verify(model).addAttribute("supportUri", supportUri);
         verify(model).addAttribute("originalRequestURL", originalRequestURL);
+        verify(model).addAttribute("primary", PRIMARY_COLOR);
+        verify(model).addAttribute("primaryContrast", PRIMARY_CONTRAST_COLOR);
+        verify(model).addAttribute("secondary", SECONDARY_COLOR);
+        verify(model).addAttribute("secondaryContrast", SECONDARY_CONTRAST_COLOR);
+        verify(model).addAttribute("faviconSrc", FAVICON_SRC);
+
     }
 
     @Test
