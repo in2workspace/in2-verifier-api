@@ -21,6 +21,7 @@ public record CustomizationsProperties(@NestedConfigurationProperty Colors color
         )).orElse(new Colors("#14274A", "#ffffff", "#00ADD3", "#000000" ));
         this.logoSrc = logoSrc;
         this.faviconSrc = faviconSrc;
+        System.out.println("logo src:: "+ this.logoSrc);
     }
 
     private static boolean isEmpty(String value) {

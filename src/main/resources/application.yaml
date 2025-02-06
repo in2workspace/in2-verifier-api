@@ -84,5 +84,5 @@ verifier:
         primaryContrast:
         secondary:
         secondaryContrast:
-      logoSrc: "img/dome_logo_white.png"
-      faviconSrc: "img/dome_logo_favicon.png"
+      logoSrc:
+      faviconSrc:
