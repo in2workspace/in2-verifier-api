@@ -2,7 +2,6 @@ package es.in2.verifier.oid4vp.controller;
 
 import es.in2.verifier.config.CustomizationConfig;
 import es.in2.verifier.config.properties.SecurityProperties;
-import es.in2.verifier.config.properties.CustomizationsProperties;
 import es.in2.verifier.config.properties.VerifierUiLoginUrisProperties;
 import es.in2.verifier.controller.LoginQrController;
 import es.in2.verifier.exception.QRCodeGenerationException;

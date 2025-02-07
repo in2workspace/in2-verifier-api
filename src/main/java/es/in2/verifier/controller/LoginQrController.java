@@ -1,7 +1,6 @@
 package es.in2.verifier.controller;
 
 import es.in2.verifier.config.CustomizationConfig;
-import es.in2.verifier.config.impl.CustomizationConfigImpl;
 import es.in2.verifier.config.properties.SecurityProperties;
 import es.in2.verifier.config.properties.VerifierUiLoginUrisProperties;
 import es.in2.verifier.exception.QRCodeGenerationException;

@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "verifier.ui.customizations.colors.secondary=",
         "verifier.ui.customizations.colors.secondaryContrast=#000000"
 })
-public class CustomizationsPropertiesTest {
+class CustomizationsPropertiesTest {
 
     @Autowired
     private CustomizationsProperties customizationsProperties;
