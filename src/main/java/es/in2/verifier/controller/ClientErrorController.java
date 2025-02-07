@@ -1,5 +1,6 @@
 package es.in2.verifier.controller;
 
+import es.in2.verifier.config.CustomizationConfig;
 import es.in2.verifier.config.properties.VerifierUiLoginUrisProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import org.springframework.ui.Model;
 public class ClientErrorController {
 
     private final VerifierUiLoginUrisProperties verifierUiLoginUrisProperties;
+    private final CustomizationConfig customizationConfig;
 
     @GetMapping("/client-error")
     @ResponseStatus(HttpStatus.OK)
@@ -28,6 +30,12 @@ public class ClientErrorController {
         model.addAttribute("clientUrl", clientUrl);
         model.addAttribute("supportUri", verifierUiLoginUrisProperties.supportUri());
         model.addAttribute("originalRequestURL", originalRequestURL);
+
+        model.addAttribute("primary", customizationConfig.getPrimaryColor());
+        model.addAttribute("primaryContrast", customizationConfig.getPrimaryContrastColor());
+        model.addAttribute("secondary", customizationConfig.getSecondaryColor());
+        model.addAttribute("secondaryContrast", customizationConfig.getSecondaryContrastColor());
+        model.addAttribute("faviconSrc", customizationConfig.getFaviconSrc());
         // Return the view name
         return "client-authentication-error";
     }

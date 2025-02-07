@@ -77,3 +77,11 @@ verifier:
         onboardingUri:
         supportUri:
         walletUri:
+    customizations:
+      colors:
+        primary:
+        primaryContrast:
+        secondary:
+        secondaryContrast:
+      logoSrc:
+      faviconSrc:
