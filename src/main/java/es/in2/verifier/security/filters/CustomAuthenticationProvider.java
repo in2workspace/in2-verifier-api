@@ -5,9 +5,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
+import es.in2.verifier.config.CacheStore;
 import es.in2.verifier.config.properties.SecurityProperties;
 import es.in2.verifier.exception.InvalidCredentialTypeException;
 import es.in2.verifier.exception.JsonConversionException;
+import es.in2.verifier.model.RefreshTokenDataCache;
 import es.in2.verifier.model.credentials.lear.LEARCredential;
 import es.in2.verifier.model.credentials.lear.employee.LEARCredentialEmployee;
 import es.in2.verifier.model.credentials.lear.machine.LEARCredentialMachine;
@@ -18,20 +20,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.oauth2.core.OAuth2AccessToken;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
+import org.springframework.security.oauth2.core.*;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AccessTokenAuthenticationToken;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeAuthenticationToken;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationGrantAuthenticationToken;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientCredentialsAuthenticationToken;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.authentication.*;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
+import java.security.Principal;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+
+import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -40,6 +43,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     private final RegisteredClientRepository registeredClientRepository;
     private final SecurityProperties securityProperties;
     private final ObjectMapper objectMapper;
+    private final CacheStore<RefreshTokenDataCache> cacheStoreForRefreshTokenData;
+    private final OAuth2AuthorizationService oAuth2AuthorizationService;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -67,7 +72,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         );
         log.debug("CustomAuthenticationProvider -- handleGrant -- Issue time: {}, Expiration time: {}", issueTime, expirationTime);
 
-        LEARCredential credential = getVerifiableCredential(authentication);
+        JsonNode credentialJson = getJsonCredential(authentication);
+        LEARCredential credential = getVerifiableCredential(authentication, credentialJson);
         String subject = credential.mandateeId();
         log.debug("CustomAuthenticationProvider -- handleGrant -- Credential subject obtained: {}", subject);
 
@@ -83,14 +89,34 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 issueTime,
                 expirationTime
         );
+        OAuth2RefreshToken oAuth2RefreshToken = generateRefreshToken(issueTime);
 
         String idToken = generateIdToken(credential, subject, audience, authentication.getAdditionalParameters());
 
         Map<String, Object> additionalParameters = new HashMap<>();
         additionalParameters.put("id_token", idToken);
 
+        // Generate the data necessary to be able to refresh the token
+        RefreshTokenDataCache refreshTokenDataCache = RefreshTokenDataCache.builder()
+                .refreshToken(oAuth2RefreshToken)
+                .clientId(clientId)
+                .verifiableCredential(credentialJson)
+                .build();
+
+        cacheStoreForRefreshTokenData.add(oAuth2RefreshToken.getTokenValue(),refreshTokenDataCache);
+
+        // Save the OAuth2Authorization
+        OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(registeredClient)
+                .id(registeredClient.getId())
+                .principalName(registeredClient.getClientId())
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .token(oAuth2RefreshToken)
+                .attribute(Principal.class.getName(), authentication.getPrincipal())
+                .build();
+        oAuth2AuthorizationService.save(authorization);
+
         log.info("Authorization grant successfully processed");
-        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken, null, additionalParameters);
+        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken, oAuth2RefreshToken, additionalParameters);
     }
 
     private String getClientId(OAuth2AuthorizationGrantAuthenticationToken authentication) {
@@ -103,7 +129,6 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
     }
 
-
     private RegisteredClient getRegisteredClient(String clientId) {
         log.info("Looking up registered client with Client ID: {}", clientId);
         RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
@@ -114,18 +139,19 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         return registeredClient;
     }
 
-    private LEARCredential getVerifiableCredential(OAuth2AuthorizationGrantAuthenticationToken authentication) {
+    private JsonNode getJsonCredential(OAuth2AuthorizationGrantAuthenticationToken authentication) {
         Map<String, Object> additionalParameters = authentication.getAdditionalParameters();
         if (!additionalParameters.containsKey("vc")) {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
         }
-        JsonNode verifiableCredential = objectMapper.convertValue(additionalParameters.get("vc"), JsonNode.class);
+        return objectMapper.convertValue(additionalParameters.get("vc"), JsonNode.class);
+    }
 
-        if (authentication instanceof OAuth2AuthorizationCodeAuthenticationToken) {
+    private LEARCredential getVerifiableCredential(OAuth2AuthorizationGrantAuthenticationToken authentication, JsonNode verifiableCredential) {
+        if (authentication instanceof OAuth2AuthorizationCodeAuthenticationToken || authentication instanceof OAuth2RefreshTokenAuthenticationToken) {
             return objectMapper.convertValue(verifiableCredential, LEARCredentialEmployee.class);
         } else if (authentication instanceof OAuth2ClientCredentialsAuthenticationToken) {
             return objectMapper.convertValue(verifiableCredential, LEARCredentialMachine.class);
-
         }
 
         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
@@ -217,11 +243,35 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             additionalClaims.forEach(idTokenClaimsBuilder::claim);
         }
 
+        // This is used only in the authorization code flow
+        if (additionalParameters.containsKey(NONCE)) {
+            idTokenClaimsBuilder.claim(NONCE, additionalParameters.get(NONCE));
+        }
+
         JWTClaimsSet idTokenClaims = idTokenClaimsBuilder.build();
 
         // Use JWTService to generate the ID Token (JWT)
         return jwtService.generateJWT(idTokenClaims.toString());
     }
+
+    private OAuth2RefreshToken generateRefreshToken(Instant issueTime) {
+        // Generate a random refresh token with at least 128 bits of entropy. Here we use 256 bits (32 bytes)
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] refreshTokenBytes = new byte[32]; // 256 bits
+        secureRandom.nextBytes(refreshTokenBytes);
+        String refreshTokenValue = Base64.getUrlEncoder().withoutPadding().encodeToString(refreshTokenBytes);
+
+        // Use the expiration time of the access token to calculate the expiration time of the refresh token
+        Instant refreshTokenExpirationTime = issueTime.plus(
+                Long.parseLong(securityProperties.token().accessToken().expiration()),
+                ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit())
+        );
+        log.debug("CustomAuthenticationProvider -- generateRefreshToken -- Refresh Token Expiration time: {}", refreshTokenExpirationTime);
+
+        // Create the OAuth2RefreshToken object
+        return new OAuth2RefreshToken(refreshTokenValue, issueTime, refreshTokenExpirationTime);
+    }
+
 
     private Map<String, Object> extractClaimsFromVerifiableCredential(LEARCredential learCredential, Map<String, Object> additionalParameters) {
         Set<String> requestedScopes = new HashSet<>(Arrays.asList(additionalParameters.get(OAuth2ParameterNames.SCOPE).toString().split(" ")));
@@ -259,7 +309,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     @Override
     public boolean supports(Class<?> authentication) {
         return OAuth2AuthorizationCodeAuthenticationToken.class.isAssignableFrom(authentication)
-                || OAuth2ClientCredentialsAuthenticationToken.class.isAssignableFrom(authentication);
+                || OAuth2ClientCredentialsAuthenticationToken.class.isAssignableFrom(authentication)
+                || OAuth2RefreshTokenAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }
 

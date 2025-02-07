@@ -59,6 +59,9 @@ security:
       expiration: "5"
       cronUnit: "MINUTES"
 
+flags:
+  isNonceRequiredOnFapiProfile: false
+
 trustFramework:
   trustedIssuerList:
     uri: "http://localhost:8080/v4/issuers/"

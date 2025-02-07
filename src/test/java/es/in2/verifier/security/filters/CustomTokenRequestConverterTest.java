@@ -74,7 +74,6 @@ class CustomTokenRequestConverterTest {
         parameters.add(OAuth2ParameterNames.STATE, "state");
 
         when(mockRequest.getParameterMap()).thenReturn(convertToMap(parameters));
-
         AuthorizationCodeData authorizationCodeData = mock(AuthorizationCodeData.class);
         when(cacheStoreForAuthorizationCodeData.get("code")).thenReturn(authorizationCodeData);
         when(authorizationCodeData.state()).thenReturn("state");
@@ -208,7 +207,7 @@ class CustomTokenRequestConverterTest {
     }
 
     @Test
-    void handleM2MGrant_invalidCredentialType_shouldThrowInvalidCredentialTypeException() {
+    void handleClientCredentialsGrant_invalidCredentialType_shouldThrowInvalidCredentialTypeException() {
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         Authentication clientPrincipal = mock(Authentication.class);
         SecurityContextHolder.getContext().setAuthentication(clientPrincipal);
@@ -241,7 +240,6 @@ class CustomTokenRequestConverterTest {
                 customTokenRequestConverter.convert(mockRequest));
     }
 
-
     @Test
     void convert_unsupportedGrantType_shouldThrowUnsupportedGrantTypeException() {
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
@@ -254,7 +252,6 @@ class CustomTokenRequestConverterTest {
         assertThrows(UnsupportedGrantTypeException.class, () ->
                 customTokenRequestConverter.convert(mockRequest));
     }
-
 
     // Helper method to convert MultiValueMap to a regular Map for the request mock
     private Map<String, String[]> convertToMap(MultiValueMap<String, String> multiValueMap) {
