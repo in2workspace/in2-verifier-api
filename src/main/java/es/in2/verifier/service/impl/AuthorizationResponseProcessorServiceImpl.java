@@ -27,6 +27,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.UUID;
 
+import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -49,11 +51,6 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         // Remove the state from cache after retrieving the Object
         cacheStoreForOAuth2AuthorizationRequest.delete(state);
         String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
-        if (redirectUri == null) {
-            log.error("State {} does not exist in cache", state);
-            throw new IllegalStateException("Invalid or expired state");
-        }
-
 
         // Decode vpToken from Base64
         String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
@@ -84,18 +81,32 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
                 .id(registeredClient.getId())
                 .principalName(registeredClient.getClientId())
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .token(new OAuth2AuthorizationCode(code, issueTime, expirationTime)) // Generar código aquí
+                .token(new OAuth2AuthorizationCode(code, issueTime, expirationTime))
                 .attribute(OAuth2AuthorizationRequest.class.getName(), oAuth2AuthorizationRequest)
                 .build();
 
         log.info("OAuth2Authorization generated");
 
-        cacheStoreForAuthorizationCodeData.add(code, AuthorizationCodeData.builder()
+
+
+        // Retrieve nonce from additional parameters
+        String nonceValue = (String) oAuth2AuthorizationRequest.getAdditionalParameters().get(NONCE);
+
+        // Create a builder
+        AuthorizationCodeData.AuthorizationCodeDataBuilder authCodeDataBuilder = AuthorizationCodeData.builder()
                 .state(state)
                 .verifiableCredential(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(decodedVpToken))
                 .oAuth2Authorization(authorization)
-                .requestedScopes(oAuth2AuthorizationRequest.getScopes())
-                .build());
+                .requestedScopes(oAuth2AuthorizationRequest.getScopes());
+
+        // Conditionally add the nonce if it's not null or blank
+        if (nonceValue != null && !nonceValue.isBlank()) {
+            authCodeDataBuilder.clientNonce(nonceValue);
+        }
+
+        // Finally build the object
+        AuthorizationCodeData authorizationCodeData = authCodeDataBuilder.build();
+        cacheStoreForAuthorizationCodeData.add(code, authorizationCodeData);
 
         oAuth2AuthorizationService.save(authorization);
 

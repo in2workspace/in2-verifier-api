@@ -59,6 +59,8 @@ security:
       expiration: "5"
       cronUnit: "MINUTES"
 
+flags:
+  isNonceRequiredOnFapiProfile: false
 
 trustFramework:
   trustedIssuerList:

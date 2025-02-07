@@ -10,7 +10,7 @@ plugins {
 }
 
 group = 'es.in2'
-version = '1.0.17'
+version = '1.1.0'
 
 java {
 	toolchain {
@@ -50,6 +50,8 @@ sonar {
 						"src/main/java/es/in2/vcverifier/service/impl/ClientAssertionValidationServiceImpl.java, " +
 						"src/main/java/es/in2/vcverifier/service/impl/TrustFrameworkServiceImpl.java, " +
 						"src/main/java/es/in2/vcverifier/service/impl/CertificateValidationServiceImpl.java, " +
+						"src/main/java/es/in2/verifier/security/filters/CustomTokenRequestConverter.java, " +
+						"src/main/java/es/in2/verifier/security/AuthorizationServerConfig.java, " +
 						"src/main/java/es/in2/vcverifier/exception/MismatchOrganizationIdentifierException.java"
 	}
 }
@@ -122,10 +124,11 @@ tasks.jacocoTestReport {
 	}
 	classDirectories.setFrom(files(classDirectories.files.collect {
 		fileTree(dir: it, exclude: [
-				"**/AuthorizationResponseProcessorServiceImpl.class",
 				"**/TrustFrameworkServiceImpl.class",
 				"**/CertificateValidationServiceImpl.class",
 				"**/MismatchOrganizationIdentifierException.class",
+				"**/CustomTokenRequestConverter.class",
+				"**/AuthorizationServerConfig.class",
 		])
 	}))
 }

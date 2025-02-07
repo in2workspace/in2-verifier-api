@@ -22,10 +22,12 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
 
 @ExtendWith(MockitoExtension.class)
 class AuthorizationResponseProcessorServiceImplTest {
@@ -63,6 +65,7 @@ class AuthorizationResponseProcessorServiceImplTest {
                 .clientId("client-id")
                 .redirectUri("https://client.example.com/callback")
                 .state(state)
+                .additionalParameters(Map.of(NONCE, "test-nonce"))
                 .scope("read")
                 .build();
 
