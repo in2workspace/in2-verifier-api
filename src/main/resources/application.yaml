@@ -1,90 +1,91 @@
-server:
-  port: 9000
-
-logging:
-  level:
-    org.springframework.security: TRACE
-    org.springframework.security.oauth2: TRACE
-    org.springframework.web.filter: TRACE
-    es.in2: info
-
 spring:
   application:
+    # Defines the name of the Spring application
     name: VC Verifier
   web:
     resources:
       static-locations:
+        # Specifies locations for serving static resources
         - classpath:/static/
+        # Additional location for static resources
         - classpath:/resources/
 
-# Spring Management Configuration - Actuator
+server:
+  # Defines the port on which the application will run
+  port: 8080
+
+logging:
+  level:
+    # Sets logging level for Spring Security
+    org.springframework.security: INFO
+    # Sets logging level for web filters
+    org.springframework.web.filter: INFO
+    # Sets logging level for the custom package "es.in2.vcverifier"
+    es.in2.vcverifier: INFO
+
 management:
   endpoints:
+    # Disables all management endpoints by default
     enabled-by-default: false
     web:
       exposure:
-        include: health, info, loggers, metrics, prometheus
+        # Specifies the enabled management endpoints
+        include: health, prometheus
+      # Sets the base path for management endpoints
       base-path: /
       path-mapping:
+        # Maps the health endpoint to /health
         health: health
-        info: info
-        loggers: loggers
-        metrics: metrics
+        # Maps the Prometheus metrics endpoint to /prometheus
         prometheus: prometheus
   endpoint:
     health:
+      # Enables the health endpoint
       enabled: true
+      # Always show detailed health information
       show-details: always
-    loggers:
-      enabled: true
-    metrics:
-      enabled: true
     prometheus:
+      # Enables the Prometheus endpoint for exporting metrics
       enabled: true
   metrics:
     tags:
+      # Adds application name as a tag to metrics
       application: ${spring.application.name}
 
-security:
-  authorizationServer: "http://localhost:9000"
-  loginCode:
-    expirationProperties:
-      expiration: "5"
-      cronUnit: "MINUTES"
-  token:
-    accessToken:
-      expiration: "5"
-      cronUnit: "MINUTES"
-    idToken:
-      expiration: "5"
-      cronUnit: "MINUTES"
-
-flags:
-  isNonceRequiredOnFapiProfile: false
-
-trustFramework:
-  trustedIssuerList:
-    uri: "http://localhost:8085/v4/issuers/"
-  clientsRepository:
-    uri: "https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml"
-  revocationList:
-    uri: "https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/revoked_credential_list.yaml"
-
-crypto:
-  privateKey: "73e509a7681d4a395b1ced75681c4dc4020dbab02da868512276dd766733d5b5" # for test purposes
-
 verifier:
-  ui:
-    login:
-      uris:
-        onboardingUri:
-        supportUri:
-        walletUri:
-    customizations:
-      colors:
-        primary:
-        primaryContrast:
-        secondary:
-        secondaryContrast:
-      logoSrc:
-      faviconSrc:
+  frontend:
+    urls:
+      # Placeholder for onboarding URL (REQUIRED)
+      onboarding:
+      # Placeholder for support URL (REQUIRED)
+      support:
+      # Placeholder for wallet URL (REQUIRED)
+      wallet:
+    colors:
+      # Defines primary color for the frontend (OPTIONAL with default value)
+      primary: "#14274A"
+      # Defines contrasting text color for primary color (OPTIONAL with default value)
+      primaryContrast: "#ffffff"
+      # Defines secondary color for the frontend (OPTIONAL with default value)
+      secondary: "#00ADD3"
+      # Defines contrasting text color for secondary color (OPTIONAL with default value)
+      secondaryContrast: "#000000"
+    # Placeholder for logo source path (REQUIRED)
+    logoSrc:
+    # Placeholder for favicon source path (OPTIONAL)
+    faviconSrc:
+  backend:
+    # Placeholder for backend URL (REQUIRED)
+    url:
+    identity:
+      # Placeholder for private key used in identity verification (REQUIRED)
+      privateKey:
+    trustFrameworks:
+      # Placeholder for the name of a trust framework (REQUIRED)
+      - name:
+        # Placeholder for trusted issuers list URL
+        trustedIssuersListUrl:
+        # Placeholder for trusted services list URL
+        trustedServicesListUrl:
+        # Placeholder for revoked credentials list URL
+        revokedCredentialListUrl:
