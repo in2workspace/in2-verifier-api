@@ -356,8 +356,7 @@
     let homeUri = /*[[${homeUri}]]*/ "";
     let authRequest = /*[[${authRequest}]]*/ "";
     let state = /*[[${state}]]*/ "";  // If 'state' is a unique identifier, it is fine to use it
-    let timeUnit = /*[[${cronUnit}]]*/ "MINUTES";
-    let timeValue = parseInt(/*[[${expiration}]]*/ "5");
+    let timeValue = parseInt(/*[[${expiration}]]*/ "120");
     /*]]>*/
 </script>
 <script src="https://cdn.jsdelivr.net/sockjs/latest/sockjs.min.js"></script>
@@ -416,15 +415,7 @@
     // Automatically redirect to the home page after a specified time
     function setAutoRedirect() {
         console.log('Setting auto redirect'); // Log for debugging
-        let timeInMs;
-        if (timeUnit === 'MINUTES') {
-            timeInMs = timeValue * 60 * 1000;
-        } else if (timeUnit === 'SECONDS') {
-            timeInMs = timeValue * 1000;
-        } else {
-            console.error('Invalid time unit'); // Log error in English
-            return;
-        }
+        let timeInMs = timeValue * 1000;
         console.log(`Redirecting to home in ${timeInMs} milliseconds`); // Log for debugging
         setTimeout(() => {
             console.log('Redirecting to home URL:', homeUri); // Log for debugging

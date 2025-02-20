@@ -1,0 +1,63 @@
+package es.in2.vcverifier.controller;
+
+import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT;
+import es.in2.vcverifier.config.properties.SecurityProperties;
+import es.in2.vcverifier.config.frontend.FrontendConfig;
+import es.in2.vcverifier.exception.QRCodeGenerationException;
+import lombok.RequiredArgsConstructor;
+import net.glxn.qrgen.javase.QRCode;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+import java.io.ByteArrayOutputStream;
+import java.util.Base64;
+
+@Controller
+@RequiredArgsConstructor
+public class LoginQrController {
+
+    private final FrontendConfig frontendConfig;
+    private final SecurityProperties securityProperties;
+
+    @GetMapping("/login")
+    @ResponseStatus(HttpStatus.OK)
+    public String showQrLogin(@RequestParam("authRequest") String authRequest, @RequestParam("state") String state, Model model, @RequestParam("homeUri") String homeUri) {
+        try {
+            // Generar la imagen QR en base64
+            String qrImageBase64 = generateQRCodeImageBase64(authRequest);
+            // Pasar el QR en base64 y el authRequest en texto al modelo
+            model.addAttribute("qrImage", "data:image/png;base64," + qrImageBase64);
+            model.addAttribute("authRequest", authRequest);
+            // Pasar el sessionId al modelo
+            model.addAttribute("state", state);
+            model.addAttribute("homeUri", homeUri);
+            model.addAttribute("onboardingUri", frontendConfig.getOnboardingUrl());
+            model.addAttribute("supportUri", frontendConfig.getSupportUrl());
+            model.addAttribute("walletUri", frontendConfig.getWalletUrl());
+            model.addAttribute("primary", frontendConfig.getPrimaryColor());
+            model.addAttribute("primaryContrast", frontendConfig.getPrimaryContrastColor());
+            model.addAttribute("secondary", frontendConfig.getSecondaryColor());
+            model.addAttribute("secondaryContrast", frontendConfig.getSecondaryContrastColor());
+            model.addAttribute("logoSrc", frontendConfig.getLogoSrc());
+            model.addAttribute("faviconSrc", frontendConfig.getFaviconSrc());
+            model.addAttribute("expiration", LOGIN_TIMEOUT);
+        } catch (Exception e) {
+            throw new QRCodeGenerationException(e.getMessage());
+        }
+        return "login";
+    }
+
+    private String generateQRCodeImageBase64(String barcodeText) {
+        ByteArrayOutputStream stream = QRCode
+                .from(barcodeText)
+                .withSize(250, 250)
+                .stream();
+        byte[] imageBytes = stream.toByteArray();
+        return Base64.getEncoder().encodeToString(imageBytes);
+    }
+
+}

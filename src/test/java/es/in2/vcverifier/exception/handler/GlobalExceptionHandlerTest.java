@@ -1,8 +1,7 @@
 package es.in2.vcverifier.exception.handler;
 
-import es.in2.verifier.exception.*;
-import es.in2.verifier.exception.handler.GlobalExceptionHandler;
-import es.in2.verifier.model.GlobalErrorMessage;
+import es.in2.vcverifier.exception.*;
+import es.in2.vcverifier.model.GlobalErrorMessage;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
