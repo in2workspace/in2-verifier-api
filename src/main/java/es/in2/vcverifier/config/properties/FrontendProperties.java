@@ -1,4 +1,4 @@
-package es.in2.vcverifier.config.properties.frontend;
+package es.in2.vcverifier.config.properties;
 
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.URL;

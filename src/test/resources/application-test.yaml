@@ -1,0 +1,13 @@
+verifier:
+  frontend:
+    urls:
+      onboarding: https://example.com/onboarding
+      support: https://example.com/support
+      wallet: https://example.com/wallet
+    logoSrc: logo.png
+    faviconSrc: favicon.ico
+    colors:
+      primary: "#FF0000"
+      primaryContrast: "#FFFFFF"
+      secondary: "#00ADD3"
+      secondaryContrast: "#000000"

@@ -1,40 +1,14 @@
 package es.in2.vcverifier.config.backend;
 
-import es.in2.vcverifier.config.properties.backend.BackendProperties;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+public interface BackendConfig {
 
-@Configuration
-@EnableConfigurationProperties(BackendProperties.class)
-public class BackendConfig {
+    String getUrl();
 
-    private final BackendProperties properties;
+    String getPrivateKey();
 
-    public BackendConfig(BackendProperties properties) {
-        this.properties = properties;
-    }
+    String getTrustedIssuerListUri();
 
-    public String getUrl() {
-        return properties.url();
-    }
+    String getClientsRepositoryUri();
 
-    public String getPrivateKey() {
-        String privateKey = properties.identity().privateKey();
-        if (privateKey.startsWith("0x")) {
-            privateKey = privateKey.substring(2);
-        }
-        return privateKey;
-    }
-
-    public String getTrustedIssuerListUri() {
-        return properties.getFirstTrustFramework().trustedIssuersListUrl().uri();
-    }
-
-    public String getClientsRepositoryUri() {
-        return properties.getFirstTrustFramework().trustedServicesListUrl().uri();
-    }
-
-    public String getRevocationListUri() {
-        return properties.getFirstTrustFramework().revokedCredentialListUrl().uri();
-    }
+    String getRevocationListUri();
 }

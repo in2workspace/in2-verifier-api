@@ -1,15 +1,17 @@
-package es.in2.vcverifier.config.properties;
+package es.in2.vcverifier.config.properties.frontend;
 
-import es.in2.vcverifier.config.properties.frontend.FrontendProperties;
+import es.in2.vcverifier.config.properties.FrontendProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = FrontendPropertiesTest.TestConfig.class)
+@ActiveProfiles("test")
 @TestPropertySource(properties = {
         "verifier.frontend.urls.onboarding=https://example.com/onboarding",
         "verifier.frontend.urls.support=https://example.com/support",

@@ -1,7 +1,6 @@
-package es.in2.vcverifier.config.frontend.impl;
+package es.in2.vcverifier.config.frontend;
 
-import es.in2.vcverifier.config.properties.frontend.FrontendProperties;
-import es.in2.vcverifier.config.frontend.FrontendConfig;
+import es.in2.vcverifier.config.properties.FrontendProperties;
 import org.springframework.stereotype.Component;
 
 @Component
