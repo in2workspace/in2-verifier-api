@@ -11,3 +11,15 @@ verifier:
       primaryContrast: "#FFFFFF"
       secondary: "#00ADD3"
       secondaryContrast: "#000000"
+  backend:
+    url: https://backend.example.com
+    identity:
+      privateKey: 0x123456789abcdef
+    trustFrameworks:
+      - name: DOME
+        trustedIssuersListUrl:
+          uri: https://trust.example.com/issuers
+        trustedServicesListUrl:
+          uri: https://trust.example.com/services
+        revokedCredentialListUrl:
+          uri: https://trust.example.com/revoked

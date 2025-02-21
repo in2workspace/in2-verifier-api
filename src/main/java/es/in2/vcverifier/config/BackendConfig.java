@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
+import java.util.List;
+
 @Configuration
 @RequiredArgsConstructor
 public class BackendConfig {
@@ -23,15 +25,24 @@ public class BackendConfig {
         return privateKey;
     }
 
+    private BackendProperties.TrustFramework getSelectedTrustFramework() {
+        return properties.getDOMETrustFrameworkByName();
+    }
+
     public String getTrustedIssuerListUri() {
-        return properties.getFirstTrustFramework().trustedIssuersListUrl().uri();
+        return getSelectedTrustFramework().trustedIssuersListUrl().uri();
     }
 
     public String getClientsRepositoryUri() {
-        return properties.getFirstTrustFramework().trustedServicesListUrl().uri();
+        return getSelectedTrustFramework().trustedServicesListUrl().uri();
     }
 
     public String getRevocationListUri() {
-        return properties.getFirstTrustFramework().revokedCredentialListUrl().uri();
+        return getSelectedTrustFramework().revokedCredentialListUrl().uri();
+    }
+
+    // todo currently unused
+    public List<BackendProperties.TrustFramework> getAllTrustFrameworks() {
+        return properties.trustFrameworks();
     }
 }

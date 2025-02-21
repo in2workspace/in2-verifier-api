@@ -1,6 +1,5 @@
-package es.in2.vcverifier.config.properties.backend;
+package es.in2.vcverifier.config.properties;
 
-import es.in2.vcverifier.config.properties.BackendProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -17,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestPropertySource(properties = {
         "verifier.backend.url=https://backend.example.com",
         "verifier.backend.identity.privateKey=some-private-key",
+        "verifier.backend.trustFrameworks[0].name=DOME",
         "verifier.backend.trustFrameworks[0].trustedIssuersListUrl.uri=https://trust.example.com/issuers",
         "verifier.backend.trustFrameworks[0].trustedServicesListUrl.uri=https://trust.example.com/services",
         "verifier.backend.trustFrameworks[0].revokedCredentialListUrl.uri=https://trust.example.com/revoked"
@@ -31,6 +31,7 @@ class BackendPropertiesTest {
         BackendProperties.Identity expectedIdentity = new BackendProperties.Identity("some-private-key");
 
         BackendProperties.TrustFramework expectedTrustFramework = new BackendProperties.TrustFramework(
+                "DOME",
                 new BackendProperties.TrustedIssuersListUrl("https://trust.example.com/issuers"),
                 new BackendProperties.TrustedServicesListUrl("https://trust.example.com/services"),
                 new BackendProperties.RevokedCredentialListUrl("https://trust.example.com/revoked")
@@ -48,8 +49,8 @@ class BackendPropertiesTest {
                 .as("Trust frameworks should contain the expected data")
                 .isEqualTo(List.of(expectedTrustFramework));
 
-        assertThat(backendProperties.getFirstTrustFramework())
-                .as("getFirstTrustFramework should return the first framework or a default instance")
+        assertThat(backendProperties.getDOMETrustFrameworkByName())
+                .as("getDOMETrustFrameworkByName should return the expected DOME framework")
                 .isEqualTo(expectedTrustFramework);
     }
 

@@ -4,6 +4,7 @@ import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.component.CryptoComponent;
+import es.in2.vcverifier.config.BackendConfig;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
@@ -54,9 +55,6 @@ class CustomAuthorizationRequestConverterTest {
 
     @Mock
     private CacheStore<OAuth2AuthorizationRequest> cacheStoreForOAuth2AuthorizationRequest;
-
-    @Mock
-    private SecurityProperties securityProperties;
 
     @Mock
     private BackendConfig backendConfig;

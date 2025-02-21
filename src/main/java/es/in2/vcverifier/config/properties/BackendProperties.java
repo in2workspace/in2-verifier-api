@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Validated
@@ -18,15 +19,17 @@ public record BackendProperties(
     public record Identity(@NotNull String privateKey) {}
 
     public record TrustFramework(
+            @NotNull String name,
             @NestedConfigurationProperty TrustedIssuersListUrl trustedIssuersListUrl,
             @NestedConfigurationProperty TrustedServicesListUrl trustedServicesListUrl,
             @NestedConfigurationProperty RevokedCredentialListUrl revokedCredentialListUrl) {
 
         public TrustFramework(
+                String name,
                 TrustedIssuersListUrl trustedIssuersListUrl,
                 TrustedServicesListUrl trustedServicesListUrl,
                 RevokedCredentialListUrl revokedCredentialListUrl) {
-        // todo decide whether this should be optional
+            this.name = Optional.ofNullable(name).orElse("");
             this.trustedIssuersListUrl = Optional.ofNullable(trustedIssuersListUrl).orElse(new TrustedIssuersListUrl(""));
             this.trustedServicesListUrl = Optional.ofNullable(trustedServicesListUrl).orElse(new TrustedServicesListUrl(""));
             this.revokedCredentialListUrl = Optional.ofNullable(revokedCredentialListUrl).orElse(new RevokedCredentialListUrl(""));
@@ -37,7 +40,12 @@ public record BackendProperties(
     public record TrustedServicesListUrl(String uri) {}
     public record RevokedCredentialListUrl(String uri) {}
 
-    public TrustFramework getFirstTrustFramework() {
-        return trustFrameworks.isEmpty() ? new TrustFramework(null, null, null) : trustFrameworks.get(0);
+    //todo this is temporary while VCVerifier can only manage one trustframework
+    public TrustFramework getDOMETrustFrameworkByName() {
+        return trustFrameworks.stream()
+                .filter(tf -> tf.name().equalsIgnoreCase("DOME"))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("No TrustFramework found with name 'DOME'"));
     }
+
 }
