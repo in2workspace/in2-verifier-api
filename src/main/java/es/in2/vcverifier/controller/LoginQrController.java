@@ -1,7 +1,7 @@
 package es.in2.vcverifier.controller;
 
 import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT;
-import es.in2.vcverifier.config.properties.SecurityProperties;
+
 import es.in2.vcverifier.config.frontend.FrontendConfig;
 import es.in2.vcverifier.exception.QRCodeGenerationException;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,6 @@ import java.util.Base64;
 public class LoginQrController {
 
     private final FrontendConfig frontendConfig;
-    private final SecurityProperties securityProperties;
 
     @GetMapping("/login")
     @ResponseStatus(HttpStatus.OK)

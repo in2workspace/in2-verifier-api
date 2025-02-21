@@ -6,8 +6,6 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.component.CryptoComponent;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.backend.BackendConfig;
-import es.in2.vcverifier.config.properties.FlagsProperties;
-import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.model.AuthorizationContext;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import es.in2.vcverifier.service.DIDService;
@@ -54,10 +52,9 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private final CryptoComponent cryptoComponent;
     private final CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT;
     private final CacheStore<OAuth2AuthorizationRequest> cacheStoreForOAuth2AuthorizationRequest;
-    private final SecurityProperties securityProperties;
     private final BackendConfig backendConfig;
     private final RegisteredClientRepository registeredClientRepository;
-    private final FlagsProperties flagsProperties;
+    private final boolean isNonceRequiredOnFapiProfile;
 
     /**
      * The Authorization Request MUST be signed by the Client, and MUST use the request_uri parameter which enables
@@ -135,7 +132,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         );
 
         // <-- change: validate nonce ONLY if FAPI requires it
-        if (flagsProperties.isNonceRequiredOnFapiProfile()) {
+        if (isNonceRequiredOnFapiProfile) {
             validateNonceRequired(
                     authorizationContext.clientNonce(),
                     registeredClient,

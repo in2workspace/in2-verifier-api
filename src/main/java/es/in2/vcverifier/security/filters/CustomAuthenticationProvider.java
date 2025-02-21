@@ -1,5 +1,8 @@
 package es.in2.vcverifier.security.filters;
 
+import static es.in2.vcverifier.util.Constants.ACCESS_TOKEN_EXPIRATION_TIME;
+import static es.in2.vcverifier.util.Constants.ID_TOKEN_EXPIRATION_TIME;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -7,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.backend.BackendConfig;
-import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.exception.InvalidCredentialTypeException;
 import es.in2.vcverifier.exception.JsonConversionException;
 import es.in2.vcverifier.model.RefreshTokenDataCache;
@@ -42,11 +44,11 @@ import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NO
 public class CustomAuthenticationProvider implements AuthenticationProvider {
     private final JWTService jwtService;
     private final RegisteredClientRepository registeredClientRepository;
-    private final SecurityProperties securityProperties;
     private final BackendConfig backendConfig;
     private final ObjectMapper objectMapper;
     private final CacheStore<RefreshTokenDataCache> cacheStoreForRefreshTokenData;
     private final OAuth2AuthorizationService oAuth2AuthorizationService;
+
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -69,8 +71,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(
-                Long.parseLong(securityProperties.token().accessToken().expiration()),
-                ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit())
+                Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME),
+                ChronoUnit.valueOf("MINUTES")
         );
         log.debug("CustomAuthenticationProvider -- handleGrant -- Issue time: {}, Expiration time: {}", issueTime, expirationTime);
 
@@ -212,8 +214,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     private String generateIdToken(LEARCredential learCredential, String subject, String audience, Map<String, Object> additionalParameters) {
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(
-                Long.parseLong(securityProperties.token().idToken().expiration()),
-                ChronoUnit.valueOf(securityProperties.token().idToken().cronUnit())
+                Long.parseLong(ID_TOKEN_EXPIRATION_TIME),
+                ChronoUnit.valueOf("MINUTES")
         );
 
         // Convert the VerifiableCredential to a JSON string
@@ -265,8 +267,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
         // Use the expiration time of the access token to calculate the expiration time of the refresh token
         Instant refreshTokenExpirationTime = issueTime.plus(
-                Long.parseLong(securityProperties.token().accessToken().expiration()),
-                ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit())
+                Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME),
+                ChronoUnit.valueOf("MINUTES")
         );
         log.debug("CustomAuthenticationProvider -- generateRefreshToken -- Refresh Token Expiration time: {}", refreshTokenExpirationTime);
 

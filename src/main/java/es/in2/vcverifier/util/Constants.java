@@ -25,6 +25,7 @@ public class Constants {
     public static final String ID_TOKEN_EXPIRATION_TIME = "60";
     // LOGIN_TIMEOUT must be in seconds
     public static final String LOGIN_TIMEOUT = "120";
+    public static final boolean IS_NONCE_REQUIRED_ON_FAPI_PROFILE = false;
     public static final long MSB = 0x80L;
     public static final long MSBALL = 0xFFFFFF80L;
 

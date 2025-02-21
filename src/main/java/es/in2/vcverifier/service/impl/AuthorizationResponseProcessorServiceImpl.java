@@ -1,7 +1,8 @@
 package es.in2.vcverifier.service.impl;
 
+import static es.in2.vcverifier.util.Constants.ACCESS_TOKEN_EXPIRATION_TIME;
+
 import es.in2.vcverifier.config.CacheStore;
-import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.service.AuthorizationResponseProcessorService;
@@ -37,7 +38,6 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
     private final CacheStore<OAuth2AuthorizationRequest> cacheStoreForOAuth2AuthorizationRequest;
     private final CacheStore<AuthorizationCodeData> cacheStoreForAuthorizationCodeData;
     private final VpService vpService; // Service responsible for VP validation
-    private final SecurityProperties securityProperties;
     private final RegisteredClientRepository registeredClientRepository;
     private final OAuth2AuthorizationService oAuth2AuthorizationService;
     private final SimpMessagingTemplate messagingTemplate;
@@ -74,7 +74,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
         }
         Instant issueTime = Instant.now();
-        Instant expirationTime = issueTime.plus(Long.parseLong(securityProperties.token().accessToken().expiration()), ChronoUnit.valueOf(securityProperties.token().accessToken().cronUnit()));
+        Instant expirationTime = issueTime.plus(Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME), ChronoUnit.valueOf("MINUTES"));
 
         // Register the Oauth2Authorization because is needed for verifications
         OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(registeredClient)

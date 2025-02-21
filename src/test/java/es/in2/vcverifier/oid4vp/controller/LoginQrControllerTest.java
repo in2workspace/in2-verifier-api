@@ -1,7 +1,6 @@
 package es.in2.vcverifier.oid4vp.controller;
 
 import es.in2.vcverifier.config.backend.BackendConfig;
-import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.controller.LoginQrController;
 import es.in2.vcverifier.exception.QRCodeGenerationException;
 import net.glxn.qrgen.javase.QRCode;

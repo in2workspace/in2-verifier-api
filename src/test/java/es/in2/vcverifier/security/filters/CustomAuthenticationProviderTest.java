@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.config.backend.BackendConfig;
-import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.model.RefreshTokenDataCache;
 import es.in2.vcverifier.model.credentials.Issuer;
 import es.in2.vcverifier.model.credentials.lear.CredentialSubject;

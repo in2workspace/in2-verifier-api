@@ -1,7 +1,6 @@
 package es.in2.vcverifier.service;
 
 import es.in2.vcverifier.config.CacheStore;
-import es.in2.vcverifier.config.properties.SecurityProperties;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
 import es.in2.vcverifier.service.impl.AuthorizationResponseProcessorServiceImpl;
 import org.junit.jupiter.api.Test;
