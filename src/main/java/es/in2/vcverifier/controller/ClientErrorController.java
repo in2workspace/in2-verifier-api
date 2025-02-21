@@ -1,6 +1,6 @@
 package es.in2.vcverifier.controller;
 
-import es.in2.vcverifier.config.frontend.FrontendConfig;
+import es.in2.vcverifier.config.FrontendConfig;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;

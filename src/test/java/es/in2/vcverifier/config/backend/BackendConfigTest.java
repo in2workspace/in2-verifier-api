@@ -1,5 +1,6 @@
 package es.in2.vcverifier.config.backend;
 
+import es.in2.vcverifier.config.BackendConfig;
 import es.in2.vcverifier.config.properties.BackendProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +11,7 @@ import org.springframework.test.context.TestPropertySource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = {BackendConfigImpl.class, BackendConfigTest.TestConfig.class})
+@SpringBootTest(classes = {BackendConfig.class, BackendConfigTest.TestConfig.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "verifier.backend.url=https://backend.example.com",

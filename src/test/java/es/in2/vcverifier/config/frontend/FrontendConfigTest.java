@@ -1,5 +1,6 @@
 package es.in2.vcverifier.config.frontend;
 
+import es.in2.vcverifier.config.FrontendConfig;
 import es.in2.vcverifier.config.properties.FrontendProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,7 @@ import org.springframework.test.context.ContextConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = {FrontendConfigImpl.class, FrontendConfigImplTest.TestConfig.class})
+@SpringBootTest(classes = {FrontendConfig.class, FrontendConfigImplTest.TestConfig.class})
 @ActiveProfiles("test")
 @ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class)
 class FrontendConfigImplTest {

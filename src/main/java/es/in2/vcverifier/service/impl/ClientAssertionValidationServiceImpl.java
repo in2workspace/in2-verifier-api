@@ -1,8 +1,8 @@
 package es.in2.vcverifier.service.impl;
 
 import com.nimbusds.jose.Payload;
+import es.in2.vcverifier.config.BackendConfig;
 import es.in2.vcverifier.config.JtiTokenCache;
-import es.in2.vcverifier.config.backend.BackendConfig;
 import es.in2.vcverifier.service.ClientAssertionValidationService;
 import es.in2.vcverifier.service.JWTService;
 import lombok.RequiredArgsConstructor;

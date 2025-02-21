@@ -1,6 +1,6 @@
 package es.in2.vcverifier.oid4vp.controller;
 
-import es.in2.vcverifier.config.frontend.FrontendConfig;
+import es.in2.vcverifier.config.FrontendConfig;
 import es.in2.vcverifier.controller.ClientErrorController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

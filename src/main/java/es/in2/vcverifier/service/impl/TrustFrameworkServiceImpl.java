@@ -2,7 +2,7 @@ package es.in2.vcverifier.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import es.in2.vcverifier.config.backend.BackendConfig;
+import es.in2.vcverifier.config.BackendConfig;
 import es.in2.vcverifier.exception.FailedCommunicationException;
 import es.in2.vcverifier.exception.IssuerNotAuthorizedException;
 import es.in2.vcverifier.exception.JsonConversionException;

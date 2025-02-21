@@ -1,18 +1,15 @@
-package es.in2.vcverifier.config.backend;
+package es.in2.vcverifier.config;
 
 import es.in2.vcverifier.config.properties.BackendProperties;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @Configuration
-@EnableConfigurationProperties(BackendProperties.class)
-public class BackendConfigImpl implements BackendConfig {
+@RequiredArgsConstructor
+public class BackendConfig {
 
     private final BackendProperties properties;
-
-    public BackendConfigImpl(BackendProperties properties) {
-        this.properties = properties;
-    }
 
     public String getUrl() {
         return properties.url();

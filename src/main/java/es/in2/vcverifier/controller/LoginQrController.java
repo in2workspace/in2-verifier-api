@@ -2,7 +2,7 @@ package es.in2.vcverifier.controller;
 
 import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT;
 
-import es.in2.vcverifier.config.frontend.FrontendConfig;
+import es.in2.vcverifier.config.FrontendConfig;
 import es.in2.vcverifier.exception.QRCodeGenerationException;
 import lombok.RequiredArgsConstructor;
 import net.glxn.qrgen.javase.QRCode;
