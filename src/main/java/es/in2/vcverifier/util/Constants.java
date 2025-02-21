@@ -19,12 +19,14 @@ public class Constants {
     public static final String INVALID_CLIENT_AUTHENTICATION = "invalid_client_authentication";
     public static final String LOG_ERROR_FORMAT = "{} - {}";
     // ACCESS_TOKEN_EXPIRATION_TIME must be in seconds
-    //todo 300 i 600?
     public static final String ACCESS_TOKEN_EXPIRATION_TIME = "300";
+    public static final String ACCESS_TOKEN_EXPIRATION_CRON_UNIT = "SECONDS";
     // ID_TOKEN_EXPIRATION_TIME  must be in seconds
     public static final String ID_TOKEN_EXPIRATION_TIME = "60";
+    public static final String ID_TOKEN_EXPIRATION_CRON_UNIT = "SECONDS";
     // LOGIN_TIMEOUT must be in seconds
     public static final String LOGIN_TIMEOUT = "120";
+    public static final String LOGIN_TIMEOUT_CRON_UNIT = "SECONDS";
     public static final boolean IS_NONCE_REQUIRED_ON_FAPI_PROFILE = false;
     public static final long MSB = 0x80L;
     public static final long MSBALL = 0xFFFFFF80L;

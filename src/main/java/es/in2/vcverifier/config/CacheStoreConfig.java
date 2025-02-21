@@ -1,8 +1,5 @@
 package es.in2.vcverifier.config;
 
-import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT;
-import static es.in2.vcverifier.util.Constants.ACCESS_TOKEN_EXPIRATION_TIME;
-
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import es.in2.vcverifier.model.RefreshTokenDataCache;
@@ -17,6 +14,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static es.in2.vcverifier.util.Constants.*;
+
 @Configuration
 @RequiredArgsConstructor
 public class CacheStoreConfig {
@@ -25,14 +24,14 @@ public class CacheStoreConfig {
     public CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT() {
         return new CacheStore<>(
                 Long.parseLong(LOGIN_TIMEOUT),
-                TimeUnit.of(ChronoUnit.valueOf("MINUTES")));
+                TimeUnit.of(ChronoUnit.valueOf(LOGIN_TIMEOUT_CRON_UNIT)));
     }
 
     @Bean
     public CacheStore<RefreshTokenDataCache> cacheStoreForRefreshTokenData() {
         return new CacheStore<>(
                 Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME),
-                TimeUnit.of(ChronoUnit.valueOf("MINUTES")));
+                TimeUnit.of(ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CRON_UNIT)));
     }
 
     @Bean

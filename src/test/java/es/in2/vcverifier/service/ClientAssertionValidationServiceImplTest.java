@@ -1,6 +1,7 @@
 package es.in2.vcverifier.service;
 
 import com.nimbusds.jose.Payload;
+import es.in2.vcverifier.config.BackendConfig;
 import es.in2.vcverifier.config.JtiTokenCache;
 import es.in2.vcverifier.service.impl.ClientAssertionValidationServiceImpl;
 import org.junit.jupiter.api.Test;

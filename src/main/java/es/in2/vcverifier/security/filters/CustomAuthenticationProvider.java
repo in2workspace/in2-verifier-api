@@ -1,8 +1,5 @@
 package es.in2.vcverifier.security.filters;
 
-import static es.in2.vcverifier.util.Constants.ACCESS_TOKEN_EXPIRATION_TIME;
-import static es.in2.vcverifier.util.Constants.ID_TOKEN_EXPIRATION_TIME;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,6 +34,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+import static es.in2.vcverifier.util.Constants.*;
 import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
 
 @Slf4j
@@ -72,7 +70,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(
                 Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME),
-                ChronoUnit.valueOf("MINUTES")
+                ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CRON_UNIT)
         );
         log.debug("CustomAuthenticationProvider -- handleGrant -- Issue time: {}, Expiration time: {}", issueTime, expirationTime);
 
@@ -215,7 +213,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(
                 Long.parseLong(ID_TOKEN_EXPIRATION_TIME),
-                ChronoUnit.valueOf("MINUTES")
+                ChronoUnit.valueOf(ID_TOKEN_EXPIRATION_CRON_UNIT)
         );
 
         // Convert the VerifiableCredential to a JSON string
@@ -268,7 +266,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         // Use the expiration time of the access token to calculate the expiration time of the refresh token
         Instant refreshTokenExpirationTime = issueTime.plus(
                 Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME),
-                ChronoUnit.valueOf("MINUTES")
+                ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CRON_UNIT)
         );
         log.debug("CustomAuthenticationProvider -- generateRefreshToken -- Refresh Token Expiration time: {}", refreshTokenExpirationTime);
 
