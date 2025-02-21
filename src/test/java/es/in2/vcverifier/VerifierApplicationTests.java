@@ -14,7 +14,7 @@ class VerifierApplicationTests {
 
     @Test
     void testMain() {
-        VerifierApplication.main(new String[]{});
+        VCVerifierApplication.main(new String[]{});
         Assertions.assertTrue(true);
     }
 

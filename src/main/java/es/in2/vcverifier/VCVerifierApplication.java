@@ -16,7 +16,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableConfigurationProperties
 @ConfigurationPropertiesScan
 @EnableScheduling
-public class VerifierApplication {
+public class VCVerifierApplication {
 
     private static final ObjectMapper OBJECT_MAPPER =
             JsonMapper.builder()
@@ -25,7 +25,7 @@ public class VerifierApplication {
                     .serializationInclusion(JsonInclude.Include.NON_NULL)
                     .build();
     public static void main(String[] args) {
-        SpringApplication.run(VerifierApplication.class, args);
+        SpringApplication.run(VCVerifierApplication.class, args);
     }
 
     @Bean
