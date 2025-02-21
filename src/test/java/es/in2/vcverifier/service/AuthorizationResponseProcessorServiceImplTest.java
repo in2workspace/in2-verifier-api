@@ -39,9 +39,6 @@ class AuthorizationResponseProcessorServiceImplTest {
     private VpService vpService;
 
     @Mock
-    private SecurityProperties securityProperties;
-
-    @Mock
     private RegisteredClientRepository registeredClientRepository;
 
     @Mock
@@ -76,8 +73,8 @@ class AuthorizationResponseProcessorServiceImplTest {
                 .scope("read")
                 .build();
 
-        SecurityProperties.TokenProperties.AccessTokenProperties accessTokenProperties = mock(SecurityProperties.TokenProperties.AccessTokenProperties.class);
-        SecurityProperties.TokenProperties tokenProperties = mock(SecurityProperties.TokenProperties.class);
+//        SecurityProperties.TokenProperties.AccessTokenProperties accessTokenProperties = mock(SecurityProperties.TokenProperties.AccessTokenProperties.class);
+//        SecurityProperties.TokenProperties tokenProperties = mock(SecurityProperties.TokenProperties.class);
 
         when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(oAuth2AuthorizationRequest);
         doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(state);
@@ -87,10 +84,10 @@ class AuthorizationResponseProcessorServiceImplTest {
 
         when(registeredClientRepository.findByClientId("client-id")).thenReturn(registeredClient);
 
-        when(securityProperties.token()).thenReturn(tokenProperties);
-        when(tokenProperties.accessToken()).thenReturn(accessTokenProperties);
-        when(accessTokenProperties.expiration()).thenReturn("5");
-        when(accessTokenProperties.cronUnit()).thenReturn("MINUTES");
+//        when(securityProperties.token()).thenReturn(tokenProperties);
+//        when(tokenProperties.accessToken()).thenReturn(accessTokenProperties);
+//        when(accessTokenProperties.expiration()).thenReturn("5");
+//        when(accessTokenProperties.cronUnit()).thenReturn("MINUTES");
 
         doNothing().when(oAuth2AuthorizationService).save(any(OAuth2Authorization.class));
 

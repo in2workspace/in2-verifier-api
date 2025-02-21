@@ -1,5 +1,6 @@
 package es.in2.vcverifier.oid4vp.controller;
 
+import es.in2.vcverifier.config.frontend.FrontendConfig;
 import es.in2.vcverifier.controller.ClientErrorController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,10 +19,7 @@ class ClientErrorControllerTest {
     private ClientErrorController clientErrorController;
 
     @Mock
-    private VerifierUiLoginUrisProperties verifierUiLoginUrisProperties;
-
-    @Mock
-    private CustomizationConfig customizationConfig;
+    private FrontendConfig frontendConfig;
 
     @Mock
     private Model model;
@@ -43,12 +41,12 @@ class ClientErrorControllerTest {
         String originalRequestURL = "https://original.example.com";
 
 
-        when(verifierUiLoginUrisProperties.supportUri()).thenReturn(supportUri);
-        when(customizationConfig.getPrimaryColor()).thenReturn(PRIMARY_COLOR);
-        when(customizationConfig.getPrimaryContrastColor()).thenReturn(PRIMARY_CONTRAST_COLOR);
-        when(customizationConfig.getSecondaryColor()).thenReturn(SECONDARY_COLOR);
-        when(customizationConfig.getSecondaryContrastColor()).thenReturn(SECONDARY_CONTRAST_COLOR);
-        when(customizationConfig.getFaviconSrc()).thenReturn(FAVICON_SRC);
+        when(frontendConfig.getSupportUrl()).thenReturn(supportUri);
+        when(frontendConfig.getPrimaryColor()).thenReturn(PRIMARY_COLOR);
+        when(frontendConfig.getPrimaryContrastColor()).thenReturn(PRIMARY_CONTRAST_COLOR);
+        when(frontendConfig.getSecondaryColor()).thenReturn(SECONDARY_COLOR);
+        when(frontendConfig.getSecondaryContrastColor()).thenReturn(SECONDARY_CONTRAST_COLOR);
+        when(frontendConfig.getFaviconSrc()).thenReturn(FAVICON_SRC);
 
         // Act
         String viewName = clientErrorController.showErrorPage(errorCode, errorMessage, clientUrl, originalRequestURL ,model);
@@ -76,7 +74,7 @@ class ClientErrorControllerTest {
         String errorMessage = "Another error occurred.";
         String clientUrl = "https://client.example.com";
         String originalRequestURL = "https://original.example.com";
-        when(verifierUiLoginUrisProperties.supportUri()).thenReturn(null);
+        when(frontendConfig.getSupportUrl()).thenReturn(null);
 
         // Act
         String viewName = clientErrorController.showErrorPage(errorCode, errorMessage, clientUrl, originalRequestURL, model);
@@ -96,7 +94,7 @@ class ClientErrorControllerTest {
         // Arrange
         String supportUri = "https://support.example.com";
 
-        when(verifierUiLoginUrisProperties.supportUri()).thenReturn(supportUri);
+        when(frontendConfig.getSupportUrl()).thenReturn(supportUri);
 
         // Act
         String viewName = clientErrorController.showErrorPage(null, null, null, null,model);

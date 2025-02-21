@@ -64,8 +64,6 @@ class CustomAuthorizationRequestConverterTest {
 
     @Mock
     private RegisteredClientRepository registeredClientRepository;
-    @Mock
-    private FlagsProperties flagsProperties;
 
     @InjectMocks
     private CustomAuthorizationRequestConverter converter;
@@ -314,7 +312,7 @@ class CustomAuthorizationRequestConverterTest {
 
             when(backendConfig.getUrl()).thenReturn("https://auth.server.com");
 
-            when(flagsProperties.isNonceRequiredOnFapiProfile()).thenReturn(true);
+//            when(flagsProperties.isNonceRequiredOnFapiProfile()).thenReturn(true);
             // Act & Assert
             OAuth2AuthorizationCodeRequestAuthenticationException exception = assertThrows(
                     OAuth2AuthorizationCodeRequestAuthenticationException.class,
@@ -468,7 +466,7 @@ class CustomAuthorizationRequestConverterTest {
 
         when(backendConfig.getUrl()).thenReturn("https://auth.server.com");
 
-        when(flagsProperties.isNonceRequiredOnFapiProfile()).thenReturn(true);
+//        when(flagsProperties.isNonceRequiredOnFapiProfile()).thenReturn(true);
 
         // Act & Assert
         OAuth2AuthorizationCodeRequestAuthenticationException exception = assertThrows(

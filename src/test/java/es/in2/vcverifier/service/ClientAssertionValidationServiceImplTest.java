@@ -18,9 +18,6 @@ import static org.mockito.Mockito.*;
 class ClientAssertionValidationServiceImplTest {
 
     @Mock
-    private SecurityProperties securityProperties;
-
-    @Mock
     private BackendConfig backendConfig;
 
     @Mock

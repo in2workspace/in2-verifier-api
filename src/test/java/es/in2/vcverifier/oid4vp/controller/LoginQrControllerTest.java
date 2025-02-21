@@ -1,6 +1,7 @@
 package es.in2.vcverifier.oid4vp.controller;
 
 import es.in2.vcverifier.config.backend.BackendConfig;
+import es.in2.vcverifier.config.frontend.FrontendConfig;
 import es.in2.vcverifier.controller.LoginQrController;
 import es.in2.vcverifier.exception.QRCodeGenerationException;
 import net.glxn.qrgen.javase.QRCode;
@@ -31,37 +32,28 @@ class LoginQrControllerTest {
     private Model model;
 
     @Mock
-    private SecurityProperties securityProperties;
-
-    @Mock
     private BackendConfig backendConfig;
 
     @Mock
-    private VerifierUiLoginUrisProperties verifierUiLoginUrisProperties;
-
-    @Mock
-    private CustomizationConfig customizationConfig;
-
+    private FrontendConfig frontendConfig;
 
     @Test
     void showQrLogin_validAuthRequest_shouldReturnLoginView() {
         String authRequest = "validAuthRequest";
         String state = "validState";
 
-        when(verifierUiLoginUrisProperties.onboardingUri()).thenReturn("onboardingUri");
-        when(verifierUiLoginUrisProperties.supportUri()).thenReturn("supportUri");
-        when(verifierUiLoginUrisProperties.walletUri()).thenReturn("walletUri");
-        when(backendConfig.getPrimaryColor()).thenReturn("#0000FF");
-        when(backendConfig.getPrimaryContrastColor()).thenReturn("#FFFFFF");
-        when(backendConfig.getSecondaryColor()).thenReturn("#00FF00");
-        when(backendConfig.getSecondaryContrastColor()).thenReturn("#000000");
-        when(backendConfig.getLogoSrc()).thenReturn("img/no-image.png");
-        when(backendConfig.getSecondaryContrastColor()).thenReturn("img/no-image.png");
+        when(frontendConfig.getOnboardingUrl()).thenReturn("onboardingUri");
+        when(frontendConfig.getSupportUrl()).thenReturn("supportUri");
+        when(frontendConfig.getWalletUrl()).thenReturn("walletUri");
+        when(frontendConfig.getPrimaryColor()).thenReturn("#0000FF");
+        when(frontendConfig.getPrimaryContrastColor()).thenReturn("#FFFFFF");
+        when(frontendConfig.getSecondaryColor()).thenReturn("#00FF00");
+        when(frontendConfig.getSecondaryContrastColor()).thenReturn("#000000");
+        when(frontendConfig.getLogoSrc()).thenReturn("img/no-image.png");
+        when(frontendConfig.getSecondaryContrastColor()).thenReturn("img/no-image.png");
         // todo: with LOGIN_TIMEOUT constant
-        when(backendConfig.get).thenReturn(mock(SecurityProperties.LoginCodeProperties.class));
-        when(securityProperties.loginCode().expirationProperties()).thenReturn(mock(SecurityProperties.LoginCodeProperties.ExpirationProperties.class));
-        when(securityProperties.loginCode().expirationProperties().expiration()).thenReturn("10");
-        when(securityProperties.loginCode().expirationProperties().cronUnit()).thenReturn("MINUTES");
+//        when(backendConfig.get).thenReturn(mock(SecurityProperties.LoginCodeProperties.class));
+//        when(securityProperties.loginCode().expirationProperties()).thenReturn(mock(SecurityProperties.LoginCodeProperties.ExpirationProperties.class));
 
         try (MockedStatic<QRCode> qrCodeMock = Mockito.mockStatic(QRCode.class)) {
             qrCodeMock.when(() -> QRCode.from(authRequest)).thenReturn(Mockito.mock(QRCode.class));
