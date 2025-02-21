@@ -27,15 +27,14 @@ public class BackendConfig {
     }
 
     public String getTrustedIssuerListUri() {
-        return properties.trustFramework().trustedIssuerList().uri();
+        return properties.getFirstTrustFramework().trustedIssuersListUrl().uri();
     }
 
     public String getClientsRepositoryUri() {
-        return properties.trustFramework().clientsRepository().uri();
+        return properties.getFirstTrustFramework().trustedServicesListUrl().uri();
     }
 
     public String getRevocationListUri() {
-        return properties.trustFramework().revocationList().uri();
+        return properties.getFirstTrustFramework().revokedCredentialListUrl().uri();
     }
 }
-

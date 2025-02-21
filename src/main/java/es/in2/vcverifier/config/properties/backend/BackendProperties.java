@@ -5,6 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.validation.annotation.Validated;
 
+import java.util.List;
 import java.util.Optional;
 
 @Validated
@@ -12,29 +13,31 @@ import java.util.Optional;
 public record BackendProperties(
         @NotNull String url,
         @NotNull @NestedConfigurationProperty Identity identity,
-        @NotNull @NestedConfigurationProperty TrustFramework trustFramework
+        @NotNull @NestedConfigurationProperty List<TrustFramework> trustFrameworks
 ) {
     public record Identity(@NotNull String privateKey) {}
 
-    // waiting for TF properties to be defined as Required or Optional
     public record TrustFramework(
-            @NestedConfigurationProperty TrustedIssuerList trustedIssuerList,
-            @NestedConfigurationProperty ClientsRepository clientsRepository,
-            @NestedConfigurationProperty RevocationList revocationList) {
+            @NestedConfigurationProperty TrustedIssuersListUrl trustedIssuersListUrl,
+            @NestedConfigurationProperty TrustedServicesListUrl trustedServicesListUrl,
+            @NestedConfigurationProperty RevokedCredentialListUrl revokedCredentialListUrl) {
 
         public TrustFramework(
-                TrustedIssuerList trustedIssuerList,
-                ClientsRepository clientsRepository,
-                RevocationList revocationList) {
-            this.trustedIssuerList = Optional.ofNullable(trustedIssuerList).orElse(new TrustedIssuerList(""));
-            this.clientsRepository = Optional.ofNullable(clientsRepository).orElse(new ClientsRepository(""));
-            this.revocationList = Optional.ofNullable(revocationList).orElse(new RevocationList(""));
+                TrustedIssuersListUrl trustedIssuersListUrl,
+                TrustedServicesListUrl trustedServicesListUrl,
+                RevokedCredentialListUrl revokedCredentialListUrl) {
+        // todo decide whether this should be optional
+            this.trustedIssuersListUrl = Optional.ofNullable(trustedIssuersListUrl).orElse(new TrustedIssuersListUrl(""));
+            this.trustedServicesListUrl = Optional.ofNullable(trustedServicesListUrl).orElse(new TrustedServicesListUrl(""));
+            this.revokedCredentialListUrl = Optional.ofNullable(revokedCredentialListUrl).orElse(new RevokedCredentialListUrl(""));
         }
     }
 
-    public record TrustedIssuerList(String uri) {}
-    public record ClientsRepository(String uri) {}
-    public record RevocationList(String uri) {}
+    public record TrustedIssuersListUrl(String uri) {}
+    public record TrustedServicesListUrl(String uri) {}
+    public record RevokedCredentialListUrl(String uri) {}
+
+    public TrustFramework getFirstTrustFramework() {
+        return trustFrameworks.isEmpty() ? new TrustFramework(null, null, null) : trustFrameworks.get(0);
+    }
 }
-
-
