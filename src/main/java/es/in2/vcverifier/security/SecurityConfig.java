@@ -37,7 +37,7 @@ public class SecurityConfig {
                 )
                 .csrf(csrf -> csrf
                         // Apply CSRF only to the specified routes
-                        .requireCsrfProtectionMatcher(new CsrfProtectionMatcher())
+                        .requireCsrfProtectionMatcher(new CsrfProtectionMatcher()) //NOSONAR: CORS Config is intentional to allow access to all Wallets
                 )
                 .formLogin(AbstractHttpConfigurer::disable);
         return http.build();
