@@ -315,7 +315,7 @@ class JWTServiceImplTest {
             when(signedJWT.verify(any(JWSVerifier.class))).thenReturn(false);
 
             JWTVerificationException exception = assertThrows(JWTVerificationException.class, () -> jwtService.verifyJWTWithECKey(jwt, publicKey));
-            assertEquals("JWT signature verification failed due to unexpected error: es.in2.verifier.exception.JWTVerificationException: Invalid JWT signature for EC key", exception.getMessage());
+            assertEquals("JWT signature verification failed due to unexpected error: es.in2.vcverifier.exception.JWTVerificationException: Invalid JWT signature for EC key", exception.getMessage());
         }
     }
 
