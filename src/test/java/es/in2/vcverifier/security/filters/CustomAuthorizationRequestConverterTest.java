@@ -6,9 +6,11 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.component.CryptoComponent;
 import es.in2.vcverifier.config.BackendConfig;
 import es.in2.vcverifier.config.CacheStore;
+import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import es.in2.vcverifier.service.DIDService;
 import es.in2.vcverifier.service.JWTService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -54,6 +56,9 @@ class CustomAuthorizationRequestConverterTest {
     private CryptoComponent cryptoComponent;
 
     @Mock
+    private CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT;
+
+    @Mock
     private CacheStore<OAuth2AuthorizationRequest> cacheStoreForOAuth2AuthorizationRequest;
 
     @Mock
@@ -62,8 +67,23 @@ class CustomAuthorizationRequestConverterTest {
     @Mock
     private RegisteredClientRepository registeredClientRepository;
 
-    @InjectMocks
+    private boolean isNonceRequiredOnFapiProfile = true;
+
     private CustomAuthorizationRequestConverter converter;
+
+    @BeforeEach
+    void setUp() {
+        converter = new CustomAuthorizationRequestConverter(
+                didService,
+                jwtService,
+                cryptoComponent,
+                cacheStoreForAuthorizationRequestJWT,
+                cacheStoreForOAuth2AuthorizationRequest,
+                backendConfig,
+                registeredClientRepository,
+                isNonceRequiredOnFapiProfile
+        );
+    }
 
     @Test
     void convert_validStandardRequest_shouldThrowRedirectionException() {
