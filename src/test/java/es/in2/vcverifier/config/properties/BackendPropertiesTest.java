@@ -31,7 +31,7 @@ class BackendPropertiesTest {
 
         assertThat(backendProperties.url())
                 .as("Backend URL should match")
-                .isEqualTo("https://backend.example.com");
+                .isEqualTo("https://raw.githubusercontent.com");
 
         assertThat(backendProperties.identity())
                 .as("Identity should match the provided private key")

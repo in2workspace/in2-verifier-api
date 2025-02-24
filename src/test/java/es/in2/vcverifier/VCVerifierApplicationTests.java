@@ -14,9 +14,11 @@ class VCVerifierApplicationTests {
         // The test will automatically fail if the application context cannot be loaded.
     }
 
+
+
     @Test
     void testMain() {
-        VCVerifierApplication.main(new String[]{});
+        VCVerifierApplication.main(new String[] {"--spring.profiles.active=test"});
         Assertions.assertTrue(true);
     }
 

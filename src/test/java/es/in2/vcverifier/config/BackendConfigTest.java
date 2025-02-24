@@ -26,7 +26,7 @@ class BackendConfigTest {
     void testBackendConfig() {
         assertThat(backendConfig.getUrl())
                 .as("Backend URL should match")
-                .isEqualTo("https://backend.example.com");
+                .isEqualTo("https://raw.githubusercontent.com");
 
      assertThat(backendConfig.getPrivateKey())
         .as("Private key should remove 0x prefix")
