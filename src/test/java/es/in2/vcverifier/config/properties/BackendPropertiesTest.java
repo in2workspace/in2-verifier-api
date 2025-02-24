@@ -13,14 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = BackendPropertiesTest.TestConfig.class)
 @ActiveProfiles("test")
-@TestPropertySource(properties = {
-        "verifier.backend.url=https://backend.example.com",
-        "verifier.backend.identity.privateKey=some-private-key",
-        "verifier.backend.trustFrameworks[0].name=DOME",
-        "verifier.backend.trustFrameworks[0].trustedIssuersListUrl.uri=https://trust.example.com/issuers",
-        "verifier.backend.trustFrameworks[0].trustedServicesListUrl.uri=https://trust.example.com/services",
-        "verifier.backend.trustFrameworks[0].revokedCredentialListUrl.uri=https://trust.example.com/revoked"
-})
 class BackendPropertiesTest {
 
     @Autowired
@@ -28,13 +20,13 @@ class BackendPropertiesTest {
 
     @Test
     void testBackendProperties() {
-        BackendProperties.Identity expectedIdentity = new BackendProperties.Identity("some-private-key");
+        BackendProperties.Identity expectedIdentity = new BackendProperties.Identity("0x73e509a7681d4a395b1ced75681c4dc4020dbab02da868512276dd766733d5b5");
 
         BackendProperties.TrustFramework expectedTrustFramework = new BackendProperties.TrustFramework(
                 "DOME",
-                new BackendProperties.TrustedIssuersListUrl("https://trust.example.com/issuers"),
-                new BackendProperties.TrustedServicesListUrl("https://trust.example.com/services"),
-                new BackendProperties.RevokedCredentialListUrl("https://trust.example.com/revoked")
+                new BackendProperties.TrustedIssuersListUrl("https://raw.githubusercontent.com"),
+                new BackendProperties.TrustedServicesListUrl("https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml"),
+                new BackendProperties.RevokedCredentialListUrl("https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/revoked_credential_list.yaml")
         );
 
         assertThat(backendProperties.url())

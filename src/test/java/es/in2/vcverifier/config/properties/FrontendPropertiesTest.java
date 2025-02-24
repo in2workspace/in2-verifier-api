@@ -11,17 +11,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = FrontendPropertiesTest.TestConfig.class)
 @ActiveProfiles("test")
-@TestPropertySource(properties = {
-        "verifier.frontend.urls.onboarding=https://example.com/onboarding",
-        "verifier.frontend.urls.support=https://example.com/support",
-        "verifier.frontend.urls.wallet=https://example.com/wallet",
-        "verifier.frontend.logoSrc=logo.png",
-        "verifier.frontend.faviconSrc=favicon.ico",
-        "verifier.frontend.colors.primary=#FF0000",
-        "verifier.frontend.colors.primaryContrast=#FFFFFF",
-        "verifier.frontend.colors.secondary=#00ADD3",
-        "verifier.frontend.colors.secondaryContrast=#000000"
-})
 class FrontendPropertiesTest {
 
     @Autowired
