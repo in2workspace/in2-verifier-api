@@ -88,19 +88,6 @@ class CustomAuthenticationProviderTest {
         when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
         when(registeredClient.getClientId()).thenReturn("test-client-id");
 
-//        SecurityProperties.TokenProperties tokenProperties = mock(SecurityProperties.TokenProperties.class);
-//        SecurityProperties.TokenProperties.AccessTokenProperties accessTokenProperties = mock(SecurityProperties.TokenProperties.AccessTokenProperties.class);
-//        SecurityProperties.TokenProperties.IdTokenProperties idTokenProperties = mock(SecurityProperties.TokenProperties.IdTokenProperties.class);
-
-//        when(securityProperties.token()).thenReturn(tokenProperties);
-//        when(tokenProperties.accessToken()).thenReturn(accessTokenProperties);
-//        when(accessTokenProperties.expiration()).thenReturn("3600");
-//        when(accessTokenProperties.cronUnit()).thenReturn("SECONDS");
-//        when(tokenProperties.idToken()).thenReturn(idTokenProperties);
-//        when(idTokenProperties.expiration()).thenReturn("3600");
-//        when(idTokenProperties.cronUnit()).thenReturn("SECONDS");
-//        when(backendConfig.getUrl()).thenReturn("https://auth.server");
-
         JsonNode vcJsonNode = mock(JsonNode.class);
         when(objectMapper.convertValue(vcMap, JsonNode.class)).thenReturn(vcJsonNode);
 
@@ -163,17 +150,6 @@ class CustomAuthenticationProviderTest {
         when(registeredClient.getClientId()).thenReturn(clientId);
         when(registeredClient.getId()).thenReturn("registered-client-id");
 
-//        SecurityProperties.TokenProperties tokenProperties = mock(SecurityProperties.TokenProperties.class);
-//        SecurityProperties.TokenProperties.AccessTokenProperties accessTokenProperties = mock(SecurityProperties.TokenProperties.AccessTokenProperties.class);
-//        SecurityProperties.TokenProperties.IdTokenProperties idTokenProperties = mock(SecurityProperties.TokenProperties.IdTokenProperties.class);
-//
-//        when(securityProperties.token()).thenReturn(tokenProperties);
-//        when(tokenProperties.accessToken()).thenReturn(accessTokenProperties);
-//        when(accessTokenProperties.expiration()).thenReturn("3600");
-//        when(accessTokenProperties.cronUnit()).thenReturn("SECONDS");
-//        when(tokenProperties.idToken()).thenReturn(idTokenProperties);
-//        when(idTokenProperties.expiration()).thenReturn("3600");
-//        when(idTokenProperties.cronUnit()).thenReturn("SECONDS");
         when(backendConfig.getUrl()).thenReturn("https://auth.server");
 
         JsonNode vcJsonNode = mock(JsonNode.class);
@@ -310,10 +286,6 @@ class CustomAuthenticationProviderTest {
 
         RegisteredClient registeredClient = mock(RegisteredClient.class);
         when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
-//        when(securityProperties.token()).thenReturn(mock(SecurityProperties.TokenProperties.class));
-//        when(securityProperties.token().accessToken()).thenReturn(mock(SecurityProperties.TokenProperties.AccessTokenProperties.class));
-//        when(securityProperties.token().accessToken().expiration()).thenReturn("3600");
-//        when(securityProperties.token().accessToken().cronUnit()).thenReturn("SECONDS");
 
         OAuth2AuthenticationException exception = assertThrows(OAuth2AuthenticationException.class, () -> customAuthenticationProvider.authenticate(auth));
 
@@ -332,10 +304,6 @@ class CustomAuthenticationProviderTest {
 
         RegisteredClient registeredClient = mock(RegisteredClient.class);
         when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
-//        when(securityProperties.token()).thenReturn(mock(SecurityProperties.TokenProperties.class));
-//        when(securityProperties.token().accessToken()).thenReturn(mock(SecurityProperties.TokenProperties.AccessTokenProperties.class));
-//        when(securityProperties.token().accessToken().expiration()).thenReturn("3600");
-//        when(securityProperties.token().accessToken().cronUnit()).thenReturn("SECONDS");
 
         OAuth2AuthenticationException exception = assertThrows(OAuth2AuthenticationException.class, () -> customAuthenticationProvider.authenticate(auth));
 
@@ -355,10 +323,6 @@ class CustomAuthenticationProviderTest {
 
         RegisteredClient registeredClient = mock(RegisteredClient.class);
         when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
-//        when(securityProperties.token()).thenReturn(mock(SecurityProperties.TokenProperties.class));
-//        when(securityProperties.token().accessToken()).thenReturn(mock(SecurityProperties.TokenProperties.AccessTokenProperties.class));
-//        when(securityProperties.token().accessToken().expiration()).thenReturn("3600");
-//        when(securityProperties.token().accessToken().cronUnit()).thenReturn("SECONDS");
 
         JsonNode jsonNode = mock(JsonNode.class);
         when(objectMapper.convertValue(additionalParameters.get("vc"), JsonNode.class)).thenReturn(jsonNode);
@@ -395,17 +359,6 @@ class CustomAuthenticationProviderTest {
         when(registeredClient.getClientId()).thenReturn(clientId);
         when(registeredClient.getId()).thenReturn("registered-client-id");
 
-//        SecurityProperties.TokenProperties tokenProperties = mock(SecurityProperties.TokenProperties.class);
-//        SecurityProperties.TokenProperties.AccessTokenProperties accessTokenProperties = mock(SecurityProperties.TokenProperties.AccessTokenProperties.class);
-//        SecurityProperties.TokenProperties.IdTokenProperties idTokenProperties = mock(SecurityProperties.TokenProperties.IdTokenProperties.class);
-
-//        when(securityProperties.token()).thenReturn(tokenProperties);
-//        when(tokenProperties.accessToken()).thenReturn(accessTokenProperties);
-//        when(accessTokenProperties.expiration()).thenReturn("3600");
-//        when(accessTokenProperties.cronUnit()).thenReturn("SECONDS");
-//        when(tokenProperties.idToken()).thenReturn(idTokenProperties);
-//        when(idTokenProperties.expiration()).thenReturn("3600");
-//        when(idTokenProperties.cronUnit()).thenReturn("SECONDS");
         when(backendConfig.getUrl()).thenReturn("https://auth.server");
 
         // Mock verifiable credential
@@ -468,8 +421,6 @@ class CustomAuthenticationProviderTest {
             assertEquals(additionalParameters.get("nonce"), idTokenClaims.get("nonce"));
         }
     }
-
-
 
     @Test
     void supports_returnsTrue_forAuthorizationCodeAuthenticationToken() {

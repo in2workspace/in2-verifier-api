@@ -1,6 +1,5 @@
 package es.in2.vcverifier.config;
 
-import es.in2.vcverifier.config.BackendConfig;
 import es.in2.vcverifier.config.properties.BackendProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +8,6 @@ import org.springframework.boot.test.context.ConfigDataApplicationContextInitial
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;

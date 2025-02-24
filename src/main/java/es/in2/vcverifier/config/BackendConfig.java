@@ -3,7 +3,6 @@ package es.in2.vcverifier.config;
 import es.in2.vcverifier.config.properties.BackendProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 import java.util.List;
 
@@ -41,7 +40,7 @@ public class BackendConfig {
         return getSelectedTrustFramework().revokedCredentialListUrl().uri();
     }
 
-    // todo currently unused
+    // todo currently unused, will be used when Verifier can manage multiple trustframeworks
     public List<BackendProperties.TrustFramework> getAllTrustFrameworks() {
         return properties.trustFrameworks();
     }

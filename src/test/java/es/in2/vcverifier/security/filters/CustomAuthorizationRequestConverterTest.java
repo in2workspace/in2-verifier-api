@@ -13,12 +13,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
@@ -329,7 +327,6 @@ class CustomAuthorizationRequestConverterTest {
 
             when(backendConfig.getUrl()).thenReturn("https://auth.server.com");
 
-//            when(flagsProperties.isNonceRequiredOnFapiProfile()).thenReturn(true);
             // Act & Assert
             OAuth2AuthorizationCodeRequestAuthenticationException exception = assertThrows(
                     OAuth2AuthorizationCodeRequestAuthenticationException.class,
@@ -482,8 +479,6 @@ class CustomAuthorizationRequestConverterTest {
         when(jwtService.generateJWT(anyString())).thenReturn("signed-auth-request");
 
         when(backendConfig.getUrl()).thenReturn("https://auth.server.com");
-
-//        when(flagsProperties.isNonceRequiredOnFapiProfile()).thenReturn(true);
 
         // Act & Assert
         OAuth2AuthorizationCodeRequestAuthenticationException exception = assertThrows(
