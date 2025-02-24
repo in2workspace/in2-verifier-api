@@ -17,7 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.Base64;
 
 import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT;
-import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT_CRON_UNIT;
+import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT_CHRONO_UNIT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
@@ -82,7 +82,7 @@ class LoginQrControllerTest {
             verify(model).addAttribute("logoSrc", "img/no-image.png");
             verify(model).addAttribute("faviconSrc", "img/favicon.ico");
             verify(model).addAttribute("expiration", LOGIN_TIMEOUT);
-            verify(model).addAttribute("cronUnit", LOGIN_TIMEOUT_CRON_UNIT);
+            verify(model).addAttribute("cronUnit", LOGIN_TIMEOUT_CHRONO_UNIT);
         }
     }
 

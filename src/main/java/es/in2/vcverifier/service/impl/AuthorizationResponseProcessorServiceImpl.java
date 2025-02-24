@@ -1,6 +1,6 @@
 package es.in2.vcverifier.service.impl;
 
-import static es.in2.vcverifier.util.Constants.ACCESS_TOKEN_EXPIRATION_CRON_UNIT;
+import static es.in2.vcverifier.util.Constants.ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT;
 import static es.in2.vcverifier.util.Constants.ACCESS_TOKEN_EXPIRATION_TIME;
 
 import es.in2.vcverifier.config.CacheStore;
@@ -75,7 +75,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
         }
         Instant issueTime = Instant.now();
-        Instant expirationTime = issueTime.plus(Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME), ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CRON_UNIT));
+        Instant expirationTime = issueTime.plus(Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME), ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT));
 
         // Register the Oauth2Authorization because is needed for verifications
         OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(registeredClient)

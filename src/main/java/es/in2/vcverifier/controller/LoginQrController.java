@@ -1,7 +1,7 @@
 package es.in2.vcverifier.controller;
 
 import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT;
-import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT_CRON_UNIT;
+import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT_CHRONO_UNIT;
 
 import es.in2.vcverifier.config.FrontendConfig;
 import es.in2.vcverifier.exception.QRCodeGenerationException;
@@ -45,7 +45,7 @@ public class LoginQrController {
             model.addAttribute("logoSrc", frontendConfig.getLogoSrc());
             model.addAttribute("faviconSrc", frontendConfig.getFaviconSrc());
             model.addAttribute("expiration", LOGIN_TIMEOUT);
-            model.addAttribute("cronUnit", LOGIN_TIMEOUT_CRON_UNIT);
+            model.addAttribute("cronUnit", LOGIN_TIMEOUT_CHRONO_UNIT);
         } catch (Exception e) {
             throw new QRCodeGenerationException(e.getMessage());
         }

@@ -24,14 +24,14 @@ public class CacheStoreConfig {
     public CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT() {
         return new CacheStore<>(
                 Long.parseLong(LOGIN_TIMEOUT),
-                TimeUnit.of(ChronoUnit.valueOf(LOGIN_TIMEOUT_CRON_UNIT)));
+                TimeUnit.of(ChronoUnit.valueOf(LOGIN_TIMEOUT_CHRONO_UNIT)));
     }
 
     @Bean
     public CacheStore<RefreshTokenDataCache> cacheStoreForRefreshTokenData() {
         return new CacheStore<>(
                 Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME),
-                TimeUnit.of(ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CRON_UNIT)));
+                TimeUnit.of(ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT)));
     }
 
     @Bean

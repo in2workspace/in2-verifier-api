@@ -70,7 +70,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(
                 Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME),
-                ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CRON_UNIT)
+                ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT)
         );
         log.debug("CustomAuthenticationProvider -- handleGrant -- Issue time: {}, Expiration time: {}", issueTime, expirationTime);
 
@@ -213,7 +213,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(
                 Long.parseLong(ID_TOKEN_EXPIRATION_TIME),
-                ChronoUnit.valueOf(ID_TOKEN_EXPIRATION_CRON_UNIT)
+                ChronoUnit.valueOf(ID_TOKEN_EXPIRATION_CHRONO_UNIT)
         );
 
         // Convert the VerifiableCredential to a JSON string
@@ -266,7 +266,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         // Use the expiration time of the access token to calculate the expiration time of the refresh token
         Instant refreshTokenExpirationTime = issueTime.plus(
                 Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME),
-                ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CRON_UNIT)
+                ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT)
         );
         log.debug("CustomAuthenticationProvider -- generateRefreshToken -- Refresh Token Expiration time: {}", refreshTokenExpirationTime);
 
