@@ -1,5 +1,6 @@
 package es.in2.vcverifier.config.properties;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
@@ -7,7 +8,6 @@ import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 @Validated
 @ConfigurationProperties(prefix = "verifier.backend")
@@ -20,25 +20,14 @@ public record BackendProperties(
 
     public record TrustFramework(
             @NotNull String name,
-            @NestedConfigurationProperty TrustedIssuersListUrl trustedIssuersListUrl,
-            @NestedConfigurationProperty TrustedServicesListUrl trustedServicesListUrl,
-            @NestedConfigurationProperty RevokedCredentialListUrl revokedCredentialListUrl) {
+            @NotNull @Valid @NestedConfigurationProperty TrustedIssuersListUrl trustedIssuersListUrl,
+            @NotNull @Valid @NestedConfigurationProperty TrustedServicesListUrl trustedServicesListUrl,
+            @NotNull @Valid @NestedConfigurationProperty RevokedCredentialListUrl revokedCredentialListUrl
+    ) {}
 
-        public TrustFramework(
-                String name,
-                TrustedIssuersListUrl trustedIssuersListUrl,
-                TrustedServicesListUrl trustedServicesListUrl,
-                RevokedCredentialListUrl revokedCredentialListUrl) {
-            this.name = Optional.ofNullable(name).orElse("");
-            this.trustedIssuersListUrl = Optional.ofNullable(trustedIssuersListUrl).orElse(new TrustedIssuersListUrl(""));
-            this.trustedServicesListUrl = Optional.ofNullable(trustedServicesListUrl).orElse(new TrustedServicesListUrl(""));
-            this.revokedCredentialListUrl = Optional.ofNullable(revokedCredentialListUrl).orElse(new RevokedCredentialListUrl(""));
-        }
-    }
-
-    public record TrustedIssuersListUrl(String uri) {}
-    public record TrustedServicesListUrl(String uri) {}
-    public record RevokedCredentialListUrl(String uri) {}
+    public record TrustedIssuersListUrl(@NotNull String uri) {}
+    public record TrustedServicesListUrl(@NotNull String uri) {}
+    public record RevokedCredentialListUrl(@NotNull String uri) {}
 
     //todo this is temporary while VCVerifier can only manage one trustframework
     public TrustFramework getDOMETrustFrameworkByName() {

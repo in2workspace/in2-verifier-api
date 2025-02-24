@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
@@ -43,6 +44,42 @@ class BackendPropertiesTest {
         assertThat(backendProperties.getDOMETrustFrameworkByName())
                 .as("getDOMETrustFrameworkByName should return the expected DOME framework")
                 .isEqualTo(expectedTrustFramework);
+    }
+
+    @Test
+    void testMissingMandatoryUrlCausesError() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(TestConfig.class)
+                .withPropertyValues(
+                        // Omit url:
+                        //  "verifier.backend.url=https://raw.githubusercontent.com",
+                        "verifier.backend.identity.privateKey",
+                        "verifier.backend.trustFrameworks[0].name=DOME",
+                        "verifier.backend.trustFrameworks[0].trustedIssuersListUrl.uri=https://raw.githubusercontent.com",
+                        "verifier.backend.trustFrameworks[0].trustedServicesListUrl.uri=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml",
+                        "verifier.backend.trustFrameworks[0].revokedCredentialListUrl.uri=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/revoked_credential_list.yaml"
+                )
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                });
+    }
+
+    @Test
+    void testMissingMandatoryPrivateKeyCausesError() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(TestConfig.class)
+                .withPropertyValues(
+                        "verifier.backend.url=https://raw.githubusercontent.com",
+                        // Omit privateKey:
+                        // "verifier.backend.identity.privateKey" no s'estableix
+                        "verifier.backend.trustFrameworks[0].name=DOME",
+                        "verifier.backend.trustFrameworks[0].trustedIssuersListUrl.uri=https://raw.githubusercontent.com",
+                        "verifier.backend.trustFrameworks[0].trustedServicesListUrl.uri=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml",
+                        "verifier.backend.trustFrameworks[0].revokedCredentialListUrl.uri=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/revoked_credential_list.yaml"
+                )
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                });
     }
 
     @EnableConfigurationProperties(BackendProperties.class)
