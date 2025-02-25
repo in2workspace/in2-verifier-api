@@ -14,7 +14,7 @@ import java.util.NoSuchElementException;
 public record BackendProperties(
         @NotNull String url,
         @NotNull @NestedConfigurationProperty Identity identity,
-        @NotNull @NestedConfigurationProperty List<TrustFramework> trustFrameworks
+        @NotNull @Valid List<TrustFramework> trustFrameworks
 ) {
     public record Identity(@NotNull String privateKey) {}
 

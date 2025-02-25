@@ -16,12 +16,12 @@ server:
 
 logging:
   level:
+    # Sets logging level for the custom package "es.in2.vcverifier"
+    es.in2.vcverifier: INFO
     # Sets logging level for Spring Security
     org.springframework.security: INFO
     # Sets logging level for web filters
     org.springframework.web.filter: INFO
-    # Sets logging level for the custom package "es.in2.vcverifier"
-    es.in2.vcverifier: INFO
 
 management:
   endpoints:
@@ -80,12 +80,13 @@ verifier:
     identity:
       # Placeholder for private key used in identity verification (REQUIRED)
       privateKey:
-    trustFrameworks:
+    trustFrameworks: ${TRUST_FRAMEWORKS}
       # Placeholder for the name of a trust framework (REQUIRED)
-      - name:
-        # Placeholder for trusted issuers list URL
-        trustedIssuersListUrl:
-        # Placeholder for trusted services list URL
-        trustedServicesListUrl:
-        # Placeholder for revoked credentials list URL
-        revokedCredentialListUrl:
+#      - name:
+#        # Placeholder for trusted issuers list URL
+#        trustedIssuersListUrl:
+#        # Placeholder for trusted services list URL
+#        trustedServicesListUrl:
+#        # Placeholder for revoked credentials list URL
+#        revokedCredentialListUrl:
+
