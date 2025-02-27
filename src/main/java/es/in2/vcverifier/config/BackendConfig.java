@@ -29,15 +29,15 @@ public class BackendConfig {
     }
 
     public String getTrustedIssuerListUri() {
-        return getSelectedTrustFramework().trustedIssuersListUrl().uri();
+        return getSelectedTrustFramework().trustedIssuersListUrl();
     }
 
     public String getClientsRepositoryUri() {
-        return getSelectedTrustFramework().trustedServicesListUrl().uri();
+        return getSelectedTrustFramework().trustedServicesListUrl();
     }
 
     public String getRevocationListUri() {
-        return getSelectedTrustFramework().revokedCredentialListUrl().uri();
+        return getSelectedTrustFramework().revokedCredentialListUrl();
     }
 
     // todo currently unused, will be used when Verifier can manage multiple trustframeworks

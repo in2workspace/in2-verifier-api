@@ -80,13 +80,13 @@ verifier:
     identity:
       # Placeholder for private key used in identity verification (REQUIRED)
       privateKey:
-    trustFrameworks: ${TRUST_FRAMEWORKS}
+    trustFrameworks:
       # Placeholder for the name of a trust framework (REQUIRED)
-#      - name:
-#        # Placeholder for trusted issuers list URL
-#        trustedIssuersListUrl:
-#        # Placeholder for trusted services list URL
-#        trustedServicesListUrl:
-#        # Placeholder for revoked credentials list URL
-#        revokedCredentialListUrl:
+      - name: DOME
+        # Placeholder for trusted issuers list URL
+        trustedIssuersListUrl:
+        # Placeholder for trusted services list URL
+        trustedServicesListUrl:
+        # Placeholder for revoked credentials list URL
+        revokedCredentialListUrl:
 

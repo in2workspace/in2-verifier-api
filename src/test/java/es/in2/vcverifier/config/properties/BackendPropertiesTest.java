@@ -24,9 +24,9 @@ class BackendPropertiesTest {
 
         BackendProperties.TrustFramework expectedTrustFramework = new BackendProperties.TrustFramework(
                 "DOME",
-                new BackendProperties.TrustedIssuersListUrl("https://raw.githubusercontent.com"),
-                new BackendProperties.TrustedServicesListUrl("https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml"),
-                new BackendProperties.RevokedCredentialListUrl("https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/revoked_credential_list.yaml")
+                "https://raw.githubusercontent.com",
+                "https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml",
+                "https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/revoked_credential_list.yaml"
         );
 
         assertThat(backendProperties.url())
@@ -52,12 +52,12 @@ class BackendPropertiesTest {
                 .withUserConfiguration(TestConfig.class)
                 .withPropertyValues(
                         // Omit url:
-                        //  "verifier.backend.url=https://raw.githubusercontent.com",
-                        "verifier.backend.identity.privateKey",
+                        // "verifier.backend.url=https://raw.githubusercontent.com",
+                        "verifier.backend.identity.privateKey=test-private-key",
                         "verifier.backend.trustFrameworks[0].name=DOME",
-                        "verifier.backend.trustFrameworks[0].trustedIssuersListUrl.uri=https://raw.githubusercontent.com",
-                        "verifier.backend.trustFrameworks[0].trustedServicesListUrl.uri=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml",
-                        "verifier.backend.trustFrameworks[0].revokedCredentialListUrl.uri=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/revoked_credential_list.yaml"
+                        "verifier.backend.trustFrameworks[0].trustedIssuersListUrl=https://raw.githubusercontent.com",
+                        "verifier.backend.trustFrameworks[0].trustedServicesListUrl=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml",
+                        "verifier.backend.trustFrameworks[0].revokedCredentialListUrl=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/revoked_credential_list.yaml"
                 )
                 .run(context -> {
                     assertThat(context).hasFailed();
@@ -73,9 +73,9 @@ class BackendPropertiesTest {
                         // Omit privateKey:
                         // "verifier.backend.identity.privateKey" no s'estableix
                         "verifier.backend.trustFrameworks[0].name=DOME",
-                        "verifier.backend.trustFrameworks[0].trustedIssuersListUrl.uri=https://raw.githubusercontent.com",
-                        "verifier.backend.trustFrameworks[0].trustedServicesListUrl.uri=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml",
-                        "verifier.backend.trustFrameworks[0].revokedCredentialListUrl.uri=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/revoked_credential_list.yaml"
+                        "verifier.backend.trustFrameworks[0].trustedIssuersListUrl=https://raw.githubusercontent.com",
+                        "verifier.backend.trustFrameworks[0].trustedServicesListUrl=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml",
+                        "verifier.backend.trustFrameworks[0].revokedCredentialListUrl=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/revoked_credential_list.yaml"
                 )
                 .run(context -> {
                     assertThat(context).hasFailed();
