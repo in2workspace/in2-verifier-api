@@ -1,5 +1,7 @@
 package es.in2.verifier.util;
 
+import java.util.List;
+
 public class Constants {
     private Constants() {
         throw new IllegalStateException("Utility class");
@@ -20,5 +22,7 @@ public class Constants {
     public static final String LOG_ERROR_FORMAT = "{} - {}";
     public static final long MSB = 0x80L;
     public static final long MSBALL = 0xFFFFFF80L;
+    public static final List<String> LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT = List.of("https://www.w3.org/ns/credentials/v2","https://trust-framework.dome-marketplace.eu/credentials/learcredentialemployee/v1");
+    public static final List<String> LEAR_CREDENTIAL_EMPLOYEE_V2_CONTEXT = List.of("https://www.w3.org/ns/credentials/v2","https://www.dome-marketplace.eu/2025/credentials/learcredentialemployee/v2");
 
 }

@@ -6,7 +6,8 @@ import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
 import es.in2.verifier.exception.*;
 import es.in2.verifier.model.credentials.lear.LEARCredential;
-import es.in2.verifier.model.credentials.lear.employee.LEARCredentialEmployee;
+import es.in2.verifier.model.credentials.lear.employee.LEARCredentialEmployeeV1;
+import es.in2.verifier.model.credentials.lear.employee.LEARCredentialEmployeeV2;
 import es.in2.verifier.model.credentials.lear.machine.LEARCredentialMachine;
 import es.in2.verifier.model.enums.LEARCredentialType;
 import es.in2.verifier.model.issuer.IssuerCredentialsCapabilities;
@@ -24,7 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static es.in2.verifier.util.Constants.DID_ELSI_PREFIX;
+import static es.in2.verifier.util.Constants.*;
 
 /**
  * This class contains basic validation steps for the scope of validating a Verifiable Presentation (VP)
@@ -71,7 +72,7 @@ public class VpServiceImpl implements VpService {
             log.info("Credential is not revoked");
 
             // Step 4: Validate the issuer
-            String credentialIssuerDid = learCredential.issuerId();
+            String credentialIssuerDid = learCredential.issuer().getId();
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Retrieved issuer DID from payload: {}", credentialIssuerDid);
 
             // Step 5: Extract and validate credential types
@@ -179,15 +180,38 @@ public class VpServiceImpl implements VpService {
                 .toList();
     }
 
+    private List<String> extractContext(Map<String, Object> vcMap) {
+        Object contextObj = vcMap.get("@context");
+        if (!(contextObj instanceof List<?> contextList)) {
+            throw new CredentialMappingException("The field '@context' is not a list.");
+        }
+        if (!contextList.stream().allMatch(String.class::isInstance)) {
+            throw new CredentialMappingException("The field '@context' contains non-string elements.");
+        }
+        return contextList.stream().map(String.class::cast).toList();
+    }
+
+
     private LEARCredential mapToSpecificCredential(Map<String, Object> vcMap, List<String> types) {
         if (types.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
-            return objectMapper.convertValue(vcMap, LEARCredentialEmployee.class);
+            // Extract the '@context' field from the VC
+            List<String> contextList = extractContext(vcMap);
+
+            // Compare the context with the v1 and v2 constants
+            if (contextList.equals(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)) {
+                return objectMapper.convertValue(vcMap, LEARCredentialEmployeeV1.class);
+            } else if (contextList.equals(LEAR_CREDENTIAL_EMPLOYEE_V2_CONTEXT)) {
+                return objectMapper.convertValue(vcMap, LEARCredentialEmployeeV2.class);
+            } else {
+                throw new InvalidCredentialTypeException("Unknown LEARCredentialEmployee version: " + contextList);
+            }
         } else if (types.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())) {
             return objectMapper.convertValue(vcMap, LEARCredentialMachine.class);
         } else {
             throw new InvalidCredentialTypeException("Unsupported credential type: " + types);
         }
     }
+
 
     private void validateCredentialTypeWithIssuerCapabilities(List<IssuerCredentialsCapabilities> issuerCapabilitiesList, List<String> credentialTypes) {
         // Iterate over each credential type in the verifiable credential

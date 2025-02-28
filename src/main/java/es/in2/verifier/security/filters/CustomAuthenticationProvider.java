@@ -11,7 +11,8 @@ import es.in2.verifier.exception.InvalidCredentialTypeException;
 import es.in2.verifier.exception.JsonConversionException;
 import es.in2.verifier.model.RefreshTokenDataCache;
 import es.in2.verifier.model.credentials.lear.LEARCredential;
-import es.in2.verifier.model.credentials.lear.employee.LEARCredentialEmployee;
+import es.in2.verifier.model.credentials.lear.employee.LEARCredentialEmployeeV1;
+import es.in2.verifier.model.credentials.lear.employee.LEARCredentialEmployeeV2;
 import es.in2.verifier.model.credentials.lear.machine.LEARCredentialMachine;
 import es.in2.verifier.model.enums.LEARCredentialType;
 import es.in2.verifier.service.JWTService;
@@ -34,6 +35,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+import static es.in2.verifier.util.Constants.LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT;
+import static es.in2.verifier.util.Constants.LEAR_CREDENTIAL_EMPLOYEE_V2_CONTEXT;
 import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
 
 @Slf4j
@@ -148,20 +151,56 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     }
 
     private LEARCredential getVerifiableCredential(OAuth2AuthorizationGrantAuthenticationToken authentication, JsonNode verifiableCredential) {
-        if (authentication instanceof OAuth2AuthorizationCodeAuthenticationToken || authentication instanceof OAuth2RefreshTokenAuthenticationToken) {
-            return objectMapper.convertValue(verifiableCredential, LEARCredentialEmployee.class);
+        if (authentication instanceof OAuth2AuthorizationCodeAuthenticationToken ||
+                authentication instanceof OAuth2RefreshTokenAuthenticationToken) {
+
+            // Extraer y validar el campo '@context' desde el JsonNode
+            List<String> contextList = extractContextFromJson(verifiableCredential);
+
+            if (contextList.equals(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)) {
+                return objectMapper.convertValue(verifiableCredential, LEARCredentialEmployeeV1.class);
+            } else if (contextList.equals(LEAR_CREDENTIAL_EMPLOYEE_V2_CONTEXT)) {
+                return objectMapper.convertValue(verifiableCredential, LEARCredentialEmployeeV2.class);
+            } else {
+                throw new OAuth2AuthenticationException(new OAuth2Error(
+                        OAuth2ErrorCodes.INVALID_REQUEST,
+                        "Unknown LEARCredentialEmployee version: " + contextList,
+                        null));
+            }
         } else if (authentication instanceof OAuth2ClientCredentialsAuthenticationToken) {
             return objectMapper.convertValue(verifiableCredential, LEARCredentialMachine.class);
         }
-
         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_REQUEST);
+    }
+
+
+    private List<String> extractContextFromJson(JsonNode verifiableCredential) {
+        JsonNode contextNode = verifiableCredential.get("@context");
+        if (contextNode == null || !contextNode.isArray()) {
+            throw new OAuth2AuthenticationException(new OAuth2Error(
+                    OAuth2ErrorCodes.INVALID_REQUEST,
+                    "'@context' field is missing or is not an array",
+                    null));
+        }
+
+        List<String> contextList = new ArrayList<>();
+        for (JsonNode node : contextNode) {
+            if (!node.isTextual()) {
+                throw new OAuth2AuthenticationException(new OAuth2Error(
+                        OAuth2ErrorCodes.INVALID_REQUEST,
+                        "Elements of '@context' must be strings",
+                        null));
+            }
+            contextList.add(node.asText());
+        }
+        return contextList;
     }
 
     private String getAudience(OAuth2AuthorizationGrantAuthenticationToken authentication, LEARCredential credential) {
         // Extraer el audience en función del tipo de credencial
         if (credential instanceof LEARCredentialMachine) {
             return securityProperties.authorizationServer();
-        } else if (credential instanceof LEARCredentialEmployee) {
+        } else if (credential instanceof LEARCredentialEmployeeV1) {
             // Obtener el audience de los parámetros adicionales
             Map<String, Object> additionalParameters = authentication.getAdditionalParameters();
             if (additionalParameters.containsKey(OAuth2ParameterNames.AUDIENCE)) {
@@ -190,9 +229,18 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         List<String> credentialTypes = learCredential.type();
 
         if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
-            LEARCredentialEmployee credential = (LEARCredentialEmployee) learCredential;
-            Map<String, Object> credentialData = objectMapper.convertValue(credential, new TypeReference<>() {});
-            claimsBuilder.claim("vc", credentialData);
+            List<String> context = learCredential.context();
+            if (context.equals(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)) {
+                LEARCredentialEmployeeV1 credential = objectMapper.convertValue(learCredential, LEARCredentialEmployeeV1.class);
+                Map<String, Object> credentialData = objectMapper.convertValue(credential, new TypeReference<>() {});
+                claimsBuilder.claim("vc", credentialData);
+            } else if (context.equals(LEAR_CREDENTIAL_EMPLOYEE_V2_CONTEXT)) {
+                LEARCredentialEmployeeV2 credential = objectMapper.convertValue(learCredential, LEARCredentialEmployeeV2.class);
+                Map<String, Object> credentialData = objectMapper.convertValue(credential, new TypeReference<>() {});
+                claimsBuilder.claim("vc", credentialData);
+            } else {
+                throw new InvalidCredentialTypeException("Unknown LEARCredentialEmployee version: " + context);
+            }
         } else if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())) {
             LEARCredentialMachine credential = (LEARCredentialMachine) learCredential;
             Map<String, Object> credentialData = objectMapper.convertValue(credential, new TypeReference<>() {});
@@ -277,18 +325,18 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         Set<String> requestedScopes = new HashSet<>(Arrays.asList(additionalParameters.get(OAuth2ParameterNames.SCOPE).toString().split(" ")));
         Map<String, Object> claims = new HashMap<>();
 
-        if (learCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
+        if (learCredential instanceof LEARCredentialEmployeeV1 learCredentialEmployeeV1) {
             // Check if "profile" scope is requested and add profile-related claims
             if (requestedScopes.contains("profile")) {
-                String name = learCredentialEmployee.mandateeFirstName() + " " + learCredentialEmployee.mandateeLastName();
+                String name = learCredentialEmployeeV1.mandateeFirstName() + " " + learCredentialEmployeeV1.mandateeLastName();
                 claims.put("name", name);
-                claims.put("given_name", learCredentialEmployee.mandateeFirstName());
-                claims.put("family_name", learCredentialEmployee.mandateeLastName());
+                claims.put("given_name", learCredentialEmployeeV1.mandateeFirstName());
+                claims.put("family_name", learCredentialEmployeeV1.mandateeLastName());
             }
 
             // Check if "email" scope is requested and add email-related claims
             if (requestedScopes.contains("email")) {
-                claims.put("email", learCredentialEmployee.mandateeEmail());
+                claims.put("email", learCredentialEmployeeV1.mandateeEmail());
                 claims.put("email_verified", true);
             }
         }
@@ -297,7 +345,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
 
     private String getScope(LEARCredential learCredential) {
-        if (learCredential instanceof LEARCredentialEmployee) {
+        if (learCredential instanceof LEARCredentialEmployeeV1) {
             return "openid learcredential";
         } else if (learCredential instanceof LEARCredentialMachine) {
             return "machine learcredential";

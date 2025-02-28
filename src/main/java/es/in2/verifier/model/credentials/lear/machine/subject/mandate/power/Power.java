@@ -1,4 +1,4 @@
-package es.in2.verifier.model.credentials.lear;
+package es.in2.verifier.model.credentials.lear.machine.subject.mandate.power;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;

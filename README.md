@@ -215,7 +215,7 @@ The `access_token` payload will have a similar structure:
 "endDateTime": "2024-10-17T12:20:08.408517084Z",
 "startDateTime": "2024-09-17T12:20:08.408517084Z"
 },
-"mandatee": {
+"mandateeV1": {
 "id": "",
 "email": "",
 "firstName": "",
