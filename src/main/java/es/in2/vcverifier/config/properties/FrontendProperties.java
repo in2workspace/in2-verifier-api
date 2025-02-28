@@ -16,9 +16,9 @@ public record FrontendProperties(
         String faviconSrc) {
 
     public record Urls(
-            @NotNull @URL String onboarding,
-            @NotNull @URL String support,
-            @NotNull @URL String wallet) {}
+            @NotBlank @URL String onboarding,
+            @NotBlank @URL String support,
+            @NotBlank @URL String wallet) {}
 
     public record Colors(
             String primary,

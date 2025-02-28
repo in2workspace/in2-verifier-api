@@ -23,19 +23,19 @@ public class FrontendConfig {
     }
 
     public String getPrimaryColor() {
-        return properties.colors().primary();
+        return defaultIfBlank(properties.colors().primary(), "#14274A");
     }
 
     public String getPrimaryContrastColor() {
-        return properties.colors().primaryContrast();
+        return defaultIfBlank(properties.colors().primaryContrast(), "#ffffff");
     }
 
     public String getSecondaryColor() {
-        return properties.colors().secondary();
+        return defaultIfBlank(properties.colors().secondary(), "#00ADD3");
     }
 
     public String getSecondaryContrastColor() {
-        return properties.colors().secondaryContrast();
+        return defaultIfBlank(properties.colors().secondaryContrast(), "#000000");
     }
 
     public String getLogoSrc() {
@@ -43,6 +43,10 @@ public class FrontendConfig {
     }
 
     public String getFaviconSrc() {
-        return properties.faviconSrc();
+        return defaultIfBlank(properties.faviconSrc(), "dome_logo_favicon.png");
+    }
+
+    private String defaultIfBlank(String value, String defaultValue) {
+        return (value == null || value.trim().isEmpty()) ? defaultValue : value;
     }
 }

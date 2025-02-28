@@ -2,6 +2,7 @@ package es.in2.vcverifier.config.properties;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -11,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = FrontendPropertiesTest.TestConfig.class)
 @ActiveProfiles("test")
+@ConfigurationPropertiesScan("es.in2.vcverifier.config.properties")
 class FrontendPropertiesTest {
 
     @Autowired
@@ -71,7 +73,7 @@ class FrontendPropertiesTest {
         new ApplicationContextRunner()
                 .withUserConfiguration(TestConfig.class)
                 .withPropertyValues(
-                         "verifier.frontend.urls.onboarding",
+                         "verifier.frontend.urls.onboarding=https://example.com/onboarding",
                         // omit support url
                         //  "verifier.frontend.urls.support=https://example.com/support",
                         "verifier.frontend.urls.wallet=https://example.com/wallet",
@@ -85,7 +87,7 @@ class FrontendPropertiesTest {
         new ApplicationContextRunner()
                 .withUserConfiguration(TestConfig.class)
                 .withPropertyValues(
-                         "verifier.frontend.urls.onboarding",
+                         "verifier.frontend.urls.onboarding=https://example.com/onboarding",
                         "verifier.frontend.urls.support=https://example.com/support",
                         // omit wallet url
                         //  "verifier.frontend.urls.wallet=https://example.com/wallet",
@@ -99,12 +101,25 @@ class FrontendPropertiesTest {
         new ApplicationContextRunner()
                 .withUserConfiguration(TestConfig.class)
                 .withPropertyValues(
-                         "verifier.frontend.urls.onboarding",
+                         "verifier.frontend.urls.onboarding=https://example.com/onboarding",
                         "verifier.frontend.urls.support=https://example.com/support",
                           "verifier.frontend.urls.wallet=https://example.com/wallet"
                         //omit logoSrc
 //                        "verifier.frontend.logoSrc=logo.png"
                 )
                 .run(context -> assertThat(context).hasFailed());
+    }
+
+    @Test
+    void testWithAllMandatoryPropertiesAndNoOptional() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(TestConfig.class)
+                .withPropertyValues(
+                        "verifier.frontend.urls.onboarding=https://example.com/onboarding",
+                        "verifier.frontend.urls.support=https://example.com/support",
+                        "verifier.frontend.urls.wallet=https://example.com/wallet",
+                        "verifier.frontend.logoSrc=logo.png"
+                )
+                .run(context -> assertThat(context).hasNotFailed());
     }
 }

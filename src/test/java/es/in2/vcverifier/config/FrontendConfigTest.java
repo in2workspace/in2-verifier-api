@@ -3,62 +3,70 @@ package es.in2.vcverifier.config;
 import es.in2.vcverifier.config.properties.FrontendProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-@SpringBootTest(classes = {FrontendConfig.class, FrontendConfigImplTest.TestConfig.class})
-@ActiveProfiles("test")
-@ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class)
+@SpringBootTest(classes = {FrontendConfig.class, FrontendConfigImplTest.DefaultTestConfig.class})
 class FrontendConfigImplTest {
 
     @Autowired
     private FrontendConfig frontendConfig;
 
+    @MockBean
+    private FrontendProperties frontendProperties;
+
     @Test
-    void testFrontendConfig() {
-        assertThat(frontendConfig.getOnboardingUrl())
-                .as("Onboarding URL should match")
-                .isEqualTo("https://example.com/onboarding");
+    void testFrontendConfigWithDefaults() {
+        FrontendProperties.Urls urls = mock(FrontendProperties.Urls.class);
+        FrontendProperties.Colors colors = mock(FrontendProperties.Colors.class);
 
-        assertThat(frontendConfig.getSupportUrl())
-                .as("Support URL should match")
-                .isEqualTo("https://example.com/support");
+        when(frontendProperties.urls()).thenReturn(urls);
+        when(frontendProperties.colors()).thenReturn(colors);
+        when(frontendProperties.logoSrc()).thenReturn(null);
+        when(frontendProperties.faviconSrc()).thenReturn(null);
 
-        assertThat(frontendConfig.getWalletUrl())
-                .as("Wallet URL should match")
-                .isEqualTo("https://example.com/wallet");
-
-        assertThat(frontendConfig.getPrimaryColor())
-                .as("Primary color should match")
-                .isEqualTo("#FF0000");
-
-        assertThat(frontendConfig.getPrimaryContrastColor())
-                .as("Primary contrast color should match")
-                .isEqualTo("#FFFFFF");
-
-        assertThat(frontendConfig.getSecondaryColor())
-                .as("Secondary color should match")
-                .isEqualTo("#00ADD3");
-
-        assertThat(frontendConfig.getSecondaryContrastColor())
-                .as("Secondary contrast color should match")
-                .isEqualTo("#000000");
-
-        assertThat(frontendConfig.getLogoSrc())
-                .as("Logo source should match")
-                .isEqualTo("logo.png");
-
-        assertThat(frontendConfig.getFaviconSrc())
-                .as("Favicon source should match")
-                .isEqualTo("favicon.ico");
+        assertThat(frontendConfig.getPrimaryColor()).isEqualTo("#14274A");
+        assertThat(frontendConfig.getPrimaryContrastColor()).isEqualTo("#ffffff");
+        assertThat(frontendConfig.getSecondaryColor()).isEqualTo("#00ADD3");
+        assertThat(frontendConfig.getSecondaryContrastColor()).isEqualTo("#000000");
+        assertThat(frontendConfig.getFaviconSrc()).isEqualTo("dome_logo_favicon.png");
     }
 
-    @EnableConfigurationProperties(FrontendProperties.class)
-    static class TestConfig {
+    @Test
+    void testFrontendConfigWithProvidedValues() {
+        FrontendProperties.Urls urls = mock(FrontendProperties.Urls.class);
+        FrontendProperties.Colors colors = mock(FrontendProperties.Colors.class);
+
+        when(frontendProperties.urls()).thenReturn(urls);
+        when(frontendProperties.colors()).thenReturn(colors);
+        when(frontendProperties.logoSrc()).thenReturn("custom_logo.png");
+        when(frontendProperties.faviconSrc()).thenReturn("custom_favicon.ico");
+        when(colors.primary()).thenReturn("#123456");
+        when(colors.primaryContrast()).thenReturn("#654321");
+        when(colors.secondary()).thenReturn("#abcdef");
+        when(colors.secondaryContrast()).thenReturn("#fedcba");
+
+        assertThat(frontendConfig.getPrimaryColor()).isEqualTo("#123456");
+        assertThat(frontendConfig.getPrimaryContrastColor()).isEqualTo("#654321");
+        assertThat(frontendConfig.getSecondaryColor()).isEqualTo("#abcdef");
+        assertThat(frontendConfig.getSecondaryContrastColor()).isEqualTo("#fedcba");
+        assertThat(frontendConfig.getFaviconSrc()).isEqualTo("custom_favicon.ico");
+        assertThat(frontendConfig.getLogoSrc()).isEqualTo("custom_logo.png");
+    }
+
+    @Configuration
+    @EnableAutoConfiguration
+    static class DefaultTestConfig {
+        @Bean
+        public FrontendProperties frontendProperties() {
+            return mock(FrontendProperties.class);
+        }
     }
 }
