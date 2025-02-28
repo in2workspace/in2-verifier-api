@@ -1,6 +1,7 @@
 package es.in2.vcverifier.config.properties;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.URL;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -12,21 +13,21 @@ import java.util.NoSuchElementException;
 @Validated
 @ConfigurationProperties(prefix = "verifier.backend")
 public record BackendProperties(
-        @NotNull @URL String url,
+        @NotBlank @URL String url,
         @NotNull Identity identity,
-        @NotNull @Valid List<TrustFramework> trustFrameworks // Spring Boot ho converteix automàticament
+        @NotNull @Valid List<TrustFramework> trustFrameworks
 ) {
 
-    public record Identity(@NotNull String privateKey) {}
+    public record Identity(@NotBlank String privateKey) {}
 
     public record TrustFramework(
-            @NotNull String name,
-            @NotNull @URL String trustedIssuersListUrl,
-            @NotNull @URL String trustedServicesListUrl,
-            @NotNull @URL String revokedCredentialListUrl
+            @NotBlank String name,
+            @NotBlank @URL String trustedIssuersListUrl,
+            @NotBlank @URL String trustedServicesListUrl,
+            @NotBlank @URL String revokedCredentialListUrl
     ) {}
 
-    // TODO: Això és temporal mentre VCVerifier només pot gestionar un trustFramework
+    // TODO: this is temporary while VCVerifier can handle only one trustFramework
     public TrustFramework getDOMETrustFrameworkByName() {
         return trustFrameworks.stream()
                 .filter(tf -> tf.name().equalsIgnoreCase("DOME"))

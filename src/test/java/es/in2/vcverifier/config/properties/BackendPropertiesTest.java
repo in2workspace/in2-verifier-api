@@ -82,6 +82,23 @@ class BackendPropertiesTest {
                 });
     }
 
+    @Test
+    void testIncludingAllMandatoryProperties() {
+        new ApplicationContextRunner()
+                .withUserConfiguration(TestConfig.class)
+                .withPropertyValues(
+                        "verifier.backend.url=https://raw.githubusercontent.com",
+                        "verifier.backend.identity.privateKey=test-private-key",
+                        "verifier.backend.trustFrameworks[0].name=DOME",
+                        "verifier.backend.trustFrameworks[0].trustedIssuersListUrl=https://raw.githubusercontent.com",
+                        "verifier.backend.trustFrameworks[0].trustedServicesListUrl=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml",
+                        "verifier.backend.trustFrameworks[0].revokedCredentialListUrl=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/revoked_credential_list.yaml"
+                )
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                });
+    }
+
     @EnableConfigurationProperties(BackendProperties.class)
     static class TestConfig {
     }
