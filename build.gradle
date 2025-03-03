@@ -10,7 +10,7 @@ plugins {
 }
 
 group = 'es.in2'
-version = '1.1.1'
+version = '1.2.0'
 
 java {
 	toolchain {
@@ -50,8 +50,8 @@ sonar {
 						"src/main/java/es/in2/vcverifier/service/impl/ClientAssertionValidationServiceImpl.java, " +
 						"src/main/java/es/in2/vcverifier/service/impl/TrustFrameworkServiceImpl.java, " +
 						"src/main/java/es/in2/vcverifier/service/impl/CertificateValidationServiceImpl.java, " +
-						"src/main/java/es/in2/verifier/security/filters/CustomTokenRequestConverter.java, " +
-						"src/main/java/es/in2/verifier/security/AuthorizationServerConfig.java, " +
+						"src/main/java/es/in2/vcverifier/security/filters/CustomTokenRequestConverter.java, " +
+						"src/main/java/es/in2/vcverifier/security/AuthorizationServerConfig.java, " +
 						"src/main/java/es/in2/vcverifier/exception/MismatchOrganizationIdentifierException.java"
 	}
 }
