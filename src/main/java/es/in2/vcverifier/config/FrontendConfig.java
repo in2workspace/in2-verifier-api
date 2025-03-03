@@ -23,7 +23,7 @@ public class FrontendConfig {
     }
 
     public String getPrimaryColor() {
-        return defaultIfBlank(properties.colors().primary(), "#14274A");
+        return defaultIfBlank(properties.colors().primary(), "#2D58A7");
     }
 
     public String getPrimaryContrastColor() {
@@ -31,11 +31,11 @@ public class FrontendConfig {
     }
 
     public String getSecondaryColor() {
-        return defaultIfBlank(properties.colors().secondary(), "#00ADD3");
+        return defaultIfBlank(properties.colors().secondary(), "#14274A");
     }
 
     public String getSecondaryContrastColor() {
-        return defaultIfBlank(properties.colors().secondaryContrast(), "#000000");
+        return defaultIfBlank(properties.colors().secondaryContrast(), "#00ADD3");
     }
 
     public String getLogoSrc() {
