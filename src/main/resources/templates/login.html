@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Blinker:wght@100;200;300;400;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Favicon -->
-    <link rel="icon" href="./" type="image/png">
+    <link rel="icon" th:href="@{/img/{file}(file=${faviconSrc})}" type="image/png">
 
     <!-- Integrated CSS styles -->
     <style th:inline="text" >
@@ -104,7 +104,6 @@
 
         .registration-card, .support-card{
             border: 3px solid var(--fore-color-primary);
-            padding: 10px;
         }
 
         .registration-card {
@@ -114,6 +113,7 @@
             flex-direction: column;
             align-items: center;
             font-size: 20px;
+            padding: 10px;
         }
 
         .registration-card button {
@@ -173,6 +173,10 @@
             margin-top: 20px;
             width: auto;
             font-weight: bold;
+        }
+
+        .support-card{
+            padding: 8px;
         }
 
         .support-card, .help-container{
@@ -295,7 +299,6 @@
 
             .support-card{
                 flex-direction: column;
-
             }
             
         }
