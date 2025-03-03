@@ -32,10 +32,10 @@ class FrontendConfigImplTest {
         when(frontendProperties.logoSrc()).thenReturn(null);
         when(frontendProperties.faviconSrc()).thenReturn(null);
 
-        assertThat(frontendConfig.getPrimaryColor()).isEqualTo("#14274A");
+        assertThat(frontendConfig.getPrimaryColor()).isEqualTo("#2D58A7");
         assertThat(frontendConfig.getPrimaryContrastColor()).isEqualTo("#ffffff");
-        assertThat(frontendConfig.getSecondaryColor()).isEqualTo("#00ADD3");
-        assertThat(frontendConfig.getSecondaryContrastColor()).isEqualTo("#000000");
+        assertThat(frontendConfig.getSecondaryColor()).isEqualTo("#14274A");
+        assertThat(frontendConfig.getSecondaryContrastColor()).isEqualTo("#00ADD3");
         assertThat(frontendConfig.getFaviconSrc()).isEqualTo("dome_logo_favicon.png");
     }
 

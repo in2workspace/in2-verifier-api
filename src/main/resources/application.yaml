@@ -63,13 +63,13 @@ verifier:
       wallet:
     colors:
       # Defines primary color for the frontend (OPTIONAL with default value)
-      primary: "#14274A"
+      primary: "#2D58A7"
       # Defines contrasting text color for primary color (OPTIONAL with default value)
       primaryContrast: "#ffffff"
       # Defines secondary color for the frontend (OPTIONAL with default value)
-      secondary: "#00ADD3"
+      secondary: "#14274A"
       # Defines contrasting text color for secondary color (OPTIONAL with default value)
-      secondaryContrast: "#000000"
+      secondaryContrast: "#00ADD3"
     # Placeholder for logo source path (REQUIRED)
     logoSrc:
     # Placeholder for favicon source path (OPTIONAL)
