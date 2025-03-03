@@ -20,14 +20,9 @@
     <style th:inline="text" >
 
         :root {
-            --fore-color-primary: white;
-            --bg-color-primary: #2755b1 !important;
-            --light-blue-primary: red !important;
-            /* todo afegit per mi */
-            --dark: #132343;
-            /* --fore-color-primary: [[${primaryContrast}]];
+            --fore-color-primary: [[${primaryContrast}]];
             --bg-color-primary: [[${primary}]] !important;
-            --light-blue-primary: [[${secondary}]] !important; */
+            --dark-primary: [[${secondary}]] !important;
         }
 
         body {
@@ -37,17 +32,6 @@
             font-size: medium;
             margin: 0;
             padding: 0;
-        }
-
-        .qr-frame{
-            max-width: 180px;
-        }
-
-        .qr-image {
-            display: block;
-            max-width: 100%; 
-            padding: 8px;
-            box-sizing: border-box;
         }
 
         .header {
@@ -62,13 +46,17 @@
             width:100%;
         }
 
+        .page {
+            min-height: 100vh;
+        }
+
         h1, h2, h3, h4, h5, h6 {
-            font-weight: 600 !important;
             margin: 0;
         }
 
-        .page {
-            min-height: 100vh;
+        h3 {
+            font-size: inherit;
+            font-weight: normal;
         }
 
         .container{
@@ -80,39 +68,46 @@
             gap: 20px;
             max-width: 80%;
             padding: 20px;
+            padding-top: 0;
         }
-
-        /* .left-column, .right-column {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .left-column {
-            flex: 1;
-            max-width: 300px;
-        }
-
-        .right-column {
-            flex: 2;
-            max-width: 680px;
-        } */
 
         .card {
             padding: 20px;
             display: flex;
             flex-grow: 1;
             flex-direction: column;
-            /* border: 3px solid var(--light-blue-primary); */
-            border-radius: 8px;
             background-color: var(--bg-color-primary);
             text-align: center;
         }
 
-        .registration-card {
-            background-color: var(--dark);
+        .card p{
+            font-weight: 600;
+
+        }
+
+        .card a{
+            font-weight: bold;
+            text-decoration: underline;
+            color: var(--text-color-link);
+            transition: text-decoration 200ms ease-in-out, color 200ms ease-in-out;
+            cursor: auto;
+        }
+
+        .card a:hover {
+            color: var(--dark-primary);
+            font-weight: bold;
+            text-decoration: underline;
+            transition: text-decoration 200ms ease-in-out, color 200ms ease-in-out;
+            cursor:pointer;
+        }
+
+        .registration-card, .support-card{
             border: 3px solid var(--fore-color-primary);
-            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .registration-card {
+            background-color: var(--dark-primary);
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -121,21 +116,13 @@
             font-size: 25px;
         }
 
-        .support-card{
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-size: 20px;
-        }
-
         .registration-card button {
             display: flex;
             justify-content: center;
             gap: 10px;
             border: none;
             width: auto;
-            padding: 10px 20px;
-            border-radius: 8px;
+            padding: 10px 24px;
             align-items: center;
             margin-top: 20px;
             background-color: var(--bg-color-primary);
@@ -146,6 +133,28 @@
             font-size: inherit;
             cursor: pointer;
             transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .registration-card button:hover, .qr-container button:hover {
+            background-color: var(--fore-color-primary);
+            color: var(--dark-primary);
+            transform: scale(1.05);
+            transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
+        }
+
+        .qr-frame{
+            padding-inline: 20px;
+        }
+
+        .qr-image {
+            display: block;
+            max-width: 100%; 
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        .qr-title{
+            font-size: 20px;
         }
 
         .qr-container button {
@@ -166,42 +175,22 @@
             font-weight: bold;
         }
 
-        .registration-card button:hover, .qr-container button:hover {
-            background-color: var(--fore-color-primary);
-            color: var(--light-blue-primary);
-            transform: scale(1.05);
-            transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
-        }
-
-        .card p{
-            font-weight: 600;
-
+        .support-card, .help-container{
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 20px;
         }
         
         .help a{
                 font-size: 20px;
+                color: var(--fore-color-primary);
                 text-decoration: underline;
+
         }
 
-        .card a{
-            font-weight: bold;
-            text-decoration: underline;
-            color: var(--text-color-link);
-            transition: text-decoration 200ms ease-in-out, color 200ms ease-in-out;
-            cursor: auto;
-        }
-
-        .card a:hover {
-            color: var(--light-blue-primary);
-            font-weight: bold;
-            text-decoration: underline;
-            transition: text-decoration 200ms ease-in-out, color 200ms ease-in-out;
-            cursor:pointer;
-        }
-
-        h3 {
-            font-size: inherit;
-            font-weight: normal;
+        .help a:hover{
+            color: var(--dark-primary);
         }
 
         .qr-card-content {
@@ -238,7 +227,7 @@
             text-align: left;
             font-size: 25px;
 
-             .instructions-title, li{
+            .instructions-title, li{
                 padding-left: 30px;
             }
 
@@ -273,18 +262,6 @@
                 justify-content: center;
                 align-items: flex-start;
             }
-            /* .container{
-                flex-direction: column;
-                justify-content: flex-start;
-                align-items: stretch;
-                gap: 20px;
-                max-width: 700px;
-            } */
-
-            /* .left-column, .right-column {
-                max-width: 100%;
-                flex: none;
-            } */
         }
 
         @media (max-width: 768px) {
@@ -299,13 +276,26 @@
                 max-width: 100%;
                 margin-right: 0;
             }
+
             .qr-container{
-                padding-inline:20px;
+                padding-top:  20px;
+                padding-inline: 20px;
             }
+
             .instructions{
                 max-width: 400px;
                 text-align:center;
                 padding-top:20px;
+
+                ol{
+                    list-style-position: inside;
+                    text-align: left;
+                }
+            }
+
+            .support-card{
+                flex-direction: column;
+
             }
             
         }
@@ -328,24 +318,20 @@
 </head>
 <body>
 <div class="header">
-    <!--todo <img th:src="@{/img/{file}(file=${logoSrc})}" alt="DOME White Logo" th:attr="onclick='window.location.href = \'' + ${homeUri} + '\''" style="cursor: pointer;"> -->
-    <img src="../static/img/dome_logo_white.png" alt="DOME White Logo" th:attr="onclick='window.location.href = \'' + ${homeUri} + '\''" style="cursor: pointer;">
+    <img th:src="@{/img/{file}(file=${logoSrc})}" alt="DOME White Logo" th:attr="onclick='window.location.href = \'' + ${homeUri} + '\''" style="cursor: pointer;">
 </div>
 <div class="page">
     <div class="container">
-        <!-- <div class="left-column"> -->
             <div class="registration-card">
                 <h3>Your organization must be registered in the marketplace before you log in.</h3>
                 <button th:attr="onclick='window.location.href = \'' + ${onboardingUri} + '\''">
                         Onboarding
                 </button>
             </div>
-        <!-- </div> -->
-        <!-- <div class="right-column"> -->
             <div class="card qr-card">
                 <div class="qr-card-content">
                     <div class="instructions">
-                        <h3 class="instructions-title">Login instructions</h3>
+                        <h1 class="instructions-title">Login instructions</h1>
                         <ol>
                             <li>You must log in to an Eudi Wallet or to a <a
                                     th:href="${walletUri}">DOME Wallet</a> using your smartphone.</li>
@@ -354,13 +340,11 @@
                         </ol>
                     </div>
                     <div class="qr-container">
-                        <!-- Uso de Thymeleaf para insertar el QR generado -->
-                        <div id="qr-frame">
-                            <!--todo <img id="qr-code" class="qr-image" th:src="${qrImage}" alt="QR Code"> -->
-                            <img id="qr-code" class="qr-image" src="https://docs.lightburnsoftware.com/legacy/img/QRCode/ExampleCode.png" alt="QR Code">
+                        <div id="qr-frame" class="qr-frame">
+                            <img id="qr-code" class="qr-image" th:src="${qrImage}" alt="QR Code">
                         </div>
-                        <div id="qr-title" class="additional-element">
-                            <h3 class="scan-title">Scan the QR with your EUDI wallet or DOME wallet to log in</h3>
+                        <div id="qr-title" class="qr-title additional-element">
+                            Scan the QR with your EUDI wallet or DOME wallet to log in
                         </div>
                         <div id="same-device-title" class="additional-element" style="display: none;">
                             <h3>Login from the same device</h3>
@@ -371,16 +355,14 @@
                         </button>
                     </div>
                 </div>
-                <!--<div class="grey-section">
-                    <p id="grey-section-text">Unable to scan the QR code? You may log in from the <a href="#" onclick="switchToSameDeviceLogin()">same device</a></p>
-                </div>-->
             </div>
             <div class="support-card">
                 <span>Having trouble logging in?</span>
-                <i class="fa-solid fa-wrench"></i>
-                <span class="help">Get help from <a th:href="${supportUri}">customer support</a></span>
+                <div class="help-container">
+                    <i class="fa-solid fa-wrench"></i>
+                    <span class="help">Get help from <a href="www.google.com">customer support</a></span>
+                </div>
             </div>
-        <!-- </div> -->
     </div>
 </div>
 
