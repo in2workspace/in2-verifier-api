@@ -25,7 +25,7 @@ public record LEARCredentialEmployeeV2(
         @JsonProperty("issuer") @JsonDeserialize(using = IssuerDeserializer.class)
         Issuer issuer,
         @JsonProperty("credentialSubject")
-        CredentialSubjectV2 credentialSubject,
+        CredentialSubjectV2 credentialSubjectV2,
         @JsonProperty("validFrom")
         String validFrom,
         @JsonProperty("validUntil")
@@ -34,26 +34,26 @@ public record LEARCredentialEmployeeV2(
 
     @Override
     public String mandateeId() {
-        return credentialSubject.mandate().mandatee().id();
+        return credentialSubjectV2.mandate().mandatee().id();
     }
 
     @Override
     public String mandatorOrganizationIdentifier() {
-        return credentialSubject.mandate().mandator().organizationIdentifier();
+        return credentialSubjectV2.mandate().mandator().organizationIdentifier();
     }
 
     @Override
     public String getMandateeFirstName() {
-        return credentialSubject.mandate().mandatee().firstName();
+        return credentialSubjectV2.mandate().mandatee().firstName();
     }
 
     @Override
     public String getMandateeLastName() {
-        return credentialSubject.mandate().mandatee().lastName();
+        return credentialSubjectV2.mandate().mandatee().lastName();
     }
 
     @Override
     public String getMandateeEmail() {
-        return credentialSubject.mandate().mandatee().email();
+        return credentialSubjectV2.mandate().mandatee().email();
     }
 }
