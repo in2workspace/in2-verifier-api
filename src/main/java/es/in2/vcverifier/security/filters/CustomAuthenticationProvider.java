@@ -18,7 +18,6 @@ import es.in2.vcverifier.model.enums.LEARCredentialType;
 import es.in2.vcverifier.service.JWTService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -200,7 +199,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         // Extraer el audience en función del tipo de credencial
         if (credential instanceof LEARCredentialMachine) {
             return backendConfig.getUrl();
-        } else if (credential instanceof LEARCredentialEmployeeV1) {
+        } else if (credential instanceof LEARCredentialEmployeeV1 || credential instanceof LEARCredentialEmployeeV2) {
             // Obtener el audience de los parámetros adicionales
             Map<String, Object> additionalParameters = authentication.getAdditionalParameters();
             if (additionalParameters.containsKey(OAuth2ParameterNames.AUDIENCE)) {
