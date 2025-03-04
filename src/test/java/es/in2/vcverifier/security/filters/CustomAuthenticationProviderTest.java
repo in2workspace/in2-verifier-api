@@ -170,7 +170,7 @@ class CustomAuthenticationProviderTest {
     }
 
     @Test
-    void getVerifiableCredential_unknownEmployeeVersion_throwsException() {
+    void extractContextFromJson_contextNotArray_throwsException() {
         // Arrange
         String clientId = "test-client-id";
         Map<String, Object> additionalParameters = new HashMap<>();
@@ -188,7 +188,7 @@ class CustomAuthenticationProviderTest {
 
         JsonNode vcJsonNode = mock(JsonNode.class);
         when(objectMapper.convertValue(vcMap, JsonNode.class)).thenReturn(vcJsonNode);
-        when(vcJsonNode.get("@context")).thenReturn(null);
+        when(vcJsonNode.get("@context")).thenReturn(JsonNodeFactory.instance.textNode("not an array"));
 
         OAuth2AuthenticationException exception = assertThrows(OAuth2AuthenticationException.class, () -> customAuthenticationProvider.authenticate(authToken));
 
@@ -196,7 +196,7 @@ class CustomAuthenticationProviderTest {
     }
 
     @Test
-    void extractContextFromJson_contextNotArray_throwsException() {
+    void getVerifiableCredential_unknownEmployeeVersion_throwsException() {
         // Arrange
         String clientId = "test-client-id";
         Map<String, Object> additionalParameters = new HashMap<>();
