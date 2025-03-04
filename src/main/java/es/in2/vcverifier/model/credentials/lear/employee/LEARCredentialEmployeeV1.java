@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import es.in2.vcverifier.model.credentials.Issuer;
 import es.in2.vcverifier.model.credentials.IssuerDeserializer;
-import es.in2.vcverifier.model.credentials.lear.LEARCredential;
 import es.in2.vcverifier.model.credentials.lear.employee.subject.CredentialSubjectV1;
 import lombok.Builder;
 
@@ -34,7 +33,7 @@ public record LEARCredentialEmployeeV1(
         String expirationDate,
         @JsonProperty("issuanceDate")
         String issuanceDate
-) implements LEARCredential {
+) implements LEARCredentialEmployee {
 
         @Override
         public String mandateeId() {
@@ -46,16 +45,19 @@ public record LEARCredentialEmployeeV1(
                 return credentialSubject.mandate().mandator().organizationIdentifier();
         }
 
-        public String mandateeFirstName(){
+
+        @Override
+        public String getMandateeFirstName() {
                 return credentialSubject.mandate().mandatee().firstName();
         }
 
-        public String mandateeLastName(){
+        @Override
+        public String getMandateeLastName() {
                 return credentialSubject.mandate().mandatee().lastName();
         }
 
-        public String mandateeEmail(){
+        @Override
+        public String getMandateeEmail() {
                 return credentialSubject.mandate().mandatee().email();
         }
-
 }

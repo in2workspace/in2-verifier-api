@@ -11,6 +11,7 @@ import es.in2.vcverifier.exception.InvalidCredentialTypeException;
 import es.in2.vcverifier.exception.JsonConversionException;
 import es.in2.vcverifier.model.RefreshTokenDataCache;
 import es.in2.vcverifier.model.credentials.lear.LEARCredential;
+import es.in2.vcverifier.model.credentials.lear.employee.LEARCredentialEmployee;
 import es.in2.vcverifier.model.credentials.lear.employee.LEARCredentialEmployeeV1;
 import es.in2.vcverifier.model.credentials.lear.employee.LEARCredentialEmployeeV2;
 import es.in2.vcverifier.model.credentials.lear.machine.LEARCredentialMachine;
@@ -323,18 +324,18 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         Set<String> requestedScopes = new HashSet<>(Arrays.asList(additionalParameters.get(OAuth2ParameterNames.SCOPE).toString().split(" ")));
         Map<String, Object> claims = new HashMap<>();
 
-        if (learCredential instanceof LEARCredentialEmployeeV1 learCredentialEmployeeV1) {
+        if (learCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
             // Check if "profile" scope is requested and add profile-related claims
             if (requestedScopes.contains("profile")) {
-                String name = learCredentialEmployeeV1.mandateeFirstName() + " " + learCredentialEmployeeV1.mandateeLastName();
+                String name = learCredentialEmployee.getMandateeFirstName() + " " + learCredentialEmployee.getMandateeLastName();
                 claims.put("name", name);
-                claims.put("given_name", learCredentialEmployeeV1.mandateeFirstName());
-                claims.put("family_name", learCredentialEmployeeV1.mandateeLastName());
+                claims.put("given_name", learCredentialEmployee.getMandateeFirstName());
+                claims.put("family_name", learCredentialEmployee.getMandateeLastName());
             }
 
             // Check if "email" scope is requested and add email-related claims
             if (requestedScopes.contains("email")) {
-                claims.put("email", learCredentialEmployeeV1.mandateeEmail());
+                claims.put("email", learCredentialEmployee.getMandateeEmail());
                 claims.put("email_verified", true);
             }
         }
