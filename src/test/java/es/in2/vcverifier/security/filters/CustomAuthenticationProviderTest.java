@@ -144,6 +144,86 @@ class CustomAuthenticationProviderTest {
     }
 
     @Test
+    void extractContextFromJson_missingContext_throwsException() {
+        // Arrange
+        String clientId = "test-client-id";
+        Map<String, Object> additionalParameters = new HashMap<>();
+        additionalParameters.put("client_id", clientId);
+
+        Map<String, Object> vcMap = new HashMap<>();
+        vcMap.put("type", List.of("VerifiableCredential", "LEARCredentialEmployee"));
+        additionalParameters.put("vc", vcMap);
+
+        OAuth2AuthorizationCodeAuthenticationToken authToken = mock(OAuth2AuthorizationCodeAuthenticationToken.class);
+        when(authToken.getAdditionalParameters()).thenReturn(additionalParameters);
+
+        RegisteredClient registeredClient = mock(RegisteredClient.class);
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+
+        JsonNode vcJsonNode = mock(JsonNode.class);
+        when(objectMapper.convertValue(vcMap, JsonNode.class)).thenReturn(vcJsonNode);
+        when(vcJsonNode.get("@context")).thenReturn(null);
+
+        OAuth2AuthenticationException exception = assertThrows(OAuth2AuthenticationException.class, () -> customAuthenticationProvider.authenticate(authToken));
+
+        assertEquals(OAuth2ErrorCodes.INVALID_REQUEST, exception.getError().getErrorCode());
+    }
+
+    @Test
+    void getVerifiableCredential_unknownEmployeeVersion_throwsException() {
+        // Arrange
+        String clientId = "test-client-id";
+        Map<String, Object> additionalParameters = new HashMap<>();
+        additionalParameters.put("client_id", clientId);
+
+        Map<String, Object> vcMap = new HashMap<>();
+        vcMap.put("type", List.of("VerifiableCredential", "LEARCredentialEmployee"));
+        additionalParameters.put("vc", vcMap);
+
+        OAuth2AuthorizationCodeAuthenticationToken authToken = mock(OAuth2AuthorizationCodeAuthenticationToken.class);
+        when(authToken.getAdditionalParameters()).thenReturn(additionalParameters);
+
+        RegisteredClient registeredClient = mock(RegisteredClient.class);
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+
+        JsonNode vcJsonNode = mock(JsonNode.class);
+        when(objectMapper.convertValue(vcMap, JsonNode.class)).thenReturn(vcJsonNode);
+        when(vcJsonNode.get("@context")).thenReturn(null);
+
+        OAuth2AuthenticationException exception = assertThrows(OAuth2AuthenticationException.class, () -> customAuthenticationProvider.authenticate(authToken));
+
+        assertEquals(OAuth2ErrorCodes.INVALID_REQUEST, exception.getError().getErrorCode());
+    }
+
+    @Test
+    void extractContextFromJson_contextNotArray_throwsException() {
+        // Arrange
+        String clientId = "test-client-id";
+        Map<String, Object> additionalParameters = new HashMap<>();
+        additionalParameters.put("client_id", clientId);
+
+        Map<String, Object> vcMap = new HashMap<>();
+        vcMap.put("type", List.of("VerifiableCredential", "LEARCredentialEmployee"));
+        additionalParameters.put("vc", vcMap);
+
+        OAuth2AuthorizationCodeAuthenticationToken authToken = mock(OAuth2AuthorizationCodeAuthenticationToken.class);
+        when(authToken.getAdditionalParameters()).thenReturn(additionalParameters);
+
+        RegisteredClient registeredClient = mock(RegisteredClient.class);
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+
+        JsonNode vcJsonNode = mock(JsonNode.class);
+        when(objectMapper.convertValue(vcMap, JsonNode.class)).thenReturn(vcJsonNode);
+        ArrayNode contextNode = JsonNodeFactory.instance.arrayNode();
+        contextNode.add("https://unknown-context");
+        when(vcJsonNode.get("@context")).thenReturn(contextNode);
+
+        OAuth2AuthenticationException exception = assertThrows(OAuth2AuthenticationException.class, () -> customAuthenticationProvider.authenticate(authToken));
+
+        assertEquals(OAuth2ErrorCodes.INVALID_REQUEST, exception.getError().getErrorCode());
+    }
+
+    @Test
     void authenticate_validAuthorizationCodeGrant_withEmployeeCredentialV2_success() throws Exception {
         // Arrange
         String clientId = "test-client-id";
