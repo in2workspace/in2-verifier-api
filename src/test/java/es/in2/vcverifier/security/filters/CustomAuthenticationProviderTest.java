@@ -10,9 +10,13 @@ import es.in2.vcverifier.model.RefreshTokenDataCache;
 import es.in2.vcverifier.model.credentials.DetailedIssuer;
 import es.in2.vcverifier.model.credentials.SimpleIssuer;
 import es.in2.vcverifier.model.credentials.lear.employee.LEARCredentialEmployeeV1;
+import es.in2.vcverifier.model.credentials.lear.employee.LEARCredentialEmployeeV2;
 import es.in2.vcverifier.model.credentials.lear.employee.subject.CredentialSubjectV1;
+import es.in2.vcverifier.model.credentials.lear.employee.subject.CredentialSubjectV2;
 import es.in2.vcverifier.model.credentials.lear.employee.subject.mandate.MandateV1;
+import es.in2.vcverifier.model.credentials.lear.employee.subject.mandate.MandateV2;
 import es.in2.vcverifier.model.credentials.lear.employee.subject.mandate.mandatee.MandateeV1;
+import es.in2.vcverifier.model.credentials.lear.employee.subject.mandate.mandatee.MandateeV2;
 import es.in2.vcverifier.model.credentials.lear.machine.LEARCredentialMachine;
 import es.in2.vcverifier.model.credentials.lear.machine.subject.CredentialSubject;
 import es.in2.vcverifier.model.credentials.lear.machine.subject.mandate.Mandate;
@@ -43,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 
 import static es.in2.vcverifier.util.Constants.LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT;
+import static es.in2.vcverifier.util.Constants.LEAR_CREDENTIAL_EMPLOYEE_V2_CONTEXT;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -72,7 +77,7 @@ class CustomAuthenticationProviderTest {
     private CustomAuthenticationProvider customAuthenticationProvider;
 
     @Test
-    void authenticate_validAuthorizationCodeGrant_withEmployeeCredential_success() throws Exception {
+    void authenticate_validAuthorizationCodeGrant_withEmployeeCredentialV1_success() throws Exception {
         // Arrange
         String clientId = "test-client-id";
         String audience = "test-audience";
@@ -138,7 +143,72 @@ class CustomAuthenticationProviderTest {
         verify(oAuth2AuthorizationService).save(authorizationCaptor.capture());
     }
 
+    @Test
+    void authenticate_validAuthorizationCodeGrant_withEmployeeCredentialV2_success() throws Exception {
+        // Arrange
+        String clientId = "test-client-id";
+        String audience = "test-audience";
+        Map<String, Object> additionalParameters = new HashMap<>();
+        additionalParameters.put("client_id", clientId);
+        additionalParameters.put(OAuth2ParameterNames.AUDIENCE, audience);
+        additionalParameters.put(OAuth2ParameterNames.SCOPE, "openid profile email");
 
+        Map<String, Object> vcMap = new HashMap<>();
+        vcMap.put("type", List.of("VerifiableCredential", "LEARCredentialEmployee"));
+        additionalParameters.put("vc", vcMap);
+
+        OAuth2AuthorizationCodeAuthenticationToken authToken = mock(OAuth2AuthorizationCodeAuthenticationToken.class);
+        when(authToken.getAdditionalParameters()).thenReturn(additionalParameters);
+
+        TestingAuthenticationToken principal = new TestingAuthenticationToken("user", null);
+        when(authToken.getPrincipal()).thenReturn(principal);
+
+        RegisteredClient registeredClient = mock(RegisteredClient.class);
+        when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
+        when(registeredClient.getClientId()).thenReturn("test-client-id");
+
+        when(backendConfig.getUrl()).thenReturn("https://auth.server");
+
+        JsonNode vcJsonNode = mock(JsonNode.class);
+        when(objectMapper.convertValue(vcMap, JsonNode.class)).thenReturn(vcJsonNode);
+        ArrayNode contextNode = JsonNodeFactory.instance.arrayNode();
+        for (String ctx : LEAR_CREDENTIAL_EMPLOYEE_V2_CONTEXT) {
+            contextNode.add(ctx);
+        }
+        when(vcJsonNode.get("@context")).thenReturn(contextNode);
+
+        LEARCredentialEmployeeV2 learCredentialEmployeeV2 = getLEARCredentialEmployeeV2();
+        when(objectMapper.convertValue(vcJsonNode, LEARCredentialEmployeeV2.class)).thenReturn(learCredentialEmployeeV2);
+
+        when(objectMapper.writeValueAsString(learCredentialEmployeeV2)).thenReturn("{\"credential\":\"value\"}");
+
+        when(jwtService.generateJWT(anyString())).thenReturn("mock-jwt-token");
+
+        // Act
+        Authentication result = customAuthenticationProvider.authenticate(authToken);
+
+        // Assert
+        assertNotNull(result);
+        assertInstanceOf(OAuth2AccessTokenAuthenticationToken.class, result);
+
+        OAuth2AccessTokenAuthenticationToken tokenResult = (OAuth2AccessTokenAuthenticationToken) result;
+        assertEquals("mock-jwt-token", tokenResult.getAccessToken().getTokenValue());
+
+        Map<String, Object> additionalParams = tokenResult.getAdditionalParameters();
+        assertTrue(additionalParams.containsKey("id_token"));
+        assertEquals("mock-jwt-token", additionalParams.get("id_token"));
+
+        verify(jwtService, times(2)).generateJWT(anyString());
+
+        // Verify refresh token data cache
+        ArgumentCaptor<String> refreshTokenCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<RefreshTokenDataCache> refreshTokenDataCaptor = ArgumentCaptor.forClass(RefreshTokenDataCache.class);
+        verify(cacheStoreForRefreshTokenData).add(refreshTokenCaptor.capture(), refreshTokenDataCaptor.capture());
+
+        // Verify OAuth2AuthorizationService saved
+        ArgumentCaptor<OAuth2Authorization> authorizationCaptor = ArgumentCaptor.forClass(OAuth2Authorization.class);
+        verify(oAuth2AuthorizationService).save(authorizationCaptor.capture());
+    }
 
     @Test
     void authenticate_validClientCredentialsGrant_withMachineCredential_success() throws Exception {
@@ -493,7 +563,32 @@ class CustomAuthenticationProviderTest {
                 .issuer(SimpleIssuer.builder()
                         .id("did:elsi:issuer")
                         .build())
-                .credentialSubject(credentialSubject)
+                .credentialSubjectV1(credentialSubject)
+                .build();
+    }
+
+    private LEARCredentialEmployeeV2 getLEARCredentialEmployeeV2(){
+        MandateeV2 mandatee = MandateeV2.builder()
+                .id("did:key:1234")
+                .firstName("John")
+                .lastName("Doe")
+                .nationality("ES")
+                .email("john.doe@example.com")
+                .build();
+        MandateV2 mandate = MandateV2.builder()
+                .mandatee(mandatee)
+                .build();
+        CredentialSubjectV2 credentialSubject = CredentialSubjectV2.builder()
+                .mandate(mandate)
+                .build();
+        return LEARCredentialEmployeeV2.builder()
+                .type(List.of("VerifiableCredential", "LEARCredentialEmployee"))
+                .context(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)
+                .id("urn:uuid:1234")
+                .issuer(DetailedIssuer.builder()
+                        .id("did:elsi:issuer")
+                        .build())
+                .credentialSubjectV2(credentialSubject)
                 .build();
     }
 

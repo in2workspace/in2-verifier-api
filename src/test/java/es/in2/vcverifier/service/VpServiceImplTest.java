@@ -465,7 +465,7 @@ class VpServiceImplTest {
                 .issuer(SimpleIssuer.builder()
                         .id("did:elsi:issuer")
                         .build())
-                .credentialSubject(credentialSubject)
+                .credentialSubjectV1(credentialSubject)
                 .validUntil(ZonedDateTime.now().plusDays(1).toString())
                 .validFrom(ZonedDateTime.now().toString())
                 .build();
