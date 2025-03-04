@@ -229,11 +229,13 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
         if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
             List<String> context = learCredential.context();
+            log.debug("CustomAuthenticationProvider -- generateAccessTokenWithVc -- Context: {}", context);
             if (context.equals(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)) {
                 LEARCredentialEmployeeV1 credential = objectMapper.convertValue(learCredential, LEARCredentialEmployeeV1.class);
                 Map<String, Object> credentialData = objectMapper.convertValue(credential, new TypeReference<>() {});
                 claimsBuilder.claim("vc", credentialData);
             } else if (context.equals(LEAR_CREDENTIAL_EMPLOYEE_V2_CONTEXT)) {
+                log.debug("CustomAuthenticationProvider -- generateAccessTokenWithVc -- LEARCredentialEmployeeV2: {}", learCredential);
                 LEARCredentialEmployeeV2 credential = objectMapper.convertValue(learCredential, LEARCredentialEmployeeV2.class);
                 Map<String, Object> credentialData = objectMapper.convertValue(credential, new TypeReference<>() {});
                 claimsBuilder.claim("vc", credentialData);
