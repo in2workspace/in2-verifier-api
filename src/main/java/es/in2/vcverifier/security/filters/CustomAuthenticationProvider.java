@@ -226,7 +226,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .claim(OAuth2ParameterNames.SCOPE, getScope(learCredential));
 
         List<String> credentialTypes = learCredential.type();
-
+        log.debug("CustomAuthenticationProvider -- generateAccessTokenWithVc -- Credential Types: {}", credentialTypes);
         if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
             List<String> context = learCredential.context();
             log.debug("CustomAuthenticationProvider -- generateAccessTokenWithVc -- Context: {}", context);
