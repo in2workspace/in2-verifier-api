@@ -1,4 +1,4 @@
-package es.in2.vcverifier.model.credentials.lear.machine;
+package es.in2.vcverifier.model.credentials.lear.employee;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -7,15 +7,15 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import es.in2.vcverifier.model.credentials.Issuer;
 import es.in2.vcverifier.model.credentials.IssuerDeserializer;
 import es.in2.vcverifier.model.credentials.lear.LEARCredential;
-import es.in2.vcverifier.model.credentials.lear.machine.subject.CredentialSubject;
+import es.in2.vcverifier.model.credentials.lear.employee.subject.CredentialSubjectV2;
 import lombok.Builder;
 
 import java.util.List;
 
 @Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record LEARCredentialMachine(
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public record LEARCredentialEmployeeV2(
         @JsonProperty("@context")
         List<String> context,
         @JsonProperty("id")
@@ -25,7 +25,7 @@ public record LEARCredentialMachine(
         @JsonProperty("issuer") @JsonDeserialize(using = IssuerDeserializer.class)
         Issuer issuer,
         @JsonProperty("credentialSubject")
-        CredentialSubject credentialSubject,
+        CredentialSubjectV2 credentialSubject,
         @JsonProperty("validFrom")
         String validFrom,
         @JsonProperty("validUntil")
@@ -44,6 +44,18 @@ public record LEARCredentialMachine(
     @Override
     public String mandatorOrganizationIdentifier() {
         return credentialSubject.mandate().mandator().organizationIdentifier();
+    }
+
+    public String mandateeFirstName(){
+        return credentialSubject.mandate().mandatee().firstName();
+    }
+
+    public String mandateeLastName(){
+        return credentialSubject.mandate().mandatee().lastName();
+    }
+
+    public String mandateeEmail(){
+        return credentialSubject.mandate().mandatee().email();
     }
 
 }
