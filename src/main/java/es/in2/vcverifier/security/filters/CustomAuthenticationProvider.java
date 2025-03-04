@@ -226,16 +226,13 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .claim(OAuth2ParameterNames.SCOPE, getScope(learCredential));
 
         List<String> credentialTypes = learCredential.type();
-        log.debug("CustomAuthenticationProvider -- generateAccessTokenWithVc -- Credential Types: {}", credentialTypes);
         if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
             List<String> context = learCredential.context();
-            log.debug("CustomAuthenticationProvider -- generateAccessTokenWithVc -- Context: {}", context);
             if (context.equals(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)) {
                 LEARCredentialEmployeeV1 credential = objectMapper.convertValue(learCredential, LEARCredentialEmployeeV1.class);
                 Map<String, Object> credentialData = objectMapper.convertValue(credential, new TypeReference<>() {});
                 claimsBuilder.claim("vc", credentialData);
             } else if (context.equals(LEAR_CREDENTIAL_EMPLOYEE_V2_CONTEXT)) {
-                log.debug("CustomAuthenticationProvider -- generateAccessTokenWithVc -- LEARCredentialEmployeeV2: {}", learCredential);
                 LEARCredentialEmployeeV2 credential = objectMapper.convertValue(learCredential, LEARCredentialEmployeeV2.class);
                 Map<String, Object> credentialData = objectMapper.convertValue(credential, new TypeReference<>() {});
                 claimsBuilder.claim("vc", credentialData);
@@ -346,7 +343,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
 
     private String getScope(LEARCredential learCredential) {
-        if (learCredential instanceof LEARCredentialEmployeeV1) {
+        if (learCredential instanceof LEARCredentialEmployeeV1 || learCredential instanceof LEARCredentialEmployeeV2) {
             return "openid learcredential";
         } else if (learCredential instanceof LEARCredentialMachine) {
             return "machine learcredential";
