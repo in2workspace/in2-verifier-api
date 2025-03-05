@@ -117,7 +117,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         // Check if VC is LEARCredentialMachine Type
         JsonNode vc = vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(vpToken);
         LEARCredentialMachine learCredentialMachine = objectMapper.convertValue(vc, LEARCredentialMachine.class);
-        List<String> types = learCredentialMachine.type();
+        List<String> types = learCredentialMachine.getType();
         if (!types.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())){
             log.error("CustomTokenRequestConverter -- handleClientCredentialsGrant-- LEARCredentialType Expected: {}", LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue());
             throw new InvalidCredentialTypeException("Invalid LEARCredentialType. Expected LEARCredentialMachine");

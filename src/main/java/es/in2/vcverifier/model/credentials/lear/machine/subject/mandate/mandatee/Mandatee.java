@@ -1,9 +1,9 @@
-package es.in2.vcverifier.model.credentials.lear;
+package es.in2.vcverifier.model.credentials.lear.machine.subject.mandate.mandatee;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import es.in2.vcverifier.model.credentials.lear.machine.Contact;
+import es.in2.vcverifier.model.credentials.lear.machine.subject.mandate.mandatee.contact.Contact;
 import lombok.Builder;
 
 @Builder
@@ -11,10 +11,6 @@ import lombok.Builder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record Mandatee(
         @JsonProperty("id") String id,
-        @JsonProperty("email") String email,
-        @JsonProperty("first_name") String firstName,
-        @JsonProperty("last_name") String lastName,
-        @JsonProperty("mobile_phone") String mobilePhone,
         @JsonProperty("serviceName") String serviceName,
         @JsonProperty("serviceType") String serviceType,
         @JsonProperty("version") String version,

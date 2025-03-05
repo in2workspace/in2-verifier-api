@@ -1,4 +1,4 @@
-package es.in2.vcverifier.model.credentials.lear.machine;
+package es.in2.vcverifier.model.credentials.lear.employee;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -6,44 +6,55 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import es.in2.vcverifier.model.credentials.Issuer;
 import es.in2.vcverifier.model.credentials.IssuerDeserializer;
-import es.in2.vcverifier.model.credentials.lear.LEARCredential;
-import es.in2.vcverifier.model.credentials.lear.machine.subject.CredentialSubject;
+import es.in2.vcverifier.model.credentials.lear.employee.subject.CredentialSubjectV2;
 import lombok.Builder;
 
 import java.util.List;
 
 @Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record LEARCredentialMachine(
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public record LEARCredentialEmployeeV2(
         @JsonProperty("@context")
         List<String> getContext,
         @JsonProperty("id")
         String getId,
         @JsonProperty("type")
         List<String> getType,
+        @JsonProperty("description")
+        String description,
         @JsonProperty("issuer") @JsonDeserialize(using = IssuerDeserializer.class)
         Issuer getIssuer,
         @JsonProperty("credentialSubject")
-        CredentialSubject credentialSubject,
+        CredentialSubjectV2 credentialSubjectV2,
         @JsonProperty("validFrom")
         String getValidFrom,
         @JsonProperty("validUntil")
-        String getValidUntil,
-        @JsonProperty("expirationDate")
-        String expirationDate,
-        @JsonProperty("issuanceDate")
-        String issuanceDate
-) implements LEARCredential {
+        String getValidUntil
+) implements LEARCredentialEmployee {
 
     @Override
     public String getMandateeId() {
-        return credentialSubject.mandate().mandatee().id();
+        return credentialSubjectV2.mandate().mandatee().id();
     }
 
     @Override
     public String getMandatorOrganizationIdentifier() {
-        return credentialSubject.mandate().mandator().organizationIdentifier();
+        return credentialSubjectV2.mandate().mandator().organizationIdentifier();
     }
 
+    @Override
+    public String getMandateeFirstName() {
+        return credentialSubjectV2.mandate().mandatee().firstName();
+    }
+
+    @Override
+    public String getMandateeLastName() {
+        return credentialSubjectV2.mandate().mandatee().lastName();
+    }
+
+    @Override
+    public String getMandateeEmail() {
+        return credentialSubjectV2.mandate().mandatee().email();
+    }
 }

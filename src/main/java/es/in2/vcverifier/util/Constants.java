@@ -1,5 +1,7 @@
 package es.in2.vcverifier.util;
 
+import java.util.List;
+
 public class Constants {
     private Constants() {
         throw new IllegalStateException("Utility class");
@@ -28,6 +30,8 @@ public class Constants {
     public static final String LOGIN_TIMEOUT = "120";
     public static final String LOGIN_TIMEOUT_CHRONO_UNIT = "SECONDS";
     public static final boolean IS_NONCE_REQUIRED_ON_FAPI_PROFILE = false;
+    public static final List<String> LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT = List.of("https://www.w3.org/ns/credentials/v2","https://trust-framework.dome-marketplace.eu/credentials/learcredentialemployee/v1");
+    public static final List<String> LEAR_CREDENTIAL_EMPLOYEE_V2_CONTEXT = List.of("https://www.w3.org/ns/credentials/v2","https://www.dome-marketplace.eu/2025/credentials/learcredentialemployee/v2");
     public static final long MSB = 0x80L;
     public static final long MSBALL = 0xFFFFFF80L;
 
