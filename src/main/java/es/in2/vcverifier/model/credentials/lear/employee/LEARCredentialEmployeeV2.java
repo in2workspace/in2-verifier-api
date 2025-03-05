@@ -16,21 +16,21 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record LEARCredentialEmployeeV2(
         @JsonProperty("@context")
-        List<String> context,
+        List<String> getContext,
         @JsonProperty("id")
-        String id,
+        String getId,
         @JsonProperty("type")
-        List<String> type,
+        List<String> getType,
         @JsonProperty("description")
         String description,
         @JsonProperty("issuer") @JsonDeserialize(using = IssuerDeserializer.class)
-        Issuer issuer,
+        Issuer getIssuer,
         @JsonProperty("credentialSubject")
         CredentialSubjectV2 credentialSubjectV2,
         @JsonProperty("validFrom")
-        String validFrom,
+        String getValidFrom,
         @JsonProperty("validUntil")
-        String validUntil
+        String getValidUntil
 ) implements LEARCredentialEmployee {
 
     @Override

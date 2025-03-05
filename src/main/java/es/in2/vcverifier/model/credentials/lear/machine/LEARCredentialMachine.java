@@ -17,19 +17,19 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record LEARCredentialMachine(
         @JsonProperty("@context")
-        List<String> context,
+        List<String> getContext,
         @JsonProperty("id")
-        String id,
+        String getId,
         @JsonProperty("type")
-        List<String> type,
+        List<String> getType,
         @JsonProperty("issuer") @JsonDeserialize(using = IssuerDeserializer.class)
-        Issuer issuer,
+        Issuer getIssuer,
         @JsonProperty("credentialSubject")
         CredentialSubject credentialSubject,
         @JsonProperty("validFrom")
-        String validFrom,
+        String getValidFrom,
         @JsonProperty("validUntil")
-        String validUntil,
+        String getValidUntil,
         @JsonProperty("expirationDate")
         String expirationDate,
         @JsonProperty("issuanceDate")

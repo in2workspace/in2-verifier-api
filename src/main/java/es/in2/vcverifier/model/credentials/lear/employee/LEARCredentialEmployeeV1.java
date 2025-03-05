@@ -16,19 +16,19 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record LEARCredentialEmployeeV1(
         @JsonProperty("@context")
-        List<String> context,
+        List<String> getContext,
         @JsonProperty("id")
-        String id,
+        String getId,
         @JsonProperty("type")
-        List<String> type,
+        List<String> getType,
         @JsonProperty("issuer") @JsonDeserialize(using = IssuerDeserializer.class)
-        Issuer issuer,
+        Issuer getIssuer,
         @JsonProperty("credentialSubject")
         CredentialSubjectV1 credentialSubjectV1,
         @JsonProperty("validFrom")
-        String validFrom,
+        String getValidFrom,
         @JsonProperty("validUntil")
-        String validUntil,
+        String getValidUntil,
         @JsonProperty("expirationDate")
         String expirationDate,
         @JsonProperty("issuanceDate")

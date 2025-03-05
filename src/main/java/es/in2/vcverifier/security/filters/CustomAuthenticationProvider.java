@@ -226,9 +226,9 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .expirationTime(Date.from(expirationTime))
                 .claim(OAuth2ParameterNames.SCOPE, getScope(learCredential));
 
-        List<String> credentialTypes = learCredential.type();
+        List<String> credentialTypes = learCredential.getType();
         if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
-            List<String> context = learCredential.context();
+            List<String> context = learCredential.getContext();
             if (context.equals(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)) {
                 LEARCredentialEmployeeV1 credential = objectMapper.convertValue(learCredential, LEARCredentialEmployeeV1.class);
                 Map<String, Object> credentialData = objectMapper.convertValue(credential, new TypeReference<>() {});

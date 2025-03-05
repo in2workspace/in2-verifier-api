@@ -310,7 +310,7 @@ class VpServiceImplTest {
                             .claims(null)
                             .build()
             );
-            when(trustFrameworkService.getTrustedIssuerListData(learCredentialEmployeeV1.issuer().getId())).thenReturn(issuerCapabilitiesList);
+            when(trustFrameworkService.getTrustedIssuerListData(learCredentialEmployeeV1.getIssuer().getId())).thenReturn(issuerCapabilitiesList);
 
             when(objectMapper.convertValue(vcFromPayload, LEARCredentialEmployeeV1.class)).thenReturn(learCredentialEmployeeV1);
 

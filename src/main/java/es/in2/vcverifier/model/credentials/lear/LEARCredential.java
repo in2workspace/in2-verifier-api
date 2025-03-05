@@ -5,12 +5,12 @@ import es.in2.vcverifier.model.credentials.Issuer;
 import java.util.List;
 
 public interface LEARCredential {
-    List<String> context();
-    String id();
-    List<String> type();
-    Issuer issuer(); // Adjusted to be common
+    List<String> getContext();
+    String getId();
+    List<String> getType();
+    Issuer getIssuer(); // Adjusted to be common
     String getMandateeId();
     String getMandatorOrganizationIdentifier();
-    String validFrom();
-    String validUntil();
+    String getValidFrom();
+    String getValidUntil();
 }

@@ -68,15 +68,15 @@ public class VpServiceImpl implements VpService {
 
             // Step 3: Validate the credential id is not in the revoked list
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Validating that the credential is not revoked");
-            validateCredentialNotRevoked(learCredential.id());
+            validateCredentialNotRevoked(learCredential.getId());
             log.info("Credential is not revoked");
 
             // Step 4: Validate the issuer
-            String credentialIssuerDid = learCredential.issuer().getId();
+            String credentialIssuerDid = learCredential.getIssuer().getId();
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Retrieved issuer DID from payload: {}", credentialIssuerDid);
 
             // Step 5: Extract and validate credential types
-            List<String> credentialTypes = learCredential.type();
+            List<String> credentialTypes = learCredential.getType();
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Credential types extracted: {}", credentialTypes);
 
             // Step 6: Retrieve the list of issuer capabilities
@@ -238,8 +238,8 @@ public class VpServiceImpl implements VpService {
 
     private void validateCredentialTimeWindow(LEARCredential credential) {
         try {
-            ZonedDateTime validFrom = ZonedDateTime.parse(credential.validFrom());
-            ZonedDateTime validUntil = ZonedDateTime.parse(credential.validUntil());
+            ZonedDateTime validFrom = ZonedDateTime.parse(credential.getValidFrom());
+            ZonedDateTime validUntil = ZonedDateTime.parse(credential.getValidUntil());
             ZonedDateTime now = ZonedDateTime.now();
 
             // Check if the credential is not yet valid
