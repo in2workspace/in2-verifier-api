@@ -95,7 +95,7 @@ public class VpServiceImpl implements VpService {
             certificateValidationService.extractAndVerifyCertificate(jwtCredential.serialize(),vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
 
             // Step 9: Extract the mandator organization identifier from the Verifiable Credential
-            String mandatorOrganizationIdentifier = learCredential.mandatorOrganizationIdentifier();
+            String mandatorOrganizationIdentifier = learCredential.getMandatorOrganizationIdentifier();
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Extracted Mandator Organization Identifier from Verifiable Credential: {}", mandatorOrganizationIdentifier);
 
             //TODO this must be validated against the participants list, not the issuer list
@@ -104,7 +104,7 @@ public class VpServiceImpl implements VpService {
             log.info("Mandator OrganizationIdentifier {} is valid and allowed", mandatorOrganizationIdentifier);
 
             // Step 10: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
-            String mandateeId = learCredential.mandateeId();
+            String mandateeId = learCredential.getMandateeId();
             PublicKey holderPublicKey = didService.getPublicKeyFromDid(mandateeId); // Get the holder's public key in bytes
             jwtService.verifyJWTWithECKey(verifiablePresentation, holderPublicKey); // Validate the VP was signed by the holder DID
             log.info("VP's signature is valid, holder DID {} confirmed", mandateeId);

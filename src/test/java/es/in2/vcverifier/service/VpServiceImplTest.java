@@ -315,7 +315,7 @@ class VpServiceImplTest {
             when(objectMapper.convertValue(vcFromPayload, LEARCredentialEmployeeV1.class)).thenReturn(learCredentialEmployeeV1);
 
             // Step 7: Validate the mandator with trusted issuer service
-            when(trustFrameworkService.getTrustedIssuerListData(DID_ELSI_PREFIX + learCredentialEmployeeV1.mandatorOrganizationIdentifier())).thenReturn(issuerCapabilitiesList);
+            when(trustFrameworkService.getTrustedIssuerListData(DID_ELSI_PREFIX + learCredentialEmployeeV1.getMandatorOrganizationIdentifier())).thenReturn(issuerCapabilitiesList);
 
             // Step 7: Verify the signature and the organizationId of the credential signature
             Map<String, Object> vcHeader = new HashMap<>();
@@ -331,7 +331,7 @@ class VpServiceImplTest {
 
             // Step 8: Get the holder's public key
             PublicKey holderPublicKey = generateECPublicKey();
-            when(didService.getPublicKeyFromDid(learCredentialEmployeeV1.mandateeId())).thenReturn(holderPublicKey);
+            when(didService.getPublicKeyFromDid(learCredentialEmployeeV1.getMandateeId())).thenReturn(holderPublicKey);
 
             // Mock jwtService.verifyJWTSignature for the Verifiable Presentation
             doNothing().when(jwtService).verifyJWTWithECKey(verifiablePresentation, holderPublicKey);

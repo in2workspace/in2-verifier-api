@@ -21,7 +21,8 @@ public record LEARCredentialEmployeeV2(
         String id,
         @JsonProperty("type")
         List<String> type,
-        @JsonProperty("description") String description,
+        @JsonProperty("description")
+        String description,
         @JsonProperty("issuer") @JsonDeserialize(using = IssuerDeserializer.class)
         Issuer issuer,
         @JsonProperty("credentialSubject")
@@ -33,12 +34,12 @@ public record LEARCredentialEmployeeV2(
 ) implements LEARCredentialEmployee {
 
     @Override
-    public String mandateeId() {
+    public String getMandateeId() {
         return credentialSubjectV2.mandate().mandatee().id();
     }
 
     @Override
-    public String mandatorOrganizationIdentifier() {
+    public String getMandatorOrganizationIdentifier() {
         return credentialSubjectV2.mandate().mandator().organizationIdentifier();
     }
 

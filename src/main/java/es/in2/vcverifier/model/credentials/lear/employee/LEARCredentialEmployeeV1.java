@@ -36,12 +36,12 @@ public record LEARCredentialEmployeeV1(
 ) implements LEARCredentialEmployee {
 
         @Override
-        public String mandateeId() {
+        public String getMandateeId() {
                 return credentialSubjectV1.mandate().mandatee().id();
         }
 
         @Override
-        public String mandatorOrganizationIdentifier() {
+        public String getMandatorOrganizationIdentifier() {
                 return credentialSubjectV1.mandate().mandator().organizationIdentifier();
         }
 

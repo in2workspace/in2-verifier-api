@@ -77,7 +77,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
         JsonNode credentialJson = getJsonCredential(authentication);
         LEARCredential credential = getVerifiableCredential(authentication, credentialJson);
-        String subject = credential.mandateeId();
+        String subject = credential.getMandateeId();
         log.debug("CustomAuthenticationProvider -- handleGrant -- Credential subject obtained: {}", subject);
 
         String audience = getAudience(authentication, credential);
@@ -123,7 +123,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     }
 
     private String getClientId(OAuth2AuthorizationGrantAuthenticationToken authentication) {
-        // Asumiendo que el clientId puede estar en los parámetros adicionales o como atributo
+        // Extract the client ID from the additional parameters
         Map<String, Object> additionalParameters = authentication.getAdditionalParameters();
         if (additionalParameters != null && additionalParameters.containsKey(OAuth2ParameterNames.CLIENT_ID)) {
             return additionalParameters.get(OAuth2ParameterNames.CLIENT_ID).toString();
@@ -154,7 +154,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         if (authentication instanceof OAuth2AuthorizationCodeAuthenticationToken ||
                 authentication instanceof OAuth2RefreshTokenAuthenticationToken) {
 
-            // Extraer y validar el campo '@context' desde el JsonNode
+            // Extract and validate the '@context' field from the JsonNode
             List<String> contextList = extractContextFromJson(verifiableCredential);
 
             if (contextList.equals(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)) {
@@ -197,11 +197,11 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     }
 
     private String getAudience(OAuth2AuthorizationGrantAuthenticationToken authentication, LEARCredential credential) {
-        // Extraer el audience en función del tipo de credencial
+        // Extract the audience based on the type of credential
         if (credential instanceof LEARCredentialMachine) {
             return backendConfig.getUrl();
         } else if (credential instanceof LEARCredentialEmployeeV1 || credential instanceof LEARCredentialEmployeeV2) {
-            // Obtener el audience de los parámetros adicionales
+            // Get the audience from the additional parameters
             Map<String, Object> additionalParameters = authentication.getAdditionalParameters();
             if (additionalParameters.containsKey(OAuth2ParameterNames.AUDIENCE)) {
                 return additionalParameters.get(OAuth2ParameterNames.AUDIENCE).toString();
@@ -216,7 +216,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     private String generateAccessTokenWithVc(LEARCredential learCredential, Instant issueTime, Instant expirationTime, String subject, String audience) {
         log.info("Generating access token with verifiableCredential");
 
-        // Construir el builder del JWTClaimsSet
+        // Build the JWTClaimsSet builder
         JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
                 .issuer(backendConfig.getUrl())
                 .audience(audience)

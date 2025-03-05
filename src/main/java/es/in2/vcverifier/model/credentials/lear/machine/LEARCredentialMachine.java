@@ -37,12 +37,12 @@ public record LEARCredentialMachine(
 ) implements LEARCredential {
 
     @Override
-    public String mandateeId() {
+    public String getMandateeId() {
         return credentialSubject.mandate().mandatee().id();
     }
 
     @Override
-    public String mandatorOrganizationIdentifier() {
+    public String getMandatorOrganizationIdentifier() {
         return credentialSubject.mandate().mandator().organizationIdentifier();
     }
 
