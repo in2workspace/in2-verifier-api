@@ -24,7 +24,7 @@ public record LEARCredentialMachine(
         List<String> type,
         @JsonProperty("issuer") @JsonDeserialize(using = IssuerDeserializer.class)
         Issuer issuer,
-        @JsonProperty("credentialSubjectV2")
+        @JsonProperty("credentialSubject")
         CredentialSubject credentialSubject,
         @JsonProperty("validFrom")
         String validFrom,
