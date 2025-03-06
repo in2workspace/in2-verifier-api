@@ -643,7 +643,7 @@ class CustomAuthenticationProviderTest {
                 .issuer(SimpleIssuer.builder()
                         .id("did:elsi:issuer")
                         .build())
-                .credentialSubject(credentialSubject)
+                .credentialSubjectV1(credentialSubject)
                 .build();
     }
 
@@ -668,7 +668,7 @@ class CustomAuthenticationProviderTest {
                 .issuer(DetailedIssuer.builder()
                         .id("did:elsi:issuer")
                         .build())
-                .credentialSubject(credentialSubject)
+                .credentialSubjectV2(credentialSubject)
                 .build();
     }
 

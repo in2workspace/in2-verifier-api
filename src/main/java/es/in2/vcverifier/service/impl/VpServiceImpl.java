@@ -68,15 +68,15 @@ public class VpServiceImpl implements VpService {
 
             // Step 3: Validate the credential id is not in the revoked list
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Validating that the credential is not revoked");
-            validateCredentialNotRevoked(learCredential.getId());
+            validateCredentialNotRevoked(learCredential.id());
             log.info("Credential is not revoked");
 
             // Step 4: Validate the issuer
-            String credentialIssuerDid = learCredential.getIssuer().getId();
+            String credentialIssuerDid = learCredential.issuer().getId();
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Retrieved issuer DID from payload: {}", credentialIssuerDid);
 
             // Step 5: Extract and validate credential types
-            List<String> credentialTypes = learCredential.getType();
+            List<String> credentialTypes = learCredential.type();
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Credential types extracted: {}", credentialTypes);
 
             // Step 6: Retrieve the list of issuer capabilities
@@ -95,7 +95,7 @@ public class VpServiceImpl implements VpService {
             certificateValidationService.extractAndVerifyCertificate(jwtCredential.serialize(),vcHeader, credentialIssuerDid.substring("did:elsi:".length())); // Extract public key from x5c certificate and validate OrganizationIdentifier
 
             // Step 9: Extract the mandator organization identifier from the Verifiable Credential
-            String mandatorOrganizationIdentifier = learCredential.getMandatorOrganizationIdentifier();
+            String mandatorOrganizationIdentifier = learCredential.mandatorOrganizationIdentifier();
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Extracted Mandator Organization Identifier from Verifiable Credential: {}", mandatorOrganizationIdentifier);
 
             //TODO this must be validated against the participants list, not the issuer list
@@ -104,7 +104,7 @@ public class VpServiceImpl implements VpService {
             log.info("Mandator OrganizationIdentifier {} is valid and allowed", mandatorOrganizationIdentifier);
 
             // Step 10: Validate the VP's signature with the DIDService (the DID of the holder of the VP)
-            String mandateeId = learCredential.getMandateeId();
+            String mandateeId = learCredential.mandateeId();
             PublicKey holderPublicKey = didService.getPublicKeyFromDid(mandateeId); // Get the holder's public key in bytes
             jwtService.verifyJWTWithECKey(verifiablePresentation, holderPublicKey); // Validate the VP was signed by the holder DID
             log.info("VP's signature is valid, holder DID {} confirmed", mandateeId);
@@ -238,8 +238,8 @@ public class VpServiceImpl implements VpService {
 
     private void validateCredentialTimeWindow(LEARCredential credential) {
         try {
-            ZonedDateTime validFrom = ZonedDateTime.parse(credential.getValidFrom());
-            ZonedDateTime validUntil = ZonedDateTime.parse(credential.getValidUntil());
+            ZonedDateTime validFrom = ZonedDateTime.parse(credential.validFrom());
+            ZonedDateTime validUntil = ZonedDateTime.parse(credential.validUntil());
             ZonedDateTime now = ZonedDateTime.now();
 
             // Check if the credential is not yet valid

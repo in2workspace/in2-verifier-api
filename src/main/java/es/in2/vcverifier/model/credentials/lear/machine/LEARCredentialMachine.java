@@ -24,7 +24,7 @@ public record LEARCredentialMachine(
         List<String> type,
         @JsonProperty("issuer") @JsonDeserialize(using = IssuerDeserializer.class)
         Issuer issuer,
-        @JsonProperty("credentialSubject")
+        @JsonProperty("credentialSubjectV2")
         CredentialSubject credentialSubject,
         @JsonProperty("validFrom")
         String validFrom,
@@ -37,43 +37,13 @@ public record LEARCredentialMachine(
 ) implements LEARCredential {
 
     @Override
-    public List<String> getContext() {
-        return context;
-    }
-
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public List<String> getType() {
-        return type;
-    }
-
-    @Override
-    public Issuer getIssuer() {
-        return issuer;
-    }
-
-    @Override
-    public String getMandateeId() {
+    public String mandateeId() {
         return credentialSubject.mandate().mandatee().id();
     }
 
     @Override
-    public String getMandatorOrganizationIdentifier() {
+    public String mandatorOrganizationIdentifier() {
         return credentialSubject.mandate().mandator().organizationIdentifier();
-    }
-
-    @Override
-    public String getValidFrom() {
-        return validFrom;
-    }
-
-    @Override
-    public String getValidUntil() {
-        return validUntil;
     }
 
 }

@@ -77,7 +77,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
         JsonNode credentialJson = getJsonCredential(authentication);
         LEARCredential credential = getVerifiableCredential(authentication, credentialJson);
-        String subject = credential.getMandateeId();
+        String subject = credential.mandateeId();
         log.debug("CustomAuthenticationProvider -- handleGrant -- Credential subject obtained: {}", subject);
 
         String audience = getAudience(authentication, credential);
@@ -226,9 +226,9 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .expirationTime(Date.from(expirationTime))
                 .claim(OAuth2ParameterNames.SCOPE, getScope(learCredential));
 
-        List<String> credentialTypes = learCredential.getType();
+        List<String> credentialTypes = learCredential.type();
         if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
-            List<String> context = learCredential.getContext();
+            List<String> context = learCredential.context();
             if (context.equals(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)) {
                 LEARCredentialEmployeeV1 credential = objectMapper.convertValue(learCredential, LEARCredentialEmployeeV1.class);
                 Map<String, Object> credentialData = objectMapper.convertValue(credential, new TypeReference<>() {});
@@ -327,15 +327,15 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         if (learCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
             // Check if "profile" scope is requested and add profile-related claims
             if (requestedScopes.contains("profile")) {
-                String name = learCredentialEmployee.getMandateeFirstName() + " " + learCredentialEmployee.getMandateeLastName();
+                String name = learCredentialEmployee.mandateeFirstName() + " " + learCredentialEmployee.mandateeLastName();
                 claims.put("name", name);
-                claims.put("given_name", learCredentialEmployee.getMandateeFirstName());
-                claims.put("family_name", learCredentialEmployee.getMandateeLastName());
+                claims.put("given_name", learCredentialEmployee.mandateeFirstName());
+                claims.put("family_name", learCredentialEmployee.mandateeLastName());
             }
 
             // Check if "email" scope is requested and add email-related claims
             if (requestedScopes.contains("email")) {
-                claims.put("email", learCredentialEmployee.getMandateeEmail());
+                claims.put("email", learCredentialEmployee.mandateeEmail());
                 claims.put("email_verified", true);
             }
         }
