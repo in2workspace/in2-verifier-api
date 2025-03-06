@@ -23,7 +23,7 @@ public record LEARCredentialEmployeeV1(
         List<String> type,
         @JsonProperty("issuer") @JsonDeserialize(using = IssuerDeserializer.class)
         Issuer issuer,
-        @JsonProperty("credentialSubjectV2")
+        @JsonProperty("credentialSubject")
         CredentialSubjectV1 credentialSubjectV1,
         @JsonProperty("validFrom")
         String validFrom,
