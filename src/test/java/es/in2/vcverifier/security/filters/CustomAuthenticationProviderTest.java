@@ -638,7 +638,7 @@ class CustomAuthenticationProviderTest {
                 .build();
         return LEARCredentialEmployeeV1.builder()
                 .getType(List.of("VerifiableCredential", "LEARCredentialEmployee"))
-                .getContext(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)
+                .context(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)
                 .getId("urn:uuid:1234")
                 .getIssuer(SimpleIssuer.builder()
                         .id("did:elsi:issuer")
@@ -663,7 +663,7 @@ class CustomAuthenticationProviderTest {
                 .build();
         return LEARCredentialEmployeeV2.builder()
                 .getType(List.of("VerifiableCredential", "LEARCredentialEmployee"))
-                .getContext(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)
+                .context(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)
                 .getId("urn:uuid:1234")
                 .getIssuer(DetailedIssuer.builder()
                         .id("did:elsi:issuer")
@@ -679,7 +679,7 @@ class CustomAuthenticationProviderTest {
 
         return LEARCredentialMachine.builder()
                 .credentialSubject(credentialSubject)
-                .getContext(List.of("https://www.w3.org/2018/credentials/v1"))
+                .context(List.of("https://www.w3.org/2018/credentials/v1"))
                 .getId("urn:uuid:1234")
                 .getIssuer(DetailedIssuer.builder()
                         .id("did:elsi:issuer")

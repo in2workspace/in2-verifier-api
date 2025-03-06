@@ -17,7 +17,7 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record LEARCredentialMachine(
         @JsonProperty("@context")
-        List<String> getContext,
+        List<String> context,
         @JsonProperty("id")
         String getId,
         @JsonProperty("type")
@@ -35,6 +35,11 @@ public record LEARCredentialMachine(
         @JsonProperty("issuanceDate")
         String issuanceDate
 ) implements LEARCredential {
+
+    @Override
+    public List<String> getContext() {
+        return context;
+    }
 
     @Override
     public String getMandateeId() {

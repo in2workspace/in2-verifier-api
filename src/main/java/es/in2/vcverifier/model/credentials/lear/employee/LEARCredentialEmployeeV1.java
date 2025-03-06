@@ -16,7 +16,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record LEARCredentialEmployeeV1(
         @JsonProperty("@context")
-        List<String> getContext,
+        List<String> context,
         @JsonProperty("id")
         String getId,
         @JsonProperty("type")
@@ -34,6 +34,11 @@ public record LEARCredentialEmployeeV1(
         @JsonProperty("issuanceDate")
         String issuanceDate
 ) implements LEARCredentialEmployee {
+
+        @Override
+        public List<String> getContext() {
+                return context;
+        }
 
         @Override
         public String getMandateeId() {

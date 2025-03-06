@@ -460,7 +460,7 @@ class VpServiceImplTest {
                 .build();
         return LEARCredentialEmployeeV1.builder()
                 .getType(List.of("VerifiableCredential", "LEARCredentialEmployee"))
-                .getContext(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)
+                .context(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)
                 .getId("urn:uuid:1234")
                 .getIssuer(SimpleIssuer.builder()
                         .id("did:elsi:issuer")
