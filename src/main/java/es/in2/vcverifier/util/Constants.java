@@ -21,7 +21,7 @@ public class Constants {
     public static final String INVALID_CLIENT_AUTHENTICATION = "invalid_client_authentication";
     public static final String LOG_ERROR_FORMAT = "{} - {}";
     // ACCESS_TOKEN_EXPIRATION_TIME must be in seconds
-    public static final String ACCESS_TOKEN_EXPIRATION_TIME = "300";
+    public static final String ACCESS_TOKEN_EXPIRATION_TIME = "3600";
     public static final String ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT = "SECONDS";
     // ID_TOKEN_EXPIRATION_TIME  must be in seconds
     public static final String ID_TOKEN_EXPIRATION_TIME = "60";
