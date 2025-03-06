@@ -310,7 +310,7 @@ class VpServiceImplTest {
                             .claims(null)
                             .build()
             );
-            when(trustFrameworkService.getTrustedIssuerListData(learCredentialEmployeeV1.getIssuer().getId())).thenReturn(issuerCapabilitiesList);
+            when(trustFrameworkService.getTrustedIssuerListData(learCredentialEmployeeV1.issuer().getId())).thenReturn(issuerCapabilitiesList);
 
             when(objectMapper.convertValue(vcFromPayload, LEARCredentialEmployeeV1.class)).thenReturn(learCredentialEmployeeV1);
 
@@ -353,8 +353,8 @@ class VpServiceImplTest {
         String invalidVP = "invalid-time-window.vp.jwt";
         ZonedDateTime now = ZonedDateTime.now();
         LEARCredentialEmployeeV1 expiredCredential = LEARCredentialEmployeeV1.builder()
-                .getValidUntil(now.minusDays(1).toString())
-                .getValidFrom(now.minusDays(2).toString())
+                .validUntil(now.minusDays(1).toString())
+                .validFrom(now.minusDays(2).toString())
                 .build();
 
         // Mock parsing del VP
@@ -397,8 +397,8 @@ class VpServiceImplTest {
         String invalidVP = "invalid-time-window.vp.jwt";
         ZonedDateTime now = ZonedDateTime.now();
         LEARCredentialEmployeeV1 expiredCredential = LEARCredentialEmployeeV1.builder()
-                .getValidUntil(now.plusDays(1).toString())
-                .getValidFrom(now.plusDays(1).toString())
+                .validUntil(now.plusDays(1).toString())
+                .validFrom(now.plusDays(1).toString())
                 .build();
 
         // Mock parsing del VP
@@ -459,15 +459,15 @@ class VpServiceImplTest {
                 .mandate(mandate)
                 .build();
         return LEARCredentialEmployeeV1.builder()
-                .getType(List.of("VerifiableCredential", "LEARCredentialEmployee"))
+                .type(List.of("VerifiableCredential", "LEARCredentialEmployee"))
                 .context(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)
-                .getId("urn:uuid:1234")
-                .getIssuer(SimpleIssuer.builder()
+                .id("urn:uuid:1234")
+                .issuer(SimpleIssuer.builder()
                         .id("did:elsi:issuer")
                         .build())
-                .credentialSubjectV1(credentialSubject)
-                .getValidUntil(ZonedDateTime.now().plusDays(1).toString())
-                .getValidFrom(ZonedDateTime.now().toString())
+                .credentialSubject(credentialSubject)
+                .validUntil(ZonedDateTime.now().plusDays(1).toString())
+                .validFrom(ZonedDateTime.now().toString())
                 .build();
     }
 }

@@ -637,13 +637,13 @@ class CustomAuthenticationProviderTest {
                 .mandate(mandate)
                 .build();
         return LEARCredentialEmployeeV1.builder()
-                .getType(List.of("VerifiableCredential", "LEARCredentialEmployee"))
+                .type(List.of("VerifiableCredential", "LEARCredentialEmployee"))
                 .context(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)
-                .getId("urn:uuid:1234")
-                .getIssuer(SimpleIssuer.builder()
+                .id("urn:uuid:1234")
+                .issuer(SimpleIssuer.builder()
                         .id("did:elsi:issuer")
                         .build())
-                .credentialSubjectV1(credentialSubject)
+                .credentialSubject(credentialSubject)
                 .build();
     }
 
@@ -662,13 +662,13 @@ class CustomAuthenticationProviderTest {
                 .mandate(mandate)
                 .build();
         return LEARCredentialEmployeeV2.builder()
-                .getType(List.of("VerifiableCredential", "LEARCredentialEmployee"))
+                .type(List.of("VerifiableCredential", "LEARCredentialEmployee"))
                 .context(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)
-                .getId("urn:uuid:1234")
-                .getIssuer(DetailedIssuer.builder()
+                .id("urn:uuid:1234")
+                .issuer(DetailedIssuer.builder()
                         .id("did:elsi:issuer")
                         .build())
-                .credentialSubjectV2(credentialSubject)
+                .credentialSubject(credentialSubject)
                 .build();
     }
 
@@ -680,11 +680,11 @@ class CustomAuthenticationProviderTest {
         return LEARCredentialMachine.builder()
                 .credentialSubject(credentialSubject)
                 .context(List.of("https://www.w3.org/2018/credentials/v1"))
-                .getId("urn:uuid:1234")
-                .getIssuer(DetailedIssuer.builder()
+                .id("urn:uuid:1234")
+                .issuer(DetailedIssuer.builder()
                         .id("did:elsi:issuer")
                         .build())
-                .getType(List.of("VerifiableCredential", "LEARCredentialMachine"))
+                .type(List.of("VerifiableCredential", "LEARCredentialMachine"))
                 .build();
     }
 

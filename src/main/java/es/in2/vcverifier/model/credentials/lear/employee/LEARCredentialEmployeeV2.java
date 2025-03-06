@@ -18,19 +18,19 @@ public record LEARCredentialEmployeeV2(
         @JsonProperty("@context")
         List<String> context,
         @JsonProperty("id")
-        String getId,
+        String id,
         @JsonProperty("type")
-        List<String> getType,
+        List<String> type,
         @JsonProperty("description")
         String description,
         @JsonProperty("issuer") @JsonDeserialize(using = IssuerDeserializer.class)
-        Issuer getIssuer,
+        Issuer issuer,
         @JsonProperty("credentialSubject")
-        CredentialSubjectV2 credentialSubjectV2,
+        CredentialSubjectV2 credentialSubject,
         @JsonProperty("validFrom")
-        String getValidFrom,
+        String validFrom,
         @JsonProperty("validUntil")
-        String getValidUntil
+        String validUntil
 ) implements LEARCredentialEmployee {
 
     @Override
@@ -39,27 +39,52 @@ public record LEARCredentialEmployeeV2(
     }
 
     @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public List<String> getType() {
+        return type;
+    }
+
+    @Override
+    public Issuer getIssuer() {
+        return issuer;
+    }
+
+    @Override
     public String getMandateeId() {
-        return credentialSubjectV2.mandate().mandatee().id();
+        return credentialSubject.mandate().mandatee().id();
     }
 
     @Override
     public String getMandatorOrganizationIdentifier() {
-        return credentialSubjectV2.mandate().mandator().organizationIdentifier();
+        return credentialSubject.mandate().mandator().organizationIdentifier();
+    }
+
+    @Override
+    public String getValidFrom() {
+        return validFrom;
+    }
+
+    @Override
+    public String getValidUntil() {
+        return validUntil;
     }
 
     @Override
     public String getMandateeFirstName() {
-        return credentialSubjectV2.mandate().mandatee().firstName();
+        return credentialSubject.mandate().mandatee().firstName();
     }
 
     @Override
     public String getMandateeLastName() {
-        return credentialSubjectV2.mandate().mandatee().lastName();
+        return credentialSubject.mandate().mandatee().lastName();
     }
 
     @Override
     public String getMandateeEmail() {
-        return credentialSubjectV2.mandate().mandatee().email();
+        return credentialSubject.mandate().mandatee().email();
     }
 }

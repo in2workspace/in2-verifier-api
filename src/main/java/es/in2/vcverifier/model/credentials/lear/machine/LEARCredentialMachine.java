@@ -19,17 +19,17 @@ public record LEARCredentialMachine(
         @JsonProperty("@context")
         List<String> context,
         @JsonProperty("id")
-        String getId,
+        String id,
         @JsonProperty("type")
-        List<String> getType,
+        List<String> type,
         @JsonProperty("issuer") @JsonDeserialize(using = IssuerDeserializer.class)
-        Issuer getIssuer,
+        Issuer issuer,
         @JsonProperty("credentialSubject")
         CredentialSubject credentialSubject,
         @JsonProperty("validFrom")
-        String getValidFrom,
+        String validFrom,
         @JsonProperty("validUntil")
-        String getValidUntil,
+        String validUntil,
         @JsonProperty("expirationDate")
         String expirationDate,
         @JsonProperty("issuanceDate")
@@ -42,6 +42,21 @@ public record LEARCredentialMachine(
     }
 
     @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public List<String> getType() {
+        return type;
+    }
+
+    @Override
+    public Issuer getIssuer() {
+        return issuer;
+    }
+
+    @Override
     public String getMandateeId() {
         return credentialSubject.mandate().mandatee().id();
     }
@@ -49,6 +64,16 @@ public record LEARCredentialMachine(
     @Override
     public String getMandatorOrganizationIdentifier() {
         return credentialSubject.mandate().mandator().organizationIdentifier();
+    }
+
+    @Override
+    public String getValidFrom() {
+        return validFrom;
+    }
+
+    @Override
+    public String getValidUntil() {
+        return validUntil;
     }
 
 }

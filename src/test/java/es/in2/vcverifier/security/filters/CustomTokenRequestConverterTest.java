@@ -125,7 +125,7 @@ class CustomTokenRequestConverterTest {
 
         LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
         when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
-        when(learCredentialMachine.getType()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
+        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
 
         // Act
         Authentication result = customTokenRequestConverter.convert(mockRequest);
@@ -165,7 +165,7 @@ class CustomTokenRequestConverterTest {
 
         LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
         when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
-        when(learCredentialMachine.getType()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
+        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
 
         when(clientAssertionValidationService.validateClientAssertionJWTClaims(anyString(), any())).thenReturn(false);
 
@@ -197,7 +197,7 @@ class CustomTokenRequestConverterTest {
 
         LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
         when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
-        when(learCredentialMachine.getType()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
+        when(learCredentialMachine.type()).thenReturn(List.of(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue()));
 
         when(clientAssertionValidationService.validateClientAssertionJWTClaims(anyString(), any())).thenReturn(true);
         when(vpService.validateVerifiablePresentation(anyString())).thenReturn(false);
@@ -233,7 +233,7 @@ class CustomTokenRequestConverterTest {
         when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
 
         // Simulate an invalid LEARCredentialType
-        when(learCredentialMachine.getType()).thenReturn(List.of("InvalidType"));
+        when(learCredentialMachine.type()).thenReturn(List.of("InvalidType"));
 
         // Verify the exception is thrown
         assertThrows(InvalidCredentialTypeException.class, () ->
