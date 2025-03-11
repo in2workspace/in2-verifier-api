@@ -2,7 +2,7 @@ package es.in2.vcverifier.service.impl;
 
 import static es.in2.vcverifier.util.Constants.ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT;
 import static es.in2.vcverifier.util.Constants.ACCESS_TOKEN_EXPIRATION_TIME;
-
+import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
 import es.in2.vcverifier.model.AuthorizationCodeData;
@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
@@ -54,9 +55,21 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
 
         Object startTimeObj = oAuth2AuthorizationRequest.getAdditionalParameters().get("startTime");
-        String startTime = startTimeObj != null ? startTimeObj.toString() : "No start time found";
+        if(startTimeObj==null){
+            throw new RuntimeException("Start time is missing from login request");
+        }
+        Instant startTime = Instant.parse(startTimeObj.toString());
+        Instant endTime = Instant.now();
+
+        long elapsedSeconds = Duration.between(startTime, endTime).getSeconds();
 
         log.info("Start time of authorization request: {}", startTime);
+        log.info("Elapsed time since start: {} seconds", elapsedSeconds);
+
+        if (elapsedSeconds >  Long.parseLong(LOGIN_TIMEOUT)) {
+            log.error("Authorization request expired. Elapsed time: {} seconds (limit: {} seconds)", elapsedSeconds, LOGIN_TIMEOUT);
+            throw new RuntimeException("Authorization request has expired");
+        }
         // Decode vpToken from Base64
         String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
         log.info("Decoded VP Token: {}", decodedVpToken);
