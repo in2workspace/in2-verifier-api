@@ -53,6 +53,10 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         cacheStoreForOAuth2AuthorizationRequest.delete(state);
         String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
 
+        Object startTimeObj = oAuth2AuthorizationRequest.getAdditionalParameters().get("startTime");
+        String startTime = startTimeObj != null ? startTimeObj.toString() : "No start time found";
+
+        log.info("Start time of authorization request: {}", startTime);
         // Decode vpToken from Base64
         String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
         log.info("Decoded VP Token: {}", decodedVpToken);

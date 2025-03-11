@@ -465,13 +465,17 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .scope(authorizationContext.scope())
                 .authorizationUri(backendConfig.getUrl());
 
+        Map<String, Object> additionalParameters = new HashMap<>();
+        additionalParameters.put("startTime", Instant.now().toString());
+
         // If there's a valid nonce, then add it as an additional parameter
         String nonce = authorizationContext.clientNonce();
         if (nonce != null && !nonce.isBlank()) {
-            Map<String, Object> additionalParameters = new HashMap<>();
             additionalParameters.put(NONCE, nonce);
-            builder.additionalParameters(additionalParameters);
         }
+        builder.additionalParameters(additionalParameters);
+
+
 
         // Build the request
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = builder.build();
