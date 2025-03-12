@@ -86,7 +86,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(LoginTimeoutException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public GlobalErrorMessage handleException(LoginTimeoutException ex) {
-        log.error("Login time has expired ", ex);
+        log.error("Login time has expired ", ex.getMessage());
         return new GlobalErrorMessage("Login time has expired ",ex.getMessage(),"");
     }
 }
