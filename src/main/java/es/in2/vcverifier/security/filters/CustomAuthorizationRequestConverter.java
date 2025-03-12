@@ -42,6 +42,7 @@ import java.util.UUID;
 
 import static es.in2.vcverifier.util.Constants.*;
 import static org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames.NONCE;
+import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -466,8 +467,8 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .authorizationUri(backendConfig.getUrl());
 
         Map<String, Object> additionalParameters = new HashMap<>();
-        additionalParameters.put("startTime", Instant.now().toString());
-
+        long timeout = Long.parseLong(LOGIN_TIMEOUT);
+        additionalParameters.put("expiration", Instant.now().plusSeconds(timeout).getEpochSecond());
         // If there's a valid nonce, then add it as an additional parameter
         String nonce = authorizationContext.clientNonce();
         if (nonce != null && !nonce.isBlank()) {

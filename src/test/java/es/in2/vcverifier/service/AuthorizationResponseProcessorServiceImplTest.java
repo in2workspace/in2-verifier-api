@@ -25,10 +25,10 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
 import java.util.NoSuchElementException;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
+import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT;
 
 @ExtendWith(MockitoExtension.class)
 class AuthorizationResponseProcessorServiceImplTest {
@@ -57,10 +57,11 @@ class AuthorizationResponseProcessorServiceImplTest {
         // Arrange
         String state = "test-state";
         String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes(StandardCharsets.UTF_8));
+        long timeout = Long.parseLong(LOGIN_TIMEOUT);
 
         Map<String, Object> additionalParams = Map.of(
                 NONCE, "test-nonce",
-                "startTime", Instant.now().minusSeconds(100).toString()
+                "expiration", Instant.now().plusSeconds(timeout).getEpochSecond()
         );
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
@@ -132,11 +133,13 @@ class AuthorizationResponseProcessorServiceImplTest {
         // Arrange
         String state = "test-state";
         String vpToken = Base64.getEncoder().encodeToString("invalid-vp-token".getBytes(StandardCharsets.UTF_8));
+        long timeout = Long.parseLong(LOGIN_TIMEOUT);
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
                 .authorizationUri("https://auth.example.com")
                 .clientId("client-id")
                 .redirectUri("https://client.example.com/callback")
+                .additionalParameters(Map.of("expiration", Instant.now().plusSeconds(timeout).getEpochSecond()))
                 .state(state)
                 .scope("read")
                 .build();
@@ -159,11 +162,13 @@ class AuthorizationResponseProcessorServiceImplTest {
         // Arrange
         String state = "test-state";
         String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes(StandardCharsets.UTF_8));
+        long timeout = Long.parseLong(LOGIN_TIMEOUT);
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
                 .authorizationUri("https://auth.example.com")
                 .clientId("client-id")
                 .redirectUri("https://client.example.com/callback")
+                .additionalParameters(Map.of("expiration", Instant.now().plusSeconds(timeout).getEpochSecond()))
                 .state(state)
                 .scope("read")
                 .build();
@@ -187,10 +192,11 @@ class AuthorizationResponseProcessorServiceImplTest {
     void processAuthResponse_validInput_shouldThrowLoginTimeoutException() {
         String state = "test-state";
         String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes(StandardCharsets.UTF_8));
+        long timeout = Long.parseLong(LOGIN_TIMEOUT);
 
         Map<String, Object> additionalParams = Map.of(
                 NONCE, "test-nonce",
-                "startTime", Instant.now().minusSeconds(200).toString()
+                "expiration", Instant.now().minusSeconds(timeout).getEpochSecond()
         );
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
@@ -212,9 +218,6 @@ class AuthorizationResponseProcessorServiceImplTest {
 
         when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(oAuth2AuthorizationRequest);
         doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(state);
-
-        when(vpService.validateVerifiablePresentation("valid-vp-token")).thenReturn(true);
-        when(registeredClientRepository.findByClientId("client-id")).thenReturn(registeredClient);
 
         LoginTimeoutException exception = assertThrows(LoginTimeoutException.class, () ->
                 authorizationResponseProcessorService.processAuthResponse(state, vpToken)

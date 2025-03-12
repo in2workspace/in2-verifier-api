@@ -13,6 +13,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import java.util.NoSuchElementException;
 
+import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT;
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -79,6 +81,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         String contextPath = request.getContextPath();
         log.error("VP token is not valid: {}", ex.getMessage());
         return new GlobalErrorMessage("Invalid VP Token", ex.getMessage(), contextPath);
+    }
+
+    @ExceptionHandler(LoginTimeoutException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public GlobalErrorMessage handleException(LoginTimeoutException ex) {
+        log.error("Login time has expired ", ex);
+        return new GlobalErrorMessage("Login time has expired ",ex.getMessage(),"");
     }
 }
 
