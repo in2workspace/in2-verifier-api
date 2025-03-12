@@ -2,6 +2,7 @@ package es.in2.vcverifier.service;
 
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
+import es.in2.vcverifier.exception.LoginTimeoutException;
 import es.in2.vcverifier.service.impl.AuthorizationResponseProcessorServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +21,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -56,12 +58,17 @@ class AuthorizationResponseProcessorServiceImplTest {
         String state = "test-state";
         String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes(StandardCharsets.UTF_8));
 
+        Map<String, Object> additionalParams = Map.of(
+                NONCE, "test-nonce",
+                "startTime", Instant.now().minusSeconds(100).toString()
+        );
+
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
                 .authorizationUri("https://auth.example.com")
                 .clientId("client-id")
                 .redirectUri("https://client.example.com/callback")
                 .state(state)
-                .additionalParameters(Map.of(NONCE, "test-nonce"))
+                .additionalParameters(additionalParams)
                 .scope("read")
                 .build();
 
@@ -174,5 +181,47 @@ class AuthorizationResponseProcessorServiceImplTest {
         );
 
         assertEquals(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT, exception.getError().getErrorCode());
+    }
+
+    @Test
+    void processAuthResponse_validInput_shouldThrowLoginTimeoutException() {
+        String state = "test-state";
+        String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes(StandardCharsets.UTF_8));
+
+        Map<String, Object> additionalParams = Map.of(
+                NONCE, "test-nonce",
+                "startTime", Instant.now().minusSeconds(200).toString()
+        );
+
+        OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
+                .authorizationUri("https://auth.example.com")
+                .clientId("client-id")
+                .redirectUri("https://client.example.com/callback")
+                .state(state)
+                .additionalParameters(additionalParams)
+                .scope("read")
+                .build();
+
+        RegisteredClient registeredClient = RegisteredClient.withId("client-id")
+                .clientId("client-id")
+                .clientSecret("secret")
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .redirectUri("https://client.example.com/callback")
+                .scope("read")
+                .build();
+
+        when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(oAuth2AuthorizationRequest);
+        doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(state);
+
+        when(vpService.validateVerifiablePresentation("valid-vp-token")).thenReturn(true);
+        when(registeredClientRepository.findByClientId("client-id")).thenReturn(registeredClient);
+
+        LoginTimeoutException exception = assertThrows(LoginTimeoutException.class, () ->
+                authorizationResponseProcessorService.processAuthResponse(state, vpToken)
+        );
+
+        assertEquals("Login time has expired", exception.getMessage());
+
+        verify(cacheStoreForOAuth2AuthorizationRequest, times(1)).delete(state);
     }
 }

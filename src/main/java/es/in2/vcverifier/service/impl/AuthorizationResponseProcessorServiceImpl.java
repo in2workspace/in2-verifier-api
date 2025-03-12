@@ -5,6 +5,7 @@ import static es.in2.vcverifier.util.Constants.ACCESS_TOKEN_EXPIRATION_TIME;
 import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
+import es.in2.vcverifier.exception.LoginTimeoutException;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.service.AuthorizationResponseProcessorService;
 import es.in2.vcverifier.service.VpService;
@@ -54,22 +55,6 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         cacheStoreForOAuth2AuthorizationRequest.delete(state);
         String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
 
-        Object startTimeObj = oAuth2AuthorizationRequest.getAdditionalParameters().get("startTime");
-        if(startTimeObj==null){
-            throw new RuntimeException("Start time is missing from login request");
-        }
-        Instant startTime = Instant.parse(startTimeObj.toString());
-        Instant endTime = Instant.now();
-
-        long elapsedSeconds = Duration.between(startTime, endTime).getSeconds();
-
-        log.info("Start time of authorization request: {}", startTime);
-        log.info("Elapsed time since start: {} seconds", elapsedSeconds);
-
-        if (elapsedSeconds >  Long.parseLong(LOGIN_TIMEOUT)) {
-            log.error("Authorization request expired. Elapsed time: {} seconds (limit: {} seconds)", elapsedSeconds, LOGIN_TIMEOUT);
-            throw new RuntimeException("Authorization request has expired");
-        }
         // Decode vpToken from Base64
         String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
         log.info("Decoded VP Token: {}", decodedVpToken);
@@ -92,8 +77,20 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
         }
         Instant issueTime = Instant.now();
-        Instant expirationTime = issueTime.plus(Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME), ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT));
 
+        Object startTimeObj = oAuth2AuthorizationRequest.getAdditionalParameters().get("startTime");
+        if(startTimeObj==null){
+            throw new LoginTimeoutException("Start time is missing from login request");
+        }
+        Instant startTime = Instant.parse(startTimeObj.toString());
+
+        long elapsedSeconds = Duration.between(startTime, issueTime).getSeconds();
+
+        if (elapsedSeconds >=  Long.parseLong(LOGIN_TIMEOUT)) {
+            log.error("Login time has expired: {} seconds (limit: {} seconds)", elapsedSeconds, LOGIN_TIMEOUT);
+            throw new LoginTimeoutException("Login time has expired");
+        }
+        Instant expirationTime = issueTime.plus(Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME), ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT));
         // Register the Oauth2Authorization because is needed for verifications
         OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(registeredClient)
                 .id(registeredClient.getId())
