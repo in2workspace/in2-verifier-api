@@ -2,6 +2,7 @@ package es.in2.vcverifier.service;
 
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
+import es.in2.vcverifier.exception.LoginTimeoutException;
 import es.in2.vcverifier.service.impl.AuthorizationResponseProcessorServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,15 +19,16 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
-
+import static es.in2.vcverifier.util.Constants.EXPIRATION;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
 import java.util.NoSuchElementException;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
+import static es.in2.vcverifier.util.Constants.LOGIN_TIMEOUT;
 
 @ExtendWith(MockitoExtension.class)
 class AuthorizationResponseProcessorServiceImplTest {
@@ -55,13 +57,19 @@ class AuthorizationResponseProcessorServiceImplTest {
         // Arrange
         String state = "test-state";
         String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes(StandardCharsets.UTF_8));
+        long timeout = Long.parseLong(LOGIN_TIMEOUT);
+
+        Map<String, Object> additionalParams = Map.of(
+                NONCE, "test-nonce",
+                EXPIRATION, Instant.now().plusSeconds(timeout).getEpochSecond()
+        );
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
                 .authorizationUri("https://auth.example.com")
                 .clientId("client-id")
                 .redirectUri("https://client.example.com/callback")
                 .state(state)
-                .additionalParameters(Map.of(NONCE, "test-nonce"))
+                .additionalParameters(additionalParams)
                 .scope("read")
                 .build();
 
@@ -125,11 +133,13 @@ class AuthorizationResponseProcessorServiceImplTest {
         // Arrange
         String state = "test-state";
         String vpToken = Base64.getEncoder().encodeToString("invalid-vp-token".getBytes(StandardCharsets.UTF_8));
+        long timeout = Long.parseLong(LOGIN_TIMEOUT);
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
                 .authorizationUri("https://auth.example.com")
                 .clientId("client-id")
                 .redirectUri("https://client.example.com/callback")
+                .additionalParameters(Map.of(EXPIRATION, Instant.now().plusSeconds(timeout).getEpochSecond()))
                 .state(state)
                 .scope("read")
                 .build();
@@ -152,11 +162,13 @@ class AuthorizationResponseProcessorServiceImplTest {
         // Arrange
         String state = "test-state";
         String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes(StandardCharsets.UTF_8));
+        long timeout = Long.parseLong(LOGIN_TIMEOUT);
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
                 .authorizationUri("https://auth.example.com")
                 .clientId("client-id")
                 .redirectUri("https://client.example.com/callback")
+                .additionalParameters(Map.of(EXPIRATION, Instant.now().plusSeconds(timeout).getEpochSecond()))
                 .state(state)
                 .scope("read")
                 .build();
@@ -174,5 +186,37 @@ class AuthorizationResponseProcessorServiceImplTest {
         );
 
         assertEquals(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT, exception.getError().getErrorCode());
+    }
+
+    @Test
+    void processAuthResponse_validInput_shouldThrowLoginTimeoutException() {
+        String state = "test-state";
+        String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes(StandardCharsets.UTF_8));
+        long timeout = Long.parseLong(LOGIN_TIMEOUT);
+
+        Map<String, Object> additionalParams = Map.of(
+                NONCE, "test-nonce",
+                EXPIRATION, Instant.now().minusSeconds(timeout).getEpochSecond()
+        );
+
+        OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
+                .authorizationUri("https://auth.example.com")
+                .clientId("client-id")
+                .redirectUri("https://client.example.com/callback")
+                .state(state)
+                .additionalParameters(additionalParams)
+                .scope("read")
+                .build();
+
+        when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(oAuth2AuthorizationRequest);
+        doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(state);
+
+        LoginTimeoutException exception = assertThrows(LoginTimeoutException.class, () ->
+                authorizationResponseProcessorService.processAuthResponse(state, vpToken)
+        );
+
+        assertEquals("Login time has expired", exception.getMessage());
+
+        verify(cacheStoreForOAuth2AuthorizationRequest, times(1)).delete(state);
     }
 }

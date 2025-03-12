@@ -1,10 +1,8 @@
 package es.in2.vcverifier.service.impl;
 
-import static es.in2.vcverifier.util.Constants.ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT;
-import static es.in2.vcverifier.util.Constants.ACCESS_TOKEN_EXPIRATION_TIME;
-
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
+import es.in2.vcverifier.exception.LoginTimeoutException;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.service.AuthorizationResponseProcessorService;
 import es.in2.vcverifier.service.VpService;
@@ -22,13 +20,15 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
-
+import static es.in2.vcverifier.util.Constants.EXPIRATION;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.UUID;
 
+import static es.in2.vcverifier.util.Constants.*;
 import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
 
 @Slf4j
@@ -47,12 +47,25 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
     @Override
     public void processAuthResponse(String state, String vpToken){
         log.info("Processing authorization response");
+
         // Validate if the state exists in the cache
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = cacheStoreForOAuth2AuthorizationRequest.get(state);
+
         // Remove the state from cache after retrieving the Object
         cacheStoreForOAuth2AuthorizationRequest.delete(state);
-        String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
 
+        Instant issueTime = Instant.now();
+
+        Object expirationLoginValue = oAuth2AuthorizationRequest.getAdditionalParameters().get(EXPIRATION);
+
+        if(expirationLoginValue==null){
+            throw new LoginTimeoutException("Start time is missing from login request");
+        }
+
+        if (issueTime.getEpochSecond() >= (long) expirationLoginValue) {
+            throw new LoginTimeoutException("Login time has expired");
+        }
+        String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
         // Decode vpToken from Base64
         String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
         log.info("Decoded VP Token: {}", decodedVpToken);
@@ -74,9 +87,8 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         if (registeredClient == null) {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
         }
-        Instant issueTime = Instant.now();
-        Instant expirationTime = issueTime.plus(Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME), ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT));
 
+        Instant expirationTime = issueTime.plus(Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME), ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT));
         // Register the Oauth2Authorization because is needed for verifications
         OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(registeredClient)
                 .id(registeredClient.getId())
@@ -87,8 +99,6 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
                 .build();
 
         log.info("OAuth2Authorization generated");
-
-
 
         // Retrieve nonce from additional parameters
         String nonceValue = (String) oAuth2AuthorizationRequest.getAdditionalParameters().get(NONCE);
