@@ -208,14 +208,6 @@ class AuthorizationResponseProcessorServiceImplTest {
                 .scope("read")
                 .build();
 
-        RegisteredClient registeredClient = RegisteredClient.withId("client-id")
-                .clientId("client-id")
-                .clientSecret("secret")
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .redirectUri("https://client.example.com/callback")
-                .scope("read")
-                .build();
-
         when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(oAuth2AuthorizationRequest);
         doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(state);
 
