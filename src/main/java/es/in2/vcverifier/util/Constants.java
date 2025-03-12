@@ -34,5 +34,7 @@ public class Constants {
     public static final List<String> LEAR_CREDENTIAL_EMPLOYEE_V2_CONTEXT = List.of("https://www.w3.org/ns/credentials/v2","https://www.dome-marketplace.eu/2025/credentials/learcredentialemployee/v2");
     public static final long MSB = 0x80L;
     public static final long MSBALL = 0xFFFFFF80L;
+    public static final String EXPIRATION = "expiration";
+
 
 }

@@ -19,7 +19,7 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
-
+import static es.in2.vcverifier.util.Constants.EXPIRATION;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
@@ -61,7 +61,7 @@ class AuthorizationResponseProcessorServiceImplTest {
 
         Map<String, Object> additionalParams = Map.of(
                 NONCE, "test-nonce",
-                "expiration", Instant.now().plusSeconds(timeout).getEpochSecond()
+                EXPIRATION, Instant.now().plusSeconds(timeout).getEpochSecond()
         );
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
@@ -139,7 +139,7 @@ class AuthorizationResponseProcessorServiceImplTest {
                 .authorizationUri("https://auth.example.com")
                 .clientId("client-id")
                 .redirectUri("https://client.example.com/callback")
-                .additionalParameters(Map.of("expiration", Instant.now().plusSeconds(timeout).getEpochSecond()))
+                .additionalParameters(Map.of(EXPIRATION, Instant.now().plusSeconds(timeout).getEpochSecond()))
                 .state(state)
                 .scope("read")
                 .build();
@@ -168,7 +168,7 @@ class AuthorizationResponseProcessorServiceImplTest {
                 .authorizationUri("https://auth.example.com")
                 .clientId("client-id")
                 .redirectUri("https://client.example.com/callback")
-                .additionalParameters(Map.of("expiration", Instant.now().plusSeconds(timeout).getEpochSecond()))
+                .additionalParameters(Map.of(EXPIRATION, Instant.now().plusSeconds(timeout).getEpochSecond()))
                 .state(state)
                 .scope("read")
                 .build();
@@ -196,7 +196,7 @@ class AuthorizationResponseProcessorServiceImplTest {
 
         Map<String, Object> additionalParams = Map.of(
                 NONCE, "test-nonce",
-                "expiration", Instant.now().minusSeconds(timeout).getEpochSecond()
+                EXPIRATION, Instant.now().minusSeconds(timeout).getEpochSecond()
         );
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()

@@ -20,7 +20,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
-
+import static es.in2.vcverifier.util.Constants.EXPIRATION;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -56,7 +56,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
 
         Instant issueTime = Instant.now();
 
-        Object expirationLoginValue = oAuth2AuthorizationRequest.getAdditionalParameters().get("expiration");
+        Object expirationLoginValue = oAuth2AuthorizationRequest.getAdditionalParameters().get(EXPIRATION);
 
         if(expirationLoginValue==null){
             throw new LoginTimeoutException("Start time is missing from login request");
