@@ -29,6 +29,8 @@ import org.springframework.security.oauth2.server.authorization.authentication.O
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +101,9 @@ class CustomTokenRequestConverterTest {
 
         String clientId = "client-id";
         String clientAssertion = "client-assertion";
-        String vpToken = "vp-token";
+        String rawVpToken = "vp-token";
+        // Encoded VP token (base64)
+        String encodedVpToken = Base64.getEncoder().encodeToString(rawVpToken.getBytes(StandardCharsets.UTF_8));
 
         MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
         parameters.add(OAuth2ParameterNames.GRANT_TYPE, "client_credentials");
@@ -114,14 +118,14 @@ class CustomTokenRequestConverterTest {
 
         when(jwtService.parseJWT(clientAssertion)).thenReturn(signedJWT);
         when(jwtService.getPayloadFromSignedJWT(signedJWT)).thenReturn(payload);
-        when(jwtService.getClaimFromPayload(payload, "vp_token")).thenReturn(vpToken);
+        when(jwtService.getClaimFromPayload(payload, "vp_token")).thenReturn(encodedVpToken);
 
         JsonNode mockVC = mock(JsonNode.class);
 
-        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(vpToken)).thenReturn(mockVC);
+        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(rawVpToken)).thenReturn(mockVC);
 
         when(clientAssertionValidationService.validateClientAssertionJWTClaims(clientId, payload)).thenReturn(true);
-        when(vpService.validateVerifiablePresentation(vpToken)).thenReturn(true);
+        when(vpService.validateVerifiablePresentation(rawVpToken)).thenReturn(true);
 
         LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
         when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
@@ -157,8 +161,10 @@ class CustomTokenRequestConverterTest {
         SignedJWT signedJWT = mock(SignedJWT.class);
         when(jwtService.parseJWT("client-assertion")).thenReturn(signedJWT);
 
-        String vpToken = "vp-token";
-        when(jwtService.getClaimFromPayload(any(), eq("vp_token"))).thenReturn(vpToken);
+        String rawVpToken = "vp-token";
+        // Encoded VP token (base64)
+        String encodedVpToken = Base64.getEncoder().encodeToString(rawVpToken.getBytes(StandardCharsets.UTF_8));
+        when(jwtService.getClaimFromPayload(any(), eq("vp_token"))).thenReturn(encodedVpToken);
 
         JsonNode mockVC = mock(JsonNode.class);
         when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(anyString())).thenReturn(mockVC);
@@ -189,8 +195,10 @@ class CustomTokenRequestConverterTest {
         SignedJWT signedJWT = mock(SignedJWT.class);
         when(jwtService.parseJWT("client-assertion")).thenReturn(signedJWT);
 
-        String vpToken = "vp-token";
-        when(jwtService.getClaimFromPayload(any(), eq("vp_token"))).thenReturn(vpToken);
+        String rawVpToken = "vp-token";
+        // Encoded VP token (base64)
+        String encodedVpToken = Base64.getEncoder().encodeToString(rawVpToken.getBytes(StandardCharsets.UTF_8));
+        when(jwtService.getClaimFromPayload(any(), eq("vp_token"))).thenReturn(encodedVpToken);
 
         JsonNode mockVC = mock(JsonNode.class);
         when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(anyString())).thenReturn(mockVC);
@@ -222,12 +230,14 @@ class CustomTokenRequestConverterTest {
         SignedJWT signedJWT = mock(SignedJWT.class);
         when(jwtService.parseJWT("client-assertion")).thenReturn(signedJWT);
 
-        String vpToken = "vp-token";
-        when(jwtService.getClaimFromPayload(any(), eq("vp_token"))).thenReturn(vpToken);
+        String rawVpToken = "vp-token";
+        // Encoded VP token (base64)
+        String encodedVpToken = Base64.getEncoder().encodeToString(rawVpToken.getBytes(StandardCharsets.UTF_8));
+        when(jwtService.getClaimFromPayload(any(), eq("vp_token"))).thenReturn(encodedVpToken);
 
         // Mock the behavior of getCredentialFromTheVerifiablePresentationAsJsonNode with the correct vpToken
         JsonNode mockVC = mock(JsonNode.class);
-        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(vpToken)).thenReturn(mockVC);
+        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(rawVpToken)).thenReturn(mockVC);
 
         LEARCredentialMachine learCredentialMachine = mock(LEARCredentialMachine.class);
         when(objectMapper.convertValue(mockVC, LEARCredentialMachine.class)).thenReturn(learCredentialMachine);
