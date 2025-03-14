@@ -31,6 +31,8 @@ import org.springframework.security.web.authentication.AuthenticationConverter;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -114,8 +116,10 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
         SignedJWT signedJWT = jwtService.parseJWT(clientAssertion);
         Payload payload = jwtService.getPayloadFromSignedJWT(signedJWT);
         String vpToken = jwtService.getClaimFromPayload(payload,"vp_token");
+        String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
+
         // Check if VC is LEARCredentialMachine Type
-        JsonNode vc = vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(vpToken);
+        JsonNode vc = vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(decodedVpToken);
         LEARCredentialMachine learCredentialMachine = objectMapper.convertValue(vc, LEARCredentialMachine.class);
         List<String> types = learCredentialMachine.type();
         if (!types.contains(LEARCredentialType.LEAR_CREDENTIAL_MACHINE.getValue())){
@@ -129,7 +133,7 @@ public class CustomTokenRequestConverter implements AuthenticationConverter {
             throw new IllegalArgumentException("Invalid JWT claims from assertion");
         }
         // Validate VP
-        isValid = vpService.validateVerifiablePresentation(vpToken);
+        isValid = vpService.validateVerifiablePresentation(decodedVpToken);
         if (!isValid) {
             log.error("CustomTokenRequestConverter -- handleClientCredentialsGrant -- VP Token is invalid");
             throw new InvalidVPtokenException("VP Token used in M2M flow is invalid");
