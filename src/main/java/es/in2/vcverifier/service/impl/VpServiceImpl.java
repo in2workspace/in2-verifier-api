@@ -18,7 +18,6 @@ import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
 import java.security.PublicKey;
-import java.text.ParseException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
@@ -53,14 +52,15 @@ public class VpServiceImpl implements VpService {
     public boolean validateVerifiablePresentation(String verifiablePresentation) {
         log.info("Starting validation of Verifiable Presentation");
         try {
-            // Step 1: Extract the Verifiable Credential (VC) from the VP (JWT)
-            log.debug("VpServiceImpl -- validateVerifiablePresentation -- Extracting first Verifiable Credential from Verifiable Presentation");
+            log.info("Extracting first Verifiable Credential from Verifiable Presentation");
             SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
-            Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
-            log.debug("VpServiceImpl -- validateVerifiablePresentation -- Successfully extracted the Verifiable Credential payload");
+            log.info("Extracted JWT Credential successfully");
 
-            // Step 1.1: Map the payload to a VerifiableCredential object
+            Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
+            log.info("Extracted payload from JWT Credential");
+
             LEARCredential learCredential = mapPayloadToVerifiableCredential(payload);
+            log.info("Mapped payload to LEARCredential successfully");
 
             // Step 2: Validate the time window of the credential
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Validating the time window of the credential");
@@ -280,52 +280,55 @@ public class VpServiceImpl implements VpService {
 
     private SignedJWT extractFirstVerifiableCredential(String verifiablePresentation) {
         try {
-            // Parse the Verifiable Presentation (VP) JWT
+            log.info("Parsing Verifiable Presentation JWT");
             SignedJWT vpSignedJWT = SignedJWT.parse(verifiablePresentation);
+            log.info("Parsed Verifiable Presentation successfully");
 
-            // Extract the "vp" claim
             Object vpClaim = vpSignedJWT.getJWTClaimsSet().getClaim("vp");
+            log.info("Extracted 'vp' claim: {}", vpClaim);
 
             Object vcClaim = getVcClaim(vpClaim);
+            log.info("Extracted 'verifiableCredential' claim from 'vp': {}", vcClaim);
 
-            // Extract the first credential if it's a list or if it's a string
             Object firstCredential = getFirstCredential(vcClaim);
+            log.info("Extracted first Verifiable Credential from list: {}", firstCredential);
 
-            // Parse and return the first Verifiable Credential as SignedJWT
             return SignedJWT.parse((String) firstCredential);
-
-        } catch (ParseException e) {
+        } catch (Exception e) {
+            log.error("Error parsing the Verifiable Presentation", e);
             throw new JWTParsingException("Error parsing the Verifiable Presentation or Verifiable Credential");
         }
     }
 
-    private static Object getVcClaim(Object vpClaim) {
-        if (vpClaim == null) {
-            throw new JWTClaimMissingException("The 'vp' claim was not found in the Verifiable Presentation");
-        }
-        // Ensure that vpClaim is an instance of Map (JSON object)
+    private Object getVcClaim(Object vpClaim) {
+        log.info("Extracting 'verifiableCredential' claim from 'vp'");
         if (!(vpClaim instanceof Map<?, ?> vpMap)) {
+            log.error("'vp' claim is not a valid object: {}", vpClaim);
             throw new JWTClaimMissingException("The 'vp' claim is not a valid object");
         }
-        // Extract the "verifiableCredential" claim inside "vp"
         Object vcClaim = vpMap.get("verifiableCredential");
+        log.info("Extracted 'verifiableCredential' claim: {}", vcClaim);
         if (vcClaim == null) {
-            throw new JWTClaimMissingException("The 'verifiableCredential' claim was not found within 'vp'");
+            log.error("'verifiableCredential' claim is missing");
+            throw new JWTClaimMissingException("Missing 'verifiableCredential' claim");
         }
         return vcClaim;
     }
 
-
-    private static Object getFirstCredential(Object vcClaim) {
+    private Object getFirstCredential(Object vcClaim) {
+        log.info("Extracting first credential from 'verifiableCredential'");
         if (!(vcClaim instanceof List<?> verifiableCredentials)) {
+            log.error("'verifiableCredential' claim is not an array: {}", vcClaim);
             throw new CredentialException("The verifiableCredential claim is not an array");
         }
         if (verifiableCredentials.isEmpty()) {
+            log.error("VerifiableCredential array is empty");
             throw new CredentialException("No Verifiable Credential found in Verifiable Presentation");
         }
-        // Ensure the first item is a String (JWT in string form)
         Object firstCredential = verifiableCredentials.get(0);
+        log.info("First credential extracted: {}", firstCredential);
         if (!(firstCredential instanceof String)) {
+            log.error("First credential is not a string: {}", firstCredential);
             throw new CredentialException("The first Verifiable Credential is not a valid JWT string");
         }
         return firstCredential;
