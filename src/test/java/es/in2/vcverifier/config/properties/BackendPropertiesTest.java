@@ -20,7 +20,7 @@ class BackendPropertiesTest {
 
     @Test
     void testBackendProperties() {
-        BackendProperties.Identity expectedIdentity = new BackendProperties.Identity("0x73e509a7681d4a395b1ced75681c4dc4020dbab02da868512276dd766733d5b5");
+        BackendProperties.Identity expectedIdentity = new BackendProperties.Identity("did:key", "0x73e509a7681d4a395b1ced75681c4dc4020dbab02da868512276dd766733d5b5", "learCredentialMachineInBase64");
 
         BackendProperties.TrustFramework expectedTrustFramework = new BackendProperties.TrustFramework(
                 "DOME",
@@ -88,7 +88,9 @@ class BackendPropertiesTest {
                 .withUserConfiguration(TestConfig.class)
                 .withPropertyValues(
                         "verifier.backend.url=https://raw.githubusercontent.com",
+                        "verifier.backend.identity.did=did:key",
                         "verifier.backend.identity.privateKey=test-private-key",
+                        "verifier.backend.identity.learCredentialMachineInBase64=learCredentialMachineInBase64",
                         "verifier.backend.trustFrameworks[0].name=DOME",
                         "verifier.backend.trustFrameworks[0].trustedIssuersListUrl=https://raw.githubusercontent.com",
                         "verifier.backend.trustFrameworks[0].trustedServicesListUrl=https://raw.githubusercontent.com/in2workspace/in2-dome-gitops/refs/heads/main/trust-framework/trusted_services_list.yaml",
