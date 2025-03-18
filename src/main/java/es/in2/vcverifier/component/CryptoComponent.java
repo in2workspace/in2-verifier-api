@@ -5,11 +5,8 @@ import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.KeyUse;
 import es.in2.vcverifier.config.BackendConfig;
-import es.in2.vcverifier.config.properties.BackendProperties;
 import es.in2.vcverifier.exception.ECKeyCreationException;
-import es.in2.vcverifier.util.UVarInt;
 import lombok.RequiredArgsConstructor;
-import org.bitcoinj.base.Base58;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
@@ -27,8 +24,6 @@ import java.security.interfaces.ECPublicKey;
 public class CryptoComponent {
 
     private final BackendConfig backendConfig;
-
-    private final BackendProperties.Identity identity;
 
     @Bean
     public ECKey getECKey() {
@@ -57,31 +52,11 @@ public class CryptoComponent {
             // Build the ECKey using secp256r1 curve (P-256)
             return new ECKey.Builder(Curve.P_256, publicKey)
                     .privateKey(privateKey)
-                    .keyID(identity.did())
+                    .keyID(backendConfig.getDid())
                     .keyUse(KeyUse.SIGNATURE)
                     .build();
         } catch (Exception e) {
             throw new ECKeyCreationException("Error creating JWK source for secp256r1: " + e);
         }
-    }
-
-    // Converts raw public key bytes into a multibase58 string
-    private String convertRawKeyToMultiBase58Btc(byte[] publicKey, int code) {
-        UVarInt codeVarInt = new UVarInt(code);
-
-        // Calculate the total length of the resulting byte array
-        int totalLength = publicKey.length + codeVarInt.getLength();
-
-        // Create a byte array to hold the multicodec and raw key
-        byte[] multicodecAndRawKey = new byte[totalLength];
-
-        // Copy the UVarInt bytes to the beginning of the byte array
-        System.arraycopy(codeVarInt.getBytes(), 0, multicodecAndRawKey, 0, codeVarInt.getLength());
-
-        // Copy the raw public key bytes after the UVarInt bytes
-        System.arraycopy(publicKey, 0, multicodecAndRawKey, codeVarInt.getLength(), publicKey.length);
-
-        // Encode the combined byte array to Base58
-        return Base58.encode(multicodecAndRawKey);
     }
 }
