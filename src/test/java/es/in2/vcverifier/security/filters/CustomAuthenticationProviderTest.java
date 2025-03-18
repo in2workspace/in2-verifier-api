@@ -17,6 +17,7 @@ import es.in2.vcverifier.model.credentials.lear.employee.subject.mandate.Mandate
 import es.in2.vcverifier.model.credentials.lear.employee.subject.mandate.MandateV2;
 import es.in2.vcverifier.model.credentials.lear.employee.subject.mandate.mandatee.MandateeV1;
 import es.in2.vcverifier.model.credentials.lear.employee.subject.mandate.mandatee.MandateeV2;
+import es.in2.vcverifier.model.credentials.lear.employee.subject.mandate.power.PowerV2;
 import es.in2.vcverifier.model.credentials.lear.machine.LEARCredentialMachine;
 import es.in2.vcverifier.model.credentials.lear.machine.subject.CredentialSubject;
 import es.in2.vcverifier.model.credentials.lear.machine.subject.mandate.Mandate;
@@ -257,10 +258,10 @@ class CustomAuthenticationProviderTest {
         }
         when(vcJsonNode.get("@context")).thenReturn(contextNode);
 
-        LEARCredentialEmployeeV2 learCredentialEmployeeV2 = getLEARCredentialEmployeeV2();
-        when(objectMapper.convertValue(vcJsonNode, LEARCredentialEmployeeV2.class)).thenReturn(learCredentialEmployeeV2);
+        LEARCredentialEmployeeV2 normalizedLearCredentialEmployeeV2 = getLEARCredentialEmployeeV2();
+        when(objectMapper.convertValue(vcJsonNode, LEARCredentialEmployeeV2.class)).thenReturn(normalizedLearCredentialEmployeeV2);
 
-        when(objectMapper.writeValueAsString(learCredentialEmployeeV2)).thenReturn("{\"credential\":\"value\"}");
+        when(objectMapper.writeValueAsString(normalizedLearCredentialEmployeeV2)).thenReturn("{\"credential\":\"value\"}");
 
         when(jwtService.generateJWT(anyString())).thenReturn("mock-jwt-token");
 
@@ -652,11 +653,19 @@ class CustomAuthenticationProviderTest {
                 .id("did:key:1234")
                 .firstName("John")
                 .lastName("Doe")
+                .firstNameV1("John")
+                .lastNameV1("Doe")
                 .nationality("ES")
                 .email("john.doe@example.com")
                 .build();
+        PowerV2 power = PowerV2.builder()
+                .id("power-id")
+                .type("Example")
+                .tmfType("Example")
+                .build();
         MandateV2 mandate = MandateV2.builder()
                 .mandatee(mandatee)
+                .power(List.of(power))
                 .build();
         CredentialSubjectV2 credentialSubject = CredentialSubjectV2.builder()
                 .mandate(mandate)

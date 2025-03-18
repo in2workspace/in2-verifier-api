@@ -14,6 +14,10 @@ import es.in2.vcverifier.model.credentials.lear.LEARCredential;
 import es.in2.vcverifier.model.credentials.lear.employee.LEARCredentialEmployee;
 import es.in2.vcverifier.model.credentials.lear.employee.LEARCredentialEmployeeV1;
 import es.in2.vcverifier.model.credentials.lear.employee.LEARCredentialEmployeeV2;
+import es.in2.vcverifier.model.credentials.lear.employee.subject.CredentialSubjectV2;
+import es.in2.vcverifier.model.credentials.lear.employee.subject.mandate.MandateV2;
+import es.in2.vcverifier.model.credentials.lear.employee.subject.mandate.mandatee.MandateeV2;
+import es.in2.vcverifier.model.credentials.lear.employee.subject.mandate.power.PowerV2;
 import es.in2.vcverifier.model.credentials.lear.machine.LEARCredentialMachine;
 import es.in2.vcverifier.model.enums.LEARCredentialType;
 import es.in2.vcverifier.service.JWTService;
@@ -35,6 +39,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static es.in2.vcverifier.util.Constants.*;
 import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
@@ -160,7 +165,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             if (contextList.equals(LEAR_CREDENTIAL_EMPLOYEE_V1_CONTEXT)) {
                 return objectMapper.convertValue(verifiableCredential, LEARCredentialEmployeeV1.class);
             } else if (contextList.equals(LEAR_CREDENTIAL_EMPLOYEE_V2_CONTEXT)) {
-                return objectMapper.convertValue(verifiableCredential, LEARCredentialEmployeeV2.class);
+                LEARCredentialEmployeeV2 learCredentialEmployeeV2 = objectMapper.convertValue(verifiableCredential, LEARCredentialEmployeeV2.class);
+                return normalizeLearCredentialEmployeeV2(learCredentialEmployeeV2);
             } else {
                 throw new OAuth2AuthenticationException(new OAuth2Error(
                         OAuth2ErrorCodes.INVALID_REQUEST,
@@ -351,6 +357,59 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         } else {
             throw new InvalidCredentialTypeException("Credential Type not supported: " + learCredential.getClass().getName());
         }
+    }
+
+    /**
+     * FIXME: Temporary workaround to normalize LEAR V2 credential for compatibility.
+     * This function copies V2 attributes into their legacy counterparts.
+     */
+    private LEARCredentialEmployee normalizeLearCredentialEmployeeV2(LEARCredentialEmployeeV2 credentialV2) {
+        // Cast the mandatee to MandateeV2
+        MandateeV2 originalMandatee = credentialV2.credentialSubjectV2().mandate().mandatee();
+        MandateeV2 normalizedMandatee = MandateeV2.builder()
+                .id(originalMandatee.id())
+                .email(originalMandatee.email())
+                .firstName(originalMandatee.firstName())
+                .lastName(originalMandatee.lastName())
+                .nationality(originalMandatee.nationality())
+                .firstNameV1(originalMandatee.firstName())
+                .lastNameV1(originalMandatee.lastName())
+                .build();
+
+        // Normalize each PowerV2: duplicate values into tmf_* fields for compatibility
+        List<PowerV2> originalPowers = credentialV2.credentialSubjectV2().mandate().power();
+        List<PowerV2> normalizedPowers = originalPowers.stream()
+                .map(power -> PowerV2.builder()
+                        .id(power.id())
+                        .action(power.action())
+                        .domain(power.domain())
+                        .function(power.function())
+                        .type(power.type())
+                        .tmfAction(power.action())
+                        .tmfDomain(power.domain())
+                        .tmfFunction(power.function())
+                        .tmfType(power.type())
+                        .build())
+                .collect(Collectors.toList());
+
+        // Build a normalized Mandate using the normalized mandatee and powers
+        return LEARCredentialEmployeeV2.builder()
+                .context(credentialV2.context())
+                .id(credentialV2.id())
+                .type(credentialV2.type())
+                .description(credentialV2.description())
+                .issuer(credentialV2.issuer())
+                .validFrom(credentialV2.validFrom())
+                .validUntil(credentialV2.validUntil())
+                .credentialSubjectV2(CredentialSubjectV2.builder()
+                        .mandate(MandateV2.builder()
+                                .id(credentialV2.credentialSubjectV2().mandate().id())
+                                .mandatee(normalizedMandatee)
+                                .power(normalizedPowers)
+                                .mandator(credentialV2.credentialSubjectV2().mandate().mandator())
+                                .build())
+                        .build())
+                .build();
     }
 
     @Override
