@@ -13,5 +13,8 @@ public record MandateeV2(
         @JsonProperty("email") String email,
         @JsonProperty("firstName") String firstName,
         @JsonProperty("lastName") String lastName,
-        @JsonProperty("nationality") String nationality
+        @JsonProperty("nationality") String nationality,
+        // FIXME: Those fields are here to avoid some components failure due the incompatibility for Lear V2
+        @JsonProperty("first_name") String firstNameV1,
+        @JsonProperty("last_name") String lastNameV1
 ) {}
