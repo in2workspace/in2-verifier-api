@@ -310,7 +310,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         Map<String, Object> additionalClaims;
 
         if (additionalParameters.containsKey(OAuth2ParameterNames.SCOPE)) {
-            additionalClaims = extractClaimsFromVerifiableCredential(learCredential, additionalParameters);
+            additionalClaims = extractClaimsFromVerifiableCredential(learCredential);
             additionalClaims.forEach(idTokenClaimsBuilder::claim);
         }
 
@@ -344,24 +344,15 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     }
 
 
-    private Map<String, Object> extractClaimsFromVerifiableCredential(LEARCredential learCredential, Map<String, Object> additionalParameters) {
-        Set<String> requestedScopes = new HashSet<>(Arrays.asList(additionalParameters.get(OAuth2ParameterNames.SCOPE).toString().split(" ")));
+    private Map<String, Object> extractClaimsFromVerifiableCredential(LEARCredential learCredential) {
         Map<String, Object> claims = new HashMap<>();
-
         if (learCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
-            // Check if "profile" scope is requested and add profile-related claims
-            if (requestedScopes.contains("profile")) {
                 String name = learCredentialEmployee.mandateeFirstName() + " " + learCredentialEmployee.mandateeLastName();
                 claims.put("name", name);
                 claims.put("given_name", learCredentialEmployee.mandateeFirstName());
                 claims.put("family_name", learCredentialEmployee.mandateeLastName());
-            }
-
-            // Check if "email" scope is requested and add email-related claims
-            if (requestedScopes.contains("email")) {
                 claims.put("email", learCredentialEmployee.mandateeEmail());
                 claims.put("email_verified", true);
-            }
         }
         return claims;
     }

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Modify the response token according to the grant type (client_credentials should not include id_token or 
 refresh_token).
+- Set the scopes profile and email in the response id_token, regardless of whether they are sent in the request.
 
 ## [v1.3.6](https://github.com/in2workspace/in2-verifier-api/releases/tag/v1.3.6)
 ### Fixed
