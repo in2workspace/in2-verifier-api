@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 refresh_token).
 - Set the scopes profile and email in the response id_token, regardless of whether they are sent in the request.
 - Change the client_id_schema to did:key in the authorization request.
+- Modify the client_id in the response access_token so that it returns the URL.
 
 ## [v1.3.6](https://github.com/in2workspace/in2-verifier-api/releases/tag/v1.3.6)
 ### Fixed

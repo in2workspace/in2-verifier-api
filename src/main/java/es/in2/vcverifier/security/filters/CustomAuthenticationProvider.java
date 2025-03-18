@@ -248,7 +248,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .jwtID(UUID.randomUUID().toString())
                 .issueTime(Date.from(issueTime))
                 .expirationTime(Date.from(expirationTime))
-                .claim(OAuth2ParameterNames.SCOPE, getScope(learCredential));
+                .claim(OAuth2ParameterNames.SCOPE, getScope(learCredential))
+                .claim(CLIENT_ID, backendConfig.getUrl());
 
         List<String> credentialTypes = learCredential.type();
         if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
