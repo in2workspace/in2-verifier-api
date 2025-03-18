@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.7](https://github.com/in2workspace/in2-verifier-api/releases/tag/v1.3.7)
+### Fixed
+- Modify the response token according to the grant type (client_credentials should not include id_token or 
+refresh_token).
+
 ## [v1.3.6](https://github.com/in2workspace/in2-verifier-api/releases/tag/v1.3.6)
 ### Fixed
 - Add compatibility on LEARCredentialEmployee v2.0 for LEARCredential v1.0 claims
