@@ -62,16 +62,18 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
             if (authentication instanceof OAuth2ClientCredentialsAuthenticationToken) {
 
                 log.debug("Authorization token is Client Credentials: {}", oAuth2AuthorizationGrantAuthenticationToken);
-                return handleGrantWithoutIdTokenNorRefreshToken(oAuth2AuthorizationGrantAuthenticationToken);
+                return handleGrant(oAuth2AuthorizationGrantAuthenticationToken, false);
             } else {
-                return handleGrant(oAuth2AuthorizationGrantAuthenticationToken);
+                return handleGrant(oAuth2AuthorizationGrantAuthenticationToken, true);
             }
         }
         log.error("Unsupported grant type: {}", authentication.getClass().getName());
         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNSUPPORTED_GRANT_TYPE);
     }
 
-    private Authentication handleGrant(OAuth2AuthorizationGrantAuthenticationToken authentication) {
+    private Authentication handleGrant(
+            OAuth2AuthorizationGrantAuthenticationToken authentication,
+            boolean withIdTokenAndRefreshToken) {
         log.info("Processing authorization grant");
 
         String clientId = getClientId(authentication);
@@ -104,94 +106,43 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 issueTime,
                 expirationTime
         );
-        OAuth2RefreshToken oAuth2RefreshToken = generateRefreshToken(issueTime);
 
-        String idToken = generateIdToken(credential, subject, audience, authentication.getAdditionalParameters());
+        OAuth2RefreshToken oAuth2RefreshToken;
+        Map<String, Object> additionalParameters;
 
-        Map<String, Object> additionalParameters = new HashMap<>();
-        additionalParameters.put("id_token", idToken);
+        if(withIdTokenAndRefreshToken){
+            oAuth2RefreshToken = generateRefreshToken(issueTime);
 
-        // Generate the data necessary to be able to refresh the token
-        RefreshTokenDataCache refreshTokenDataCache = RefreshTokenDataCache.builder()
-                .refreshToken(oAuth2RefreshToken)
-                .clientId(clientId)
-                .verifiableCredential(credentialJson)
-                .build();
+            String idToken = generateIdToken(credential, subject, audience, authentication.getAdditionalParameters());
 
-        cacheStoreForRefreshTokenData.add(oAuth2RefreshToken.getTokenValue(),refreshTokenDataCache);
+            additionalParameters = new HashMap<>();
+            additionalParameters.put("id_token", idToken);
 
-        // Save the OAuth2Authorization
-        OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(registeredClient)
-                .id(registeredClient.getId())
-                .principalName(registeredClient.getClientId())
-                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .token(oAuth2RefreshToken)
-                .attribute(Principal.class.getName(), authentication.getPrincipal())
-                .build();
-        oAuth2AuthorizationService.save(authorization);
+            // Generate the data necessary to be able to refresh the token
+            RefreshTokenDataCache refreshTokenDataCache = RefreshTokenDataCache.builder()
+                    .refreshToken(oAuth2RefreshToken)
+                    .clientId(clientId)
+                    .verifiableCredential(credentialJson)
+                    .build();
+
+            cacheStoreForRefreshTokenData.add(oAuth2RefreshToken.getTokenValue(),refreshTokenDataCache);
+
+            // Save the OAuth2Authorization
+            OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(registeredClient)
+                    .id(registeredClient.getId())
+                    .principalName(registeredClient.getClientId())
+                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                    .token(oAuth2RefreshToken)
+                    .attribute(Principal.class.getName(), authentication.getPrincipal())
+                    .build();
+            oAuth2AuthorizationService.save(authorization);
+        } else {
+            oAuth2RefreshToken = null;
+            additionalParameters = Map.of();
+        }
 
         log.info("Authorization grant successfully processed");
         return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken, oAuth2RefreshToken, additionalParameters);
-    }
-
-    private Authentication handleGrantWithoutIdTokenNorRefreshToken(OAuth2AuthorizationGrantAuthenticationToken authentication) {
-        log.info("Processing authorization grant");
-
-        String clientId = getClientId(authentication);
-        log.debug("CustomAuthenticationProvider -- handleGrant -- Client ID obtained: {}", clientId);
-
-        RegisteredClient registeredClient = getRegisteredClient(clientId);
-        log.debug("CustomAuthenticationProvider -- handleGrant -- Registered client found: {}", registeredClient);
-
-        Instant issueTime = Instant.now();
-        Instant expirationTime = issueTime.plus(
-                Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME),
-                ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT)
-        );
-        log.debug("CustomAuthenticationProvider -- handleGrant -- Issue time: {}, Expiration time: {}", issueTime, expirationTime);
-
-        JsonNode credentialJson = getJsonCredential(authentication);
-        LEARCredential credential = getVerifiableCredential(authentication, credentialJson);
-        String subject = credential.mandateeId();
-        log.debug("CustomAuthenticationProvider -- handleGrant -- Credential subject obtained: {}", subject);
-
-        String audience = getAudience(authentication, credential);
-        log.debug("CustomAuthenticationProvider -- handleGrant -- Audience for credential: {}", audience);
-
-        String jwtToken = generateAccessTokenWithVc(credential, issueTime, expirationTime, subject, audience);
-        log.debug("CustomAuthenticationProvider -- handleGrant -- Generated JWT token: {}", jwtToken);
-
-        OAuth2AccessToken oAuth2AccessToken = new OAuth2AccessToken(
-                OAuth2AccessToken.TokenType.BEARER,
-                jwtToken,
-                issueTime,
-                expirationTime
-        );
-//        OAuth2RefreshToken oAuth2RefreshToken = generateRefreshToken(issueTime);
-
-//        Map<String, Object> additionalParameters = new HashMap<>();
-
-        // Generate the data necessary to be able to refresh the token
-        /*RefreshTokenDataCache refreshTokenDataCache = RefreshTokenDataCache.builder()
-                .refreshToken(oAuth2RefreshToken)
-                .clientId(clientId)
-                .verifiableCredential(credentialJson)
-                .build();*/
-
-//        cacheStoreForRefreshTokenData.add(oAuth2RefreshToken.getTokenValue(), refreshTokenDataCache);
-
-        // Save the OAuth2Authorization
-        /*OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(registeredClient)
-                .id(registeredClient.getId())
-                .principalName(registeredClient.getClientId())
-                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .token(oAuth2RefreshToken)
-                .attribute(Principal.class.getName(), authentication.getPrincipal())
-                .build();*/
-//        oAuth2AuthorizationService.save(authorization);
-
-        log.info("Authorization grant successfully processed");
-        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken, null, Map.of());
     }
 
     private String getClientId(OAuth2AuthorizationGrantAuthenticationToken authentication) {
