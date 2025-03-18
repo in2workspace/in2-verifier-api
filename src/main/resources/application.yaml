@@ -80,6 +80,7 @@ verifier:
     identity:
       # Placeholder for private key used in identity verification (REQUIRED)
       privateKey:
+      learCredentialMachineInBase64:
     trustFrameworks:
       # Placeholder for the name of a trust framework (REQUIRED)
       - name: DOME
