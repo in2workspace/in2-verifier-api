@@ -5,12 +5,11 @@ import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.KeyUse;
 import es.in2.vcverifier.config.BackendConfig;
-import es.in2.vcverifier.exception.DidKeyCreationException;
+import es.in2.vcverifier.config.properties.BackendProperties;
 import es.in2.vcverifier.exception.ECKeyCreationException;
 import es.in2.vcverifier.util.UVarInt;
 import lombok.RequiredArgsConstructor;
 import org.bitcoinj.base.Base58;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
@@ -22,13 +21,14 @@ import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
-import java.security.spec.X509EncodedKeySpec;
 
 @Configuration
 @RequiredArgsConstructor
 public class CryptoComponent {
 
     private final BackendConfig backendConfig;
+
+    private final BackendProperties.Identity identity;
 
     @Bean
     public ECKey getECKey() {
@@ -57,33 +57,11 @@ public class CryptoComponent {
             // Build the ECKey using secp256r1 curve (P-256)
             return new ECKey.Builder(Curve.P_256, publicKey)
                     .privateKey(privateKey)
-                    .keyID(generateDidKey(publicKey))
+                    .keyID(identity.did())
                     .keyUse(KeyUse.SIGNATURE)
                     .build();
         } catch (Exception e) {
             throw new ECKeyCreationException("Error creating JWK source for secp256r1: " + e);
-        }
-    }
-
-
-    // Generates a standard DID Key
-    private String generateDidKey(ECPublicKey ecPublicKey) {
-        try {
-            // Convert ECPublicKey (Java) to BCECPublicKey (Bouncy Castle)
-            byte[] encodedKey = ecPublicKey.getEncoded();
-            KeyFactory keyFactory = KeyFactory.getInstance("EC", BouncyCastleProviderSingleton.getInstance());
-            // Decode the public key using Bouncy Castle
-            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encodedKey);
-            BCECPublicKey bcPublicKey = (BCECPublicKey) keyFactory.generatePublic(keySpec);
-            // Extract the bytes from BCECPublicKey
-            byte[] pubKeyBytes = bcPublicKey.getQ().getEncoded(true);
-            // Multicodec key code for secp256r1
-            int multiCodecKeyCodeForSecp256r1 = 0x1200;
-            // Convert the public key to multibase58 format
-            String multiBase58Btc = convertRawKeyToMultiBase58Btc(pubKeyBytes, multiCodecKeyCodeForSecp256r1);
-            return "did:key:z" + multiBase58Btc;
-        } catch (Exception e) {
-            throw new DidKeyCreationException("Error converting public key to did:key", e);
         }
     }
 

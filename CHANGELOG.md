@@ -12,6 +12,7 @@ refresh_token).
 - Change the client_id_schema to did:key in the authorization request.
 - Modify the client_id in the response access_token so that it returns the URL.
 - Add LEARCredentialMachine.
+- Extract DID Key as environment variable.
 
 ## [v1.3.6](https://github.com/in2workspace/in2-verifier-api/releases/tag/v1.3.6)
 ### Fixed

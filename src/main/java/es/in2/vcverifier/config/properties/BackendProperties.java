@@ -18,7 +18,10 @@ public record BackendProperties(
         @NotNull @Valid List<TrustFramework> trustFrameworks
 ) {
 
-    public record Identity(@NotBlank String privateKey) {}
+    public record Identity(
+            @NotBlank String did,
+            @NotBlank String privateKey,
+            @NotBlank String learCredentialMachineInBase64) {}
 
     public record TrustFramework(
             @NotBlank String name,
