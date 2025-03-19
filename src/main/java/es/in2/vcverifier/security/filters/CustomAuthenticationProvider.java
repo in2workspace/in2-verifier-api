@@ -39,7 +39,6 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static es.in2.vcverifier.util.Constants.*;
 import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
@@ -402,7 +401,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                         .tmfFunction(power.function())
                         .tmfType(power.type())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         // Build a normalized Mandate using the normalized mandatee and powers
         return LEARCredentialEmployeeV2.builder()
