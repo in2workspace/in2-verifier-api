@@ -58,7 +58,6 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         if (authentication instanceof OAuth2AuthorizationGrantAuthenticationToken oAuth2AuthorizationGrantAuthenticationToken) {
             log.debug("Authorization token received: {}", oAuth2AuthorizationGrantAuthenticationToken);
-
             return handleGrant(oAuth2AuthorizationGrantAuthenticationToken);
         }
         log.error("Unsupported grant type: {}", authentication.getClass().getName());
