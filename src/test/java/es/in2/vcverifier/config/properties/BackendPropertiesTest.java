@@ -88,7 +88,7 @@ class BackendPropertiesTest {
                 .withUserConfiguration(TestConfig.class)
                 .withPropertyValues(
                         "verifier.backend.url=https://raw.githubusercontent.com",
-                        "verifier.backend.identity.did=did:key",
+                        "verifier.backend.identity.didKey=did:key",
                         "verifier.backend.identity.privateKey=test-private-key",
                         "verifier.backend.identity.verifiableCredential=verifiableCredential",
                         "verifier.backend.trustFrameworks[0].name=DOME",

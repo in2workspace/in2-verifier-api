@@ -24,8 +24,8 @@ public class BackendConfig {
         return privateKey;
     }
 
-    public String getDid() {
-        return properties.identity().did();
+    public String getDidKey() {
+        return properties.identity().didKey();
     }
 
     private BackendProperties.TrustFramework getSelectedTrustFramework() {

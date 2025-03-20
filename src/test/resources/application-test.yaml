@@ -16,7 +16,7 @@ verifier:
     url: "https://raw.githubusercontent.com"
     identity:
       # Placeholder for private key used in identity verification (REQUIRED)
-      did: "did:key"
+      didKey: "did:key"
       privateKey: "0x73e509a7681d4a395b1ced75681c4dc4020dbab02da868512276dd766733d5b5"
       verifiableCredential: "verifiableCredential"
     trustFrameworks:

@@ -19,7 +19,7 @@ public record BackendProperties(
 ) {
 
     public record Identity(
-            @NotBlank String did,
+            @NotBlank String didKey,
             @NotBlank String privateKey,
             @NotBlank String verifiableCredential) {}
 

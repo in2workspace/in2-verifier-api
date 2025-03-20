@@ -52,7 +52,7 @@ public class CryptoComponent {
             // Build the ECKey using secp256r1 curve (P-256)
             return new ECKey.Builder(Curve.P_256, publicKey)
                     .privateKey(privateKey)
-                    .keyID(backendConfig.getDid())
+                    .keyID(backendConfig.getDidKey())
                     .keyUse(KeyUse.SIGNATURE)
                     .build();
         } catch (Exception e) {

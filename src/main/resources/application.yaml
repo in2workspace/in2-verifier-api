@@ -79,7 +79,7 @@ verifier:
     url:
     identity:
       # Placeholder for private key used in identity verification (REQUIRED)
-      did:
+      didKey:
       privateKey:
       verifiableCredential:
     trustFrameworks:
