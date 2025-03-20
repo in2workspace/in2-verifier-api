@@ -24,6 +24,10 @@ public class BackendConfig {
         return privateKey;
     }
 
+    public String getDidKey() {
+        return properties.identity().didKey();
+    }
+
     private BackendProperties.TrustFramework getSelectedTrustFramework() {
         return properties.getDOMETrustFrameworkByName();
     }

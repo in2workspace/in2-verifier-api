@@ -398,7 +398,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .issueTime(Date.from(issueTime))
                 .expirationTime(Date.from(expirationTime))
                 .claim(OAuth2ParameterNames.CLIENT_ID, cryptoComponent.getECKey().getKeyID())
-                .claim("client_id_scheme", "did")
+                .claim("client_id_scheme", "did:key")
                 .claim(NONCE, generateNonce())
                 .claim("response_uri", backendConfig.getUrl() + AUTHORIZATION_RESPONSE_ENDPOINT)
                 .claim(OAuth2ParameterNames.SCOPE, "dome.credentials.presentation.LEARCredentialEmployee")

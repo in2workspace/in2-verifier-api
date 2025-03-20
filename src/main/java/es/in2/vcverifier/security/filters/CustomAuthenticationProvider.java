@@ -39,7 +39,6 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static es.in2.vcverifier.util.Constants.*;
 import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
@@ -64,7 +63,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNSUPPORTED_GRANT_TYPE);
     }
 
-    private Authentication handleGrant(OAuth2AuthorizationGrantAuthenticationToken authentication) {
+    private Authentication handleGrant(
+            OAuth2AuthorizationGrantAuthenticationToken authentication) {
         log.info("Processing authorization grant");
 
         String clientId = getClientId(authentication);
@@ -97,12 +97,33 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 issueTime,
                 expirationTime
         );
-        OAuth2RefreshToken oAuth2RefreshToken = generateRefreshToken(issueTime);
 
-        String idToken = generateIdToken(credential, subject, audience, authentication.getAdditionalParameters());
+        OAuth2RefreshToken oAuth2RefreshToken;
+        Map<String, Object> additionalParameters;
 
-        Map<String, Object> additionalParameters = new HashMap<>();
-        additionalParameters.put("id_token", idToken);
+        if (authentication instanceof OAuth2ClientCredentialsAuthenticationToken) {
+            oAuth2RefreshToken = null;
+            additionalParameters = Map.of();
+        } else {
+            additionalParameters = Map.of(
+                    "id_token",
+                    generateIdToken(credential, subject, audience, authentication.getAdditionalParameters()));
+
+            oAuth2RefreshToken = getOAuth2RefreshToken(
+                    authentication,
+                    issueTime,
+                    clientId,
+                    credentialJson,
+                    registeredClient);
+        }
+
+        log.info("Authorization grant successfully processed");
+        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken, oAuth2RefreshToken, additionalParameters);
+    }
+
+    private OAuth2RefreshToken getOAuth2RefreshToken(OAuth2AuthorizationGrantAuthenticationToken authentication, Instant issueTime, String clientId, JsonNode credentialJson, RegisteredClient registeredClient) {
+        OAuth2RefreshToken oAuth2RefreshToken;
+        oAuth2RefreshToken = generateRefreshToken(issueTime);
 
         // Generate the data necessary to be able to refresh the token
         RefreshTokenDataCache refreshTokenDataCache = RefreshTokenDataCache.builder()
@@ -122,9 +143,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .attribute(Principal.class.getName(), authentication.getPrincipal())
                 .build();
         oAuth2AuthorizationService.save(authorization);
-
-        log.info("Authorization grant successfully processed");
-        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken, oAuth2RefreshToken, additionalParameters);
+        return oAuth2RefreshToken;
     }
 
     private String getClientId(OAuth2AuthorizationGrantAuthenticationToken authentication) {
@@ -230,7 +249,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                 .jwtID(UUID.randomUUID().toString())
                 .issueTime(Date.from(issueTime))
                 .expirationTime(Date.from(expirationTime))
-                .claim(OAuth2ParameterNames.SCOPE, getScope(learCredential));
+                .claim(OAuth2ParameterNames.SCOPE, getScope(learCredential))
+                .claim(CLIENT_ID, backendConfig.getUrl());
 
         List<String> credentialTypes = learCredential.type();
         if (credentialTypes.contains(LEARCredentialType.LEAR_CREDENTIAL_EMPLOYEE.getValue())) {
@@ -292,7 +312,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         Map<String, Object> additionalClaims;
 
         if (additionalParameters.containsKey(OAuth2ParameterNames.SCOPE)) {
-            additionalClaims = extractClaimsFromVerifiableCredential(learCredential, additionalParameters);
+            additionalClaims = extractClaimsFromVerifiableCredential(learCredential);
             additionalClaims.forEach(idTokenClaimsBuilder::claim);
         }
 
@@ -326,24 +346,15 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     }
 
 
-    private Map<String, Object> extractClaimsFromVerifiableCredential(LEARCredential learCredential, Map<String, Object> additionalParameters) {
-        Set<String> requestedScopes = new HashSet<>(Arrays.asList(additionalParameters.get(OAuth2ParameterNames.SCOPE).toString().split(" ")));
+    private Map<String, Object> extractClaimsFromVerifiableCredential(LEARCredential learCredential) {
         Map<String, Object> claims = new HashMap<>();
-
         if (learCredential instanceof LEARCredentialEmployee learCredentialEmployee) {
-            // Check if "profile" scope is requested and add profile-related claims
-            if (requestedScopes.contains("profile")) {
                 String name = learCredentialEmployee.mandateeFirstName() + " " + learCredentialEmployee.mandateeLastName();
                 claims.put("name", name);
                 claims.put("given_name", learCredentialEmployee.mandateeFirstName());
                 claims.put("family_name", learCredentialEmployee.mandateeLastName());
-            }
-
-            // Check if "email" scope is requested and add email-related claims
-            if (requestedScopes.contains("email")) {
                 claims.put("email", learCredentialEmployee.mandateeEmail());
                 claims.put("email_verified", true);
-            }
         }
         return claims;
     }
@@ -390,7 +401,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
                         .tmfFunction(power.function())
                         .tmfType(power.type())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         // Build a normalized Mandate using the normalized mandatee and powers
         return LEARCredentialEmployeeV2.builder()

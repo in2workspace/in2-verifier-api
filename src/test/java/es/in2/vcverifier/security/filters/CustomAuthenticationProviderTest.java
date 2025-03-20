@@ -292,7 +292,7 @@ class CustomAuthenticationProviderTest {
     }
 
     @Test
-    void authenticate_validClientCredentialsGrant_withMachineCredential_success() throws Exception {
+    void authenticate_validClientCredentialsGrant_withMachineCredential_success() {
         // Arrange
         String clientId = "test-client-id";
         Map<String, Object> additionalParameters = new HashMap<>();
@@ -307,13 +307,8 @@ class CustomAuthenticationProviderTest {
         OAuth2ClientCredentialsAuthenticationToken authenticationToken = mock(OAuth2ClientCredentialsAuthenticationToken.class);
         when(authenticationToken.getAdditionalParameters()).thenReturn(additionalParameters);
 
-        TestingAuthenticationToken principal = new TestingAuthenticationToken("test-user", null);
-        when(authenticationToken.getPrincipal()).thenReturn(principal);
-
         RegisteredClient registeredClient = mock(RegisteredClient.class);
         when(registeredClientRepository.findByClientId(clientId)).thenReturn(registeredClient);
-        when(registeredClient.getClientId()).thenReturn(clientId);
-        when(registeredClient.getId()).thenReturn("registered-client-id");
 
         when(backendConfig.getUrl()).thenReturn("https://auth.server");
 
@@ -322,8 +317,6 @@ class CustomAuthenticationProviderTest {
 
         LEARCredentialMachine credential = getLEARCredentialMachine();
         when(objectMapper.convertValue(vcJsonNode, LEARCredentialMachine.class)).thenReturn(credential);
-
-        when(objectMapper.writeValueAsString(credential)).thenReturn("{\"credential\":\"value\"}");
 
         when(jwtService.generateJWT(anyString())).thenReturn("mock-jwt-token");
 
@@ -337,18 +330,11 @@ class CustomAuthenticationProviderTest {
         OAuth2AccessTokenAuthenticationToken tokenResult = (OAuth2AccessTokenAuthenticationToken) result;
         assertEquals("mock-jwt-token", tokenResult.getAccessToken().getTokenValue());
 
-        verify(jwtService, times(2)).generateJWT(anyString());
+        verify(jwtService, times(1)).generateJWT(anyString());
 
-        // Verificar the refresh token data cache
-        ArgumentCaptor<String> refreshTokenCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<RefreshTokenDataCache> refreshTokenDataCaptor = ArgumentCaptor.forClass(RefreshTokenDataCache.class);
-        verify(cacheStoreForRefreshTokenData).add(refreshTokenCaptor.capture(), refreshTokenDataCaptor.capture());
+        verifyNoInteractions(cacheStoreForRefreshTokenData);
 
-        ArgumentCaptor<OAuth2Authorization> authorizationCaptor = ArgumentCaptor.forClass(OAuth2Authorization.class);
-        verify(oAuth2AuthorizationService).save(authorizationCaptor.capture());
-
-        OAuth2Authorization authorization = authorizationCaptor.getValue();
-        assertEquals(clientId, authorization.getPrincipalName());
+        verifyNoInteractions(oAuth2AuthorizationService);
     }
 
 

@@ -79,7 +79,9 @@ verifier:
     url:
     identity:
       # Placeholder for private key used in identity verification (REQUIRED)
+      didKey:
       privateKey:
+      verifiableCredential:
     trustFrameworks:
       # Placeholder for the name of a trust framework (REQUIRED)
       - name: DOME
