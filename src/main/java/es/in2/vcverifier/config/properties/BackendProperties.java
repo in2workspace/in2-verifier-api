@@ -21,7 +21,7 @@ public record BackendProperties(
     public record Identity(
             @NotBlank String did,
             @NotBlank String privateKey,
-            @NotBlank String learCredentialMachineInBase64) {}
+            @NotBlank String verifiableCredential) {}
 
     public record TrustFramework(
             @NotBlank String name,

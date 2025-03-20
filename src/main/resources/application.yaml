@@ -81,7 +81,7 @@ verifier:
       # Placeholder for private key used in identity verification (REQUIRED)
       did:
       privateKey:
-      learCredentialMachineInBase64:
+      verifiableCredential:
     trustFrameworks:
       # Placeholder for the name of a trust framework (REQUIRED)
       - name: DOME
