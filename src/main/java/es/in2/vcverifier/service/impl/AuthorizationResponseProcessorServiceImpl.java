@@ -1,7 +1,10 @@
 package es.in2.vcverifier.service.impl;
 
+import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
+import es.in2.vcverifier.exception.JWTClaimMissingException;
+import es.in2.vcverifier.exception.JWTParsingException;
 import es.in2.vcverifier.exception.LoginTimeoutException;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.service.AuthorizationResponseProcessorService;
@@ -22,9 +25,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 import static es.in2.vcverifier.util.Constants.EXPIRATION;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.List;
 import java.util.UUID;
 
 import static es.in2.vcverifier.util.Constants.*;
@@ -69,6 +74,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
         log.info("Decoded VP Token: {}", decodedVpToken);
 
+        validateVpAudience(decodedVpToken, oAuth2AuthorizationRequest);
         // Send the decoded token to a service for validation
         boolean isValid = vpService.validateVerifiablePresentation(decodedVpToken);
         if (!isValid) {
@@ -133,6 +139,22 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         // Enviar la URL de redirección al cliente a través del WebSocket
         messagingTemplate.convertAndSend("/oidc/redirection/" + state, redirectUrl);
 
+    }
+
+    private void validateVpAudience(String decodedVpToken, OAuth2AuthorizationRequest oAuth2AuthorizationRequest) {
+        try {
+            SignedJWT vpSignedJWT = SignedJWT.parse(decodedVpToken);
+            List<String> audiences = vpSignedJWT.getJWTClaimsSet().getAudience();
+            String expectedAudience = (String) oAuth2AuthorizationRequest.getAdditionalParameters().get("iss");
+            if (expectedAudience == null || expectedAudience.isBlank()) {
+                throw new JWTClaimMissingException("The 'iss' parameter (expected audience) is missing from the authorization request.");
+            }
+            if (audiences == null || !audiences.contains(expectedAudience)) {
+                throw new JWTClaimMissingException("The 'aud' claim in the VP token does not match the expected verifier.");
+            }
+        } catch (ParseException e) {
+            throw new JWTParsingException("Failed to parse the VP JWT while validating the 'aud' claim.");
+        }
     }
 }
 
