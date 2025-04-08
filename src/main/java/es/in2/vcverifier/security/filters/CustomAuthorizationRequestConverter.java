@@ -35,10 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static es.in2.vcverifier.util.Constants.*;
 import static org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames.NONCE;
@@ -74,7 +71,6 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         String scope = request.getParameter(OAuth2ParameterNames.SCOPE);
         String redirectUri = request.getParameter(OAuth2ParameterNames.REDIRECT_URI);
         String clientNonce = request.getParameter(NONCE);
-
         AuthorizationContext authorizationContext = AuthorizationContext.builder()
                 .requestUri(requestUri)
                 .state(state)
@@ -82,6 +78,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .redirectUri(redirectUri)
                 .clientNonce(clientNonce)
                 .scope(scope)
+                .type(OID4VP_TYPE)
                 .build();
 
         RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
@@ -391,7 +388,8 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
 
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
-
+        Map<String, Object> dcqlQuery = Collections.singletonMap("credentials",
+                List.of(Map.of("id", "LEARCredentialEmployee", "format", "jwt_vc_json")));//TODO no estoy seguro de si es así
         JWTClaimsSet payload = new JWTClaimsSet.Builder()
                 .issuer(cryptoComponent.getECKey().getKeyID())
                 .audience(cryptoComponent.getECKey().getKeyID())
@@ -405,6 +403,8 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .claim(OAuth2ParameterNames.STATE, state)
                 .claim(OAuth2ParameterNames.RESPONSE_TYPE, "vp_token")
                 .claim("response_mode", "direct_post")
+                .claim("type", OID4VP_TYPE)
+                .claim("dcql_query",dcqlQuery)
                 .jwtID(UUID.randomUUID().toString())
                 .build();
 
@@ -470,6 +470,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         Map<String, Object> additionalParameters = new HashMap<>();
         long timeout = Long.parseLong(LOGIN_TIMEOUT);
         additionalParameters.put(EXPIRATION, Instant.now().plusSeconds(timeout).getEpochSecond());
+        additionalParameters.put("type", authorizationContext.type()); // TODO esto es necesario ??
         // If there's a valid nonce, then add it as an additional parameter
         String nonce = authorizationContext.clientNonce();
         if (nonce != null && !nonce.isBlank()) {
