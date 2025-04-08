@@ -1,9 +1,7 @@
 package es.in2.vcverifier.service.impl;
 
-import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
-import es.in2.vcverifier.exception.JWTParsingException;
 import es.in2.vcverifier.exception.LoginTimeoutException;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.service.AuthorizationResponseProcessorService;
@@ -24,8 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 import static es.in2.vcverifier.util.Constants.EXPIRATION;
 import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
@@ -73,10 +69,6 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
         log.info("Decoded VP Token: {}", decodedVpToken);
 
-        // Retrieve nonce from additional parameters
-        String nonceValue = (String) oAuth2AuthorizationRequest.getAdditionalParameters().get(NONCE);
-        validateNonceFromVpToken(decodedVpToken,nonceValue);
-
         // Send the decoded token to a service for validation
         boolean isValid = vpService.validateVerifiablePresentation(decodedVpToken);
         if (!isValid) {
@@ -107,6 +99,8 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
 
         log.info("OAuth2Authorization generated");
 
+        // Retrieve nonce from additional parameters
+        String nonceValue = (String) oAuth2AuthorizationRequest.getAdditionalParameters().get(NONCE);
 
         // Create a builder
         AuthorizationCodeData.AuthorizationCodeDataBuilder authCodeDataBuilder = AuthorizationCodeData.builder()
@@ -139,18 +133,6 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         // Enviar la URL de redirección al cliente a través del WebSocket
         messagingTemplate.convertAndSend("/oidc/redirection/" + state, redirectUrl);
 
-    }
-
-    private void validateNonceFromVpToken(String decodedVpToken, String expectedNonce) {
-        try {
-            SignedJWT signedVpToken = SignedJWT.parse(decodedVpToken);
-            String vpNonce = (String) signedVpToken.getJWTClaimsSet().getClaim(NONCE);
-            if (vpNonce == null || !vpNonce.equals(expectedNonce)) {
-                throw new IllegalArgumentException("The nonce in the VP Token does not match the one from the authorization request.");
-            }
-        } catch (ParseException e) {
-            throw new JWTParsingException("Failed to parse VP Token while validating nonce : "+e);
-        }
     }
 }
 

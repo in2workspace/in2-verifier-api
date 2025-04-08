@@ -25,6 +25,8 @@ import java.security.interfaces.ECPublicKey;
 import java.text.ParseException;
 import java.util.Map;
 
+import static es.in2.vcverifier.util.Constants.OID4VP_TYPE;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -46,6 +48,7 @@ public class JWTServiceImpl implements JWTService {
             JWSHeader jwsHeader = new JWSHeader.Builder(JWSAlgorithm.ES256)
                     .keyID(cryptoComponent.getECKey().getKeyID())
                     .type(JOSEObjectType.JWT)
+                    .customParam("type",OID4VP_TYPE)
                     .build();
             log.debug("JWTServiceImpl -- generateJWT -- JWT header set with algorithm: {}", JWSAlgorithm.ES256);
 

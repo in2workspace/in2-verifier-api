@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static es.in2.vcverifier.util.Constants.*;
+import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
 
 /**
  * This class contains basic validation steps for the scope of validating a Verifiable Presentation (VP)
@@ -282,7 +283,8 @@ public class VpServiceImpl implements VpService {
         try {
             // Parse the Verifiable Presentation (VP) JWT
             SignedJWT vpSignedJWT = SignedJWT.parse(verifiablePresentation);
-
+            validateVpNonce(vpSignedJWT);
+            
             // Extract the "vp" claim
             Object vpClaim = vpSignedJWT.getJWTClaimsSet().getClaim("vp");
 
@@ -296,6 +298,18 @@ public class VpServiceImpl implements VpService {
 
         } catch (ParseException e) {
             throw new JWTParsingException("Error parsing the Verifiable Presentation or Verifiable Credential");
+        }
+    }
+
+    private void validateVpNonce(SignedJWT vpSignedJWT) {
+        String vpNonce = null;
+        try {
+            vpNonce = (String) vpSignedJWT.getJWTClaimsSet().getClaim(NONCE);
+        } catch (ParseException e) {
+            throw new JWTParsingException("Unable to parse the 'nonce' claim from the VP token's JWT payload.");
+        }
+        if (vpNonce == null || vpNonce.isBlank()) {
+            throw new JWTClaimMissingException("The 'nonce' claim is missing in the VP token.");
         }
     }
 

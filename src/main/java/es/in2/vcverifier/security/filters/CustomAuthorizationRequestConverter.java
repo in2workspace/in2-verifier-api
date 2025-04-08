@@ -385,11 +385,8 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                                                        String originalRequestURL) {
         // TODO: Map the scope with its presentation definition if needed
         checkAuthorizationRequestScope(scope, registeredClient, originalRequestURL);
-
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
-        Map<String, Object> dcqlQuery = Collections.singletonMap("credentials",
-                List.of(Map.of("id", "LEARCredentialEmployee", "format", "jwt_vc_json")));//TODO no estoy seguro de si es así
         JWTClaimsSet payload = new JWTClaimsSet.Builder()
                 .issuer(cryptoComponent.getECKey().getKeyID())
                 .audience(cryptoComponent.getECKey().getKeyID())
@@ -403,12 +400,18 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .claim(OAuth2ParameterNames.STATE, state)
                 .claim(OAuth2ParameterNames.RESPONSE_TYPE, "vp_token")
                 .claim("response_mode", "direct_post")
-                .claim("type", OID4VP_TYPE)
-                .claim("dcql_query",dcqlQuery)
+                .claim("dcql_query",buildDcqlQuery())
                 .jwtID(UUID.randomUUID().toString())
                 .build();
 
         return payload.toString();
+    }
+
+    private Map<String, Object> buildDcqlQuery() {
+        return Collections.singletonMap(
+                "credentials",
+                List.of(Map.of("id", "LEARCredentialEmployee", "format", "jwt_vc_json"))
+        );
     }
 
     /**
@@ -470,7 +473,6 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         Map<String, Object> additionalParameters = new HashMap<>();
         long timeout = Long.parseLong(LOGIN_TIMEOUT);
         additionalParameters.put(EXPIRATION, Instant.now().plusSeconds(timeout).getEpochSecond());
-        additionalParameters.put("type", authorizationContext.type()); // TODO esto es necesario ??
         // If there's a valid nonce, then add it as an additional parameter
         String nonce = authorizationContext.clientNonce();
         if (nonce != null && !nonce.isBlank()) {
