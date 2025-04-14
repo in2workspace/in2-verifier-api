@@ -42,6 +42,7 @@ import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static es.in2.vcverifier.util.Constants.OID4VP_TYPE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -406,6 +407,39 @@ class JWTServiceImplTest {
 
         assertThrows(NullPointerException.class, () -> jwtService.generateJWT(payload));
     }
+
+    @Test
+    void generateJWT_shouldSetOID4VPType_whenResponseTypeIsVpToken() throws Exception {
+        // Arrange
+        String payload = "{\"iss\":\"did:example:1234\",\"aud\":\"did:example:1234\",\"response_type\":\"vp_token\",\"iat\":1716239022,\"exp\":1716242622}";
+
+        ECKey ecJWK = new ECKeyGenerator(Curve.P_256)
+                .keyUse(KeyUse.SIGNATURE)
+                .keyID("testKeyID")
+                .generate();
+
+        JsonNode mockJsonNode = mock(JsonNode.class);
+        when(objectMapper.readTree(payload)).thenReturn(mockJsonNode);
+
+        Map<String, Object> claimsMap = new HashMap<>();
+        claimsMap.put("iss", "did:example:1234");
+        claimsMap.put("aud", "did:example:1234");
+        claimsMap.put("response_type", "vp_token");
+        claimsMap.put("iat", 1716239022);
+        claimsMap.put("exp", 1716242622);
+
+        when(objectMapper.convertValue(any(JsonNode.class), any(TypeReference.class))).thenReturn(claimsMap);
+        when(cryptoComponent.getECKey()).thenReturn(ecJWK);
+
+        // Act
+        String jwt = jwtService.generateJWT(payload);
+
+        // Assert
+        assertNotNull(jwt);
+        SignedJWT signedJWT = SignedJWT.parse(jwt);
+        assertEquals(OID4VP_TYPE, signedJWT.getHeader().getType().toString());
+    }
+
 
 
     private PrivateKey getPrivateKeyFromJson(String json) throws Exception {

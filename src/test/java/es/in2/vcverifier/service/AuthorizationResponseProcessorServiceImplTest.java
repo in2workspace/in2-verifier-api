@@ -7,6 +7,8 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.config.BackendConfig;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
+import es.in2.vcverifier.exception.JWTClaimMissingException;
+import es.in2.vcverifier.exception.JWTParsingException;
 import es.in2.vcverifier.exception.LoginTimeoutException;
 import es.in2.vcverifier.service.impl.AuthorizationResponseProcessorServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -27,10 +29,8 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import static es.in2.vcverifier.util.Constants.EXPIRATION;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.Date;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
@@ -253,4 +253,107 @@ class AuthorizationResponseProcessorServiceImplTest {
 
         verify(cacheStoreForOAuth2AuthorizationRequest, times(1)).delete(state);
     }
+
+    @Test
+    void validateVpAudience_shouldThrowException_whenAudClaimIsMissing() throws Exception {
+        // Arrange
+        String jwtWithoutAud = createJwtWithoutAudience(); // JWT with no 'aud' claim
+        String vpToken = Base64.getEncoder().encodeToString(jwtWithoutAud.getBytes(StandardCharsets.UTF_8));
+
+        // Mock mínimo del flujo necesario para que se ejecute validateVpAudience
+        OAuth2AuthorizationRequest mockOAuth2AuthorizationRequest = mock(OAuth2AuthorizationRequest.class);
+        when(mockOAuth2AuthorizationRequest.getAdditionalParameters()).thenReturn(
+                Map.of(EXPIRATION, Instant.now().plusSeconds(60).getEpochSecond())
+        );
+        when(mockOAuth2AuthorizationRequest.getRedirectUri()).thenReturn("https://client.example.com/callback");
+
+        when(cacheStoreForOAuth2AuthorizationRequest.get("state")).thenReturn(mockOAuth2AuthorizationRequest);
+        doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete("state");
+
+        // Act & Assert
+        JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
+                authorizationResponseProcessorService.processAuthResponse("state", vpToken)
+        );
+
+        assertEquals("The 'aud' claim is missing in the VP token.", exception.getMessage());
+    }
+
+    @Test
+    void validateVpAudience_shouldThrowException_whenAudienceDoesNotMatch() throws Exception {
+        // Arrange
+        when(backendConfig.getUrl()).thenReturn("http://localhost:8080");
+        String jwtWithWrongAud = createJwtWithAudience();
+        String vpToken = Base64.getEncoder().encodeToString(jwtWithWrongAud.getBytes(StandardCharsets.UTF_8));
+
+        OAuth2AuthorizationRequest mockOAuth2AuthorizationRequest = mock(OAuth2AuthorizationRequest.class);
+        when(mockOAuth2AuthorizationRequest.getAdditionalParameters()).thenReturn(
+                Map.of(EXPIRATION, Instant.now().plusSeconds(60).getEpochSecond())
+        );
+        when(mockOAuth2AuthorizationRequest.getRedirectUri()).thenReturn("https://client.example.com/callback");
+
+        when(cacheStoreForOAuth2AuthorizationRequest.get("state")).thenReturn(mockOAuth2AuthorizationRequest);
+        doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete("state");
+
+        // Act & Assert
+        JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
+                authorizationResponseProcessorService.processAuthResponse("state", vpToken)
+        );
+
+        assertEquals("The 'aud' claim in the VP token does not match the expected verifier URL.", exception.getMessage());
+    }
+    @Test
+    void validateVpAudience_shouldThrowException_whenTokenCannotBeParsed() {
+        // Arrange
+        String invalidJwt = "malformed.token.value"; // not a valid JWT
+        String vpToken = Base64.getEncoder().encodeToString(invalidJwt.getBytes(StandardCharsets.UTF_8));
+
+        OAuth2AuthorizationRequest mockOAuth2AuthorizationRequest = mock(OAuth2AuthorizationRequest.class);
+        when(mockOAuth2AuthorizationRequest.getAdditionalParameters()).thenReturn(
+                Map.of(EXPIRATION, Instant.now().plusSeconds(60).getEpochSecond())
+        );
+        when(mockOAuth2AuthorizationRequest.getRedirectUri()).thenReturn("https://client.example.com/callback");
+
+        when(cacheStoreForOAuth2AuthorizationRequest.get("state")).thenReturn(mockOAuth2AuthorizationRequest);
+        doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete("state");
+
+        // Act & Assert
+        JWTParsingException exception = assertThrows(JWTParsingException.class, () ->
+                authorizationResponseProcessorService.processAuthResponse("state", vpToken)
+        );
+
+        assertEquals("Failed to parse the VP JWT while validating the 'aud' claim.", exception.getMessage());
+    }
+    private String createJwtWithAudience() throws JOSEException {
+        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+                .subject("did:key:abc123")
+                .audience("https://wrong-audience.com")
+                .issueTime(new Date())
+                .expirationTime(Date.from(Instant.now().plusSeconds(600)))
+                .build();
+
+        JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.HS256).type(JOSEObjectType.JWT).build();
+        SignedJWT signedJWT = new SignedJWT(header, claimsSet);
+        signedJWT.sign(new MACSigner("12345678901234567890123456789012"));
+
+        return signedJWT.serialize();
+    }
+
+    private String createJwtWithoutAudience() throws JOSEException {
+        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+                .subject("did:key:abc123")
+                .issueTime(new Date())
+                .expirationTime(Date.from(Instant.now().plusSeconds(600)))
+                .build();
+
+        JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.HS256)
+                .type(JOSEObjectType.JWT)
+                .build();
+
+        SignedJWT signedJWT = new SignedJWT(header, claimsSet);
+        MACSigner signer = new MACSigner("12345678901234567890123456789012"); // dummy secret 256-bit
+        signedJWT.sign(signer);
+
+        return signedJWT.serialize();
+    }
+
 }
