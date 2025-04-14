@@ -277,6 +277,10 @@ class VpServiceImplTest {
             JWTClaimsSet vpClaimsSet = mock(JWTClaimsSet.class);
             when(vpSignedJWT.getJWTClaimsSet()).thenReturn(vpClaimsSet);
 
+            JWSHeader vpHeader = mock(JWSHeader.class);
+            when(vpSignedJWT.getHeader()).thenReturn(vpHeader);
+            when(vpHeader.toJSONObject()).thenReturn(new HashMap<>()); // dummy header map
+
             // Mock the "vp" claim in the VP
             Map<String, Object> vcClaimMap = new HashMap<>();
             String vcJwt = "valid.vc.jwt";
@@ -366,6 +370,10 @@ class VpServiceImplTest {
             JWTClaimsSet vpClaimsSet = mock(JWTClaimsSet.class);
             when(vpSignedJWT.getJWTClaimsSet()).thenReturn(vpClaimsSet);
 
+            JWSHeader vpHeader = mock(JWSHeader.class);
+            when(vpSignedJWT.getHeader()).thenReturn(vpHeader);
+            when(vpHeader.toJSONObject()).thenReturn(new HashMap<>()); // dummy header map
+
             Map<String, Object> vcClaimMap = new HashMap<>();
             String vcJwt = "invalid-time-window.vc.jwt";
             vcClaimMap.put("verifiableCredential", List.of(vcJwt));
@@ -409,6 +417,10 @@ class VpServiceImplTest {
             // Configurar claims del VP
             JWTClaimsSet vpClaimsSet = mock(JWTClaimsSet.class);
             when(vpSignedJWT.getJWTClaimsSet()).thenReturn(vpClaimsSet);
+
+            JWSHeader vpHeader = mock(JWSHeader.class);
+            when(vpSignedJWT.getHeader()).thenReturn(vpHeader);
+            when(vpHeader.toJSONObject()).thenReturn(new HashMap<>()); // dummy header map
 
             Map<String, Object> vcClaimMap = new HashMap<>();
             String vcJwt = "invalid-time-window.vc.jwt";

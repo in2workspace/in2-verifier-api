@@ -6,7 +6,6 @@ import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.component.CryptoComponent;
 import es.in2.vcverifier.config.BackendConfig;
 import es.in2.vcverifier.config.CacheStore;
-import es.in2.vcverifier.exception.InvalidScopeException;
 import es.in2.vcverifier.model.AuthorizationContext;
 import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import es.in2.vcverifier.service.DIDService;
@@ -79,7 +78,6 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .redirectUri(redirectUri)
                 .clientNonce(clientNonce)
                 .scope(scope)
-                .type(OID4VP_TYPE)
                 .build();
 
         RegisteredClient registeredClient = registeredClientRepository.findByClientId(clientId);
@@ -421,15 +419,17 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private void checkAuthorizationRequestScope(String scope,
                                                 RegisteredClient registeredClient,
                                                 String originalRequestURL) {
-        log.info("RegisteredClient: {}, OriginalRequestURL: {}",
-                registeredClient != null ? registeredClient.getClientId() : "null",
-                originalRequestURL);
         if (!scope.contains("learcredential")) {
             String errorCode = generateNonce();
             String errorMessage =
                     "The requested scope does not contain 'learcredential'. Only this scope and 'email', 'profile' are supported.";
             log.error(LOG_ERROR_FORMAT, errorCode, errorMessage);
-            throw new InvalidScopeException(errorMessage);
+            throwInvalidClientAuthenticationException(
+                    errorMessage,
+                    registeredClient.getClientName(),
+                    errorCode,
+                    originalRequestURL
+            );
         }
     }
 

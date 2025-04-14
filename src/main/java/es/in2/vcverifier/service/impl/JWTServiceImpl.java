@@ -45,11 +45,15 @@ public class JWTServiceImpl implements JWTService {
             log.debug("JWTServiceImpl -- generateJWT -- ECKey obtained for signing: {}", ecJWK.getKeyID());
 
             // Set Header
-            JWSHeader jwsHeader = new JWSHeader.Builder(JWSAlgorithm.ES256)
-                    .keyID(cryptoComponent.getECKey().getKeyID())
-                    .type(JOSEObjectType.JWT)
-                    .customParam("type",OID4VP_TYPE)
-                    .build();
+            boolean isOid4vp = payload.contains("\"response_type\":\"vp_token\"");
+            JWSHeader.Builder headerBuilder = new JWSHeader.Builder(JWSAlgorithm.ES256)
+                    .keyID(ecJWK.getKeyID());
+            if (isOid4vp) {
+                headerBuilder.type(new JOSEObjectType(OID4VP_TYPE));
+            } else {
+                headerBuilder.type(JOSEObjectType.JWT);
+            }
+            JWSHeader jwsHeader = headerBuilder.build();
             log.debug("JWTServiceImpl -- generateJWT -- JWT header set with algorithm: {}", JWSAlgorithm.ES256);
 
             // Set Payload

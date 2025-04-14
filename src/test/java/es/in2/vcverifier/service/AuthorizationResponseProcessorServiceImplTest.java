@@ -1,5 +1,10 @@
 package es.in2.vcverifier.service;
 
+import com.nimbusds.jose.*;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
+import es.in2.vcverifier.config.BackendConfig;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
 import es.in2.vcverifier.exception.LoginTimeoutException;
@@ -23,6 +28,7 @@ import static es.in2.vcverifier.util.Constants.EXPIRATION;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Date;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,6 +42,8 @@ class AuthorizationResponseProcessorServiceImplTest {
     @Mock
     private CacheStore<OAuth2AuthorizationRequest> cacheStoreForOAuth2AuthorizationRequest;
 
+    @Mock
+    private BackendConfig backendConfig;
 
     @Mock
     private VpService vpService;
@@ -53,10 +61,10 @@ class AuthorizationResponseProcessorServiceImplTest {
     private AuthorizationResponseProcessorServiceImpl authorizationResponseProcessorService;
 
     @Test
-    void processAuthResponse_validInput_shouldProcessSuccessfully() {
+    void processAuthResponse_validInput_shouldProcessSuccessfully() throws JOSEException {
         // Arrange
         String state = "test-state";
-        String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes(StandardCharsets.UTF_8));
+        String vpToken = createVpToken();
         long timeout = Long.parseLong(LOGIN_TIMEOUT);
 
         Map<String, Object> additionalParams = Map.of(
@@ -84,8 +92,8 @@ class AuthorizationResponseProcessorServiceImplTest {
         when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(oAuth2AuthorizationRequest);
         doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(state);
 
-        when(vpService.validateVerifiablePresentation("valid-vp-token")).thenReturn(true);
-        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode("valid-vp-token")).thenReturn(null); // Mock as needed
+        when(vpService.validateVerifiablePresentation(anyString())).thenReturn(true);
+        when(vpService.getCredentialFromTheVerifiablePresentationAsJsonNode(anyString())).thenReturn(null); // Mock as needed
 
         when(registeredClientRepository.findByClientId("client-id")).thenReturn(registeredClient);
 
@@ -129,10 +137,10 @@ class AuthorizationResponseProcessorServiceImplTest {
 
 
     @Test
-    void processAuthResponse_invalidVpToken_shouldThrowException() {
+    void processAuthResponse_invalidVpToken_shouldThrowException() throws JOSEException {
         // Arrange
         String state = "test-state";
-        String vpToken = Base64.getEncoder().encodeToString("invalid-vp-token".getBytes(StandardCharsets.UTF_8));
+        String vpToken = createVpToken();
         long timeout = Long.parseLong(LOGIN_TIMEOUT);
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
@@ -147,7 +155,7 @@ class AuthorizationResponseProcessorServiceImplTest {
         when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(oAuth2AuthorizationRequest);
         doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(state);
 
-        when(vpService.validateVerifiablePresentation("invalid-vp-token")).thenReturn(false);
+        when(vpService.validateVerifiablePresentation(anyString())).thenReturn(false);
 
         // Act & Assert
         InvalidVPtokenException exception = assertThrows(InvalidVPtokenException.class, () ->
@@ -158,11 +166,11 @@ class AuthorizationResponseProcessorServiceImplTest {
     }
 
     @Test
-    void processAuthResponse_noRegisteredClient_shouldThrowException() {
+    void processAuthResponse_noRegisteredClient_shouldThrowException() throws JOSEException {
         // Arrange
         String state = "test-state";
-        String vpToken = Base64.getEncoder().encodeToString("valid-vp-token".getBytes(StandardCharsets.UTF_8));
         long timeout = Long.parseLong(LOGIN_TIMEOUT);
+        String vpToken = createVpToken();
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
                 .authorizationUri("https://auth.example.com")
@@ -176,7 +184,7 @@ class AuthorizationResponseProcessorServiceImplTest {
         when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(oAuth2AuthorizationRequest);
         doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(state);
 
-        when(vpService.validateVerifiablePresentation("valid-vp-token")).thenReturn(true);
+        when(vpService.validateVerifiablePresentation(anyString())).thenReturn(true);
 
         when(registeredClientRepository.findByClientId("client-id")).thenReturn(null);
 
@@ -186,6 +194,32 @@ class AuthorizationResponseProcessorServiceImplTest {
         );
 
         assertEquals(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT, exception.getError().getErrorCode());
+    }
+
+    private String createVpToken() throws JOSEException {
+        // Simular backendConfig.getUrl()
+        when(backendConfig.getUrl()).thenReturn("http://localhost:8080");
+
+        // Build JWT claims with matching 'aud'
+        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+                .subject("did:key:abc123")
+                .audience("http://localhost:8080") // Debe coincidir con backendConfig.getUrl()
+                .issueTime(new Date())
+                .expirationTime(Date.from(Instant.now().plusSeconds(600)))
+                .build();
+
+        // Create JWT header
+        JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.HS256)
+                .type(JOSEObjectType.JWT)
+                .build();
+
+        // Sign the JWT using a dummy secret
+        SignedJWT signedJWT = new SignedJWT(header, claimsSet);
+        MACSigner signer = new MACSigner("12345678901234567890123456789012"); // dummy secret 256-bit
+        signedJWT.sign(signer);
+
+        // Serialize and encode the token
+        return Base64.getEncoder().encodeToString(signedJWT.serialize().getBytes(StandardCharsets.UTF_8));
     }
 
     @Test

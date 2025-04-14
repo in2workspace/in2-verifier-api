@@ -1,6 +1,7 @@
 package es.in2.vcverifier.service.impl;
 
 import com.nimbusds.jwt.SignedJWT;
+import es.in2.vcverifier.config.BackendConfig;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
 import es.in2.vcverifier.exception.JWTClaimMissingException;
@@ -46,6 +47,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
     private final RegisteredClientRepository registeredClientRepository;
     private final OAuth2AuthorizationService oAuth2AuthorizationService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final BackendConfig backendConfig;
 
 
     @Override
@@ -74,7 +76,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
         log.info("Decoded VP Token: {}", decodedVpToken);
 
-        validateVpAudience(decodedVpToken, oAuth2AuthorizationRequest);
+        validateVpAudience(decodedVpToken);
         // Send the decoded token to a service for validation
         boolean isValid = vpService.validateVerifiablePresentation(decodedVpToken);
         if (!isValid) {
@@ -141,16 +143,16 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
 
     }
 
-    private void validateVpAudience(String decodedVpToken, OAuth2AuthorizationRequest oAuth2AuthorizationRequest) {
+    private void validateVpAudience(String decodedVpToken) {
         try {
             SignedJWT vpSignedJWT = SignedJWT.parse(decodedVpToken);
             List<String> audiences = vpSignedJWT.getJWTClaimsSet().getAudience();
-            String expectedAudience = (String) oAuth2AuthorizationRequest.getAdditionalParameters().get("iss");
-            if (expectedAudience == null || expectedAudience.isBlank()) {
-                throw new JWTClaimMissingException("The 'iss' parameter (expected audience) is missing from the authorization request.");
+            if (audiences == null || audiences.isEmpty()) {
+                throw new JWTClaimMissingException("The 'aud' claim is missing in the VP token.");
             }
-            if (audiences == null || !audiences.contains(expectedAudience)) {
-                throw new JWTClaimMissingException("The 'aud' claim in the VP token does not match the expected verifier.");
+            String expectedAudience = backendConfig.getUrl();
+            if (!audiences.contains(expectedAudience)) {
+                throw new JWTClaimMissingException("The 'aud' claim in the VP token does not match the expected verifier URL.");
             }
         } catch (ParseException e) {
             throw new JWTParsingException("Failed to parse the VP JWT while validating the 'aud' claim.");

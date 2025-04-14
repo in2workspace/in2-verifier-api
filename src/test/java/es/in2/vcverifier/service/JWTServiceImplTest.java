@@ -89,7 +89,7 @@ class JWTServiceImplTest {
         String result = jwtService.generateJWT(payload.toString());
 
         assertNotNull(result);
-        verify(cryptoComponent, times(2)).getECKey();
+        verify(cryptoComponent).getECKey();
 
     }
 

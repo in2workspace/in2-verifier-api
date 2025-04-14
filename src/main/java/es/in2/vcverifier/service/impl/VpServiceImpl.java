@@ -283,7 +283,12 @@ public class VpServiceImpl implements VpService {
         try {
             // Parse the Verifiable Presentation (VP) JWT
             SignedJWT vpSignedJWT = SignedJWT.parse(verifiablePresentation);
-            validateVpNonce(vpSignedJWT);
+
+            // Validate the nonce only when the request comes from Authorization Response
+            Object headerType = vpSignedJWT.getHeader().toJSONObject().get("typ");
+            if (OID4VP_TYPE.equals(headerType)) {
+                validateVpNonce(vpSignedJWT);
+            }
             
             // Extract the "vp" claim
             Object vpClaim = vpSignedJWT.getJWTClaimsSet().getClaim("vp");
