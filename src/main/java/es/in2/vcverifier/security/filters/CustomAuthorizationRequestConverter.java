@@ -353,6 +353,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 nonce,
                 AuthorizationRequestJWT.builder()
                         .authRequest(signedAuthRequest)
+                        .nonce(nonce)
                         .build()
         );
 

@@ -45,15 +45,7 @@ public class JWTServiceImpl implements JWTService {
             log.debug("JWTServiceImpl -- generateJWT -- ECKey obtained for signing: {}", ecJWK.getKeyID());
 
             // Set Header
-            boolean isOid4vp = payload.contains("\"response_type\":\"vp_token\"");
-            JWSHeader.Builder headerBuilder = new JWSHeader.Builder(JWSAlgorithm.ES256)
-                    .keyID(ecJWK.getKeyID());
-            if (isOid4vp) {
-                headerBuilder.type(new JOSEObjectType(OID4VP_TYPE));
-            } else {
-                headerBuilder.type(JOSEObjectType.JWT);
-            }
-            JWSHeader jwsHeader = headerBuilder.build();
+            JWSHeader jwsHeader =buildJwsHeader(payload, ecJWK);
             log.debug("JWTServiceImpl -- generateJWT -- JWT header set with algorithm: {}", JWSAlgorithm.ES256);
 
             // Set Payload
@@ -71,6 +63,17 @@ public class JWTServiceImpl implements JWTService {
             log.error("JWTServiceImpl -- generateJWT -- Error during JWT creation", e);
             throw new JWTCreationException("Error creating JWT");
         }
+    }
+
+    private JWSHeader buildJwsHeader(String payload, ECKey ecJWK) {
+        JWSHeader.Builder headerBuilder = new JWSHeader.Builder(JWSAlgorithm.ES256)
+                .keyID(ecJWK.getKeyID());
+        if (payload.contains("\"response_type\":\"vp_token\"")) {
+            headerBuilder.type(new JOSEObjectType(OID4VP_TYPE));
+        } else {
+            headerBuilder.type(JOSEObjectType.JWT);
+        }
+        return headerBuilder.build();
     }
 
     private JWTClaimsSet convertPayloadToJWTClaimsSet(String payload) {

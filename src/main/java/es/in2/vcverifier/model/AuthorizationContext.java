@@ -9,7 +9,6 @@ public record AuthorizationContext(
         String redirectUri,
         String clientNonce,
         String originalRequestURL,
-        String requestUri,
-        String type
+        String requestUri
 ) {
 }

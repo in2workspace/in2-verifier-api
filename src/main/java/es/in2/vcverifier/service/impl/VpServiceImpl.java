@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
+import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.*;
+import es.in2.vcverifier.model.AuthorizationRequestJWT;
 import es.in2.vcverifier.model.credentials.lear.LEARCredential;
 import es.in2.vcverifier.model.credentials.lear.employee.LEARCredentialEmployeeV1;
 import es.in2.vcverifier.model.credentials.lear.employee.LEARCredentialEmployeeV2;
@@ -48,6 +50,7 @@ public class VpServiceImpl implements VpService {
     private final TrustFrameworkService trustFrameworkService;
     private final DIDService didService;
     private final CertificateValidationService certificateValidationService;
+    private final CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT;
 
 
     @Override
@@ -284,11 +287,8 @@ public class VpServiceImpl implements VpService {
             // Parse the Verifiable Presentation (VP) JWT
             SignedJWT vpSignedJWT = SignedJWT.parse(verifiablePresentation);
 
-            // Validate the nonce only when the request comes from Authorization Response
-            Object headerType = vpSignedJWT.getHeader().toJSONObject().get("typ");
-            if (OID4VP_TYPE.equals(headerType)) {
-                validateVpNonce(vpSignedJWT);
-            }
+            // Validate the nonce
+            validateVpNonce(vpSignedJWT);
             
             // Extract the "vp" claim
             Object vpClaim = vpSignedJWT.getJWTClaimsSet().getClaim("vp");
@@ -307,7 +307,7 @@ public class VpServiceImpl implements VpService {
     }
 
     private void validateVpNonce(SignedJWT vpSignedJWT) {
-        String vpNonce = null;
+        String vpNonce;
         try {
             vpNonce = (String) vpSignedJWT.getJWTClaimsSet().getClaim(NONCE);
         } catch (ParseException e) {
@@ -316,7 +316,16 @@ public class VpServiceImpl implements VpService {
         if (vpNonce == null || vpNonce.isBlank()) {
             throw new JWTClaimMissingException("The 'nonce' claim is missing in the VP token.");
         }
+        AuthorizationRequestJWT cachedAuthRequest = cacheStoreForAuthorizationRequestJWT.get(vpNonce);
+        if (cachedAuthRequest == null) {
+            throw new JWTClaimMissingException("No AuthorizationRequestJWT found in cache for nonce=" + vpNonce);
+        }
+        if (!vpNonce.equals(cachedAuthRequest.nonce())) {
+            throw new JWTClaimMissingException("VP nonce does not match the original cached AuthorizationRequest nonce.");
+        }
+        log.info("VP nonce '{}' successfully matched with cached AuthorizationRequestJWT.", vpNonce);
     }
+
 
     private static Object getVcClaim(Object vpClaim) {
         if (vpClaim == null) {
