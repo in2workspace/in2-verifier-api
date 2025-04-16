@@ -63,6 +63,7 @@ public class AuthorizationServerConfig {
     private final ObjectMapper objectMapper;
     private final RegisteredClientsCorsConfig registeredClientsCorsConfig;
     private final CacheStore<RefreshTokenDataCache> refreshTokenDataCacheCacheStore;
+    private final CacheStore<String> cacheForNonceByState;
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -77,7 +78,7 @@ public class AuthorizationServerConfig {
                                 // Adds an AuthenticationConverter (pre-processor) used when attempting to extract
                                 // an OAuth2 authorization request (or consent) from HttpServletRequest to an instance
                                 // of OAuth2AuthorizationCodeRequestAuthenticationToken or OAuth2AuthorizationConsentAuthenticationToken.
-                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStoreForAuthorizationRequestJWT,cacheStoreForOAuth2AuthorizationRequest,backendConfig,registeredClientRepository, IS_NONCE_REQUIRED_ON_FAPI_PROFILE))
+                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStoreForAuthorizationRequestJWT,cacheStoreForOAuth2AuthorizationRequest,backendConfig,registeredClientRepository, IS_NONCE_REQUIRED_ON_FAPI_PROFILE,cacheForNonceByState))
                                 .errorResponseHandler(new CustomErrorResponseHandler())
                 )
                 .tokenEndpoint(tokenEndpoint ->

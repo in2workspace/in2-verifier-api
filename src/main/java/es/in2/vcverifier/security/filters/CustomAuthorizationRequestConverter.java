@@ -54,6 +54,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private final BackendConfig backendConfig;
     private final RegisteredClientRepository registeredClientRepository;
     private final boolean isNonceRequiredOnFapiProfile;
+    private final CacheStore<String> cacheForNonceByState;
 
     /**
      * The Authorization Request MUST be signed by the Client, and MUST use the request_uri parameter which enables
@@ -323,7 +324,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         PublicKey publicKey = didService.getPublicKeyFromDid(registeredClient.getClientId());
         jwtService.verifyJWTWithECKey(signedJwt.serialize(), publicKey);
 
-        String signedAuthRequest = jwtService.generateJWT(
+        String signedAuthRequest = jwtService.generateJWTwithOI4VPType(
                 buildAuthorizationRequestJwtPayload(
                         registeredClient,
                         authorizationContext.scope(),
@@ -405,22 +406,9 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .jwtID(UUID.randomUUID().toString())
                 .build();
 
-        cacheNonceInAuthorizationRequest(nonce, registeredClient, state, originalRequestURL);
+        cacheForNonceByState.add(state, nonce);
 
         return payload.toString();
-    }
-
-    private void cacheNonceInAuthorizationRequest(String nonce, RegisteredClient registeredClient, String state, String originalRequestURL) {
-        OAuth2AuthorizationRequest dummyAuthRequest = OAuth2AuthorizationRequest
-                .authorizationCode()
-                .authorizationUri(backendConfig.getUrl())
-                .clientId(registeredClient.getClientId())
-                .redirectUri(originalRequestURL)
-                .state(state)
-                .additionalParameters(Map.of(NONCE, nonce))
-                .build();
-
-        cacheStoreForOAuth2AuthorizationRequest.add(nonce, dummyAuthRequest);
     }
 
     private Map<String, Object> buildDcqlQuery() {

@@ -51,7 +51,7 @@ public class VpServiceImpl implements VpService {
     private final DIDService didService;
     private final CertificateValidationService certificateValidationService;
     private final CacheStore<OAuth2AuthorizationRequest> cacheStoreForOAuth2AuthorizationRequest;
-
+    private final CacheStore<String> cacheForNonceByState;
 
     @Override
     public boolean validateVerifiablePresentation(String verifiablePresentation) {
@@ -308,23 +308,32 @@ public class VpServiceImpl implements VpService {
 
     private void validateVpNonce(SignedJWT vpSignedJWT) {
         String vpNonce;
+        String state;
+
         try {
             vpNonce = (String) vpSignedJWT.getJWTClaimsSet().getClaim(NONCE);
+            state = (String) vpSignedJWT.getJWTClaimsSet().getClaim("state");
         } catch (ParseException e) {
-            throw new JWTParsingException("Unable to parse the 'nonce' claim from the VP token's JWT payload.");
+            throw new JWTParsingException("Unable to parse the 'nonce' or 'state' claim from the VP token.");
         }
+
         if (vpNonce == null || vpNonce.isBlank()) {
             throw new JWTClaimMissingException("The 'nonce' claim is missing in the VP token.");
         }
-        OAuth2AuthorizationRequest  cachedAuthRequest = cacheStoreForOAuth2AuthorizationRequest.get(vpNonce);
-        if (cachedAuthRequest == null) {
-            throw new JWTClaimMissingException("No AuthorizationRequestJWT found in cache for nonce=" + vpNonce);
+
+        if (state == null || state.isBlank()) {
+            throw new JWTClaimMissingException("The 'state' claim is missing in the VP token.");
         }
-        String cacheNonce = (String) cachedAuthRequest.getAdditionalParameters().get(NONCE);
-        if (!vpNonce.equals(cacheNonce)) {
-            throw new JWTClaimMissingException("VP nonce does not match the original cached AuthorizationRequest nonce.");
+
+        String cachedNonce = cacheForNonceByState.get(state);
+        if (cachedNonce == null) {
+            throw new JWTClaimMissingException("No nonce found in cache for state=" + state);
         }
-        log.info("VP nonce '{}' successfully matched with cached AuthorizationRequestJWT.", vpNonce);
+
+        if (!vpNonce.equals(cachedNonce)) {
+            throw new JWTClaimMissingException("VP nonce does not match the cached nonce for the given state.");
+        }
+
     }
 
 

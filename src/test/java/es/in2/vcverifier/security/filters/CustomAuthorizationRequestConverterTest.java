@@ -65,7 +65,12 @@ class CustomAuthorizationRequestConverterTest {
     @Mock
     private RegisteredClientRepository registeredClientRepository;
 
+    @Mock
+    private  CacheStore<String> cacheForNonceByState;
+
     private boolean isNonceRequiredOnFapiProfile = true;
+
+
 
     private CustomAuthorizationRequestConverter converter;
 
@@ -79,7 +84,8 @@ class CustomAuthorizationRequestConverterTest {
                 cacheStoreForOAuth2AuthorizationRequest,
                 backendConfig,
                 registeredClientRepository,
-                isNonceRequiredOnFapiProfile
+                isNonceRequiredOnFapiProfile,
+                cacheForNonceByState
         );
     }
 

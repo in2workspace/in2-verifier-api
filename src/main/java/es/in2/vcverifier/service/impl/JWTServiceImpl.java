@@ -160,4 +160,9 @@ public class JWTServiceImpl implements JWTService {
         log.info("Retrieving verifiable credential ('vc') from JWT payload");
         return payload.toJSONObject().get("vc");
     }
+
+    @Override
+    public String generateJWTwithOI4VPType(String s) {
+        return "";
+    }
 }
