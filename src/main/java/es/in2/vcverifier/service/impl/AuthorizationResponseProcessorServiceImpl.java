@@ -48,7 +48,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
     private final OAuth2AuthorizationService oAuth2AuthorizationService;
     private final SimpMessagingTemplate messagingTemplate;
     private final BackendConfig backendConfig;
-
+    private final CacheStore<String> cacheForNonceByState;
 
     @Override
     public void processAuthResponse(String state, String vpToken){
@@ -118,9 +118,8 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
                 .requestedScopes(oAuth2AuthorizationRequest.getScopes());
 
         // Conditionally add the nonce if it's not null or blank
-        if (nonceValue != null && !nonceValue.isBlank()) {
-            authCodeDataBuilder.clientNonce(nonceValue);
-        }
+        validateVpNonce(nonceValue, state);
+        authCodeDataBuilder.clientNonce(nonceValue);
 
         // Finally build the object
         AuthorizationCodeData authorizationCodeData = authCodeDataBuilder.build();
@@ -140,6 +139,28 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
 
         // Enviar la URL de redirección al cliente a través del WebSocket
         messagingTemplate.convertAndSend("/oidc/redirection/" + state, redirectUrl);
+
+    }
+
+
+    private void validateVpNonce(String vpNonce,String state) {
+
+        if (vpNonce == null || vpNonce.isBlank()) {
+            throw new JWTClaimMissingException("The 'nonce' claim is missing in the VP token.");
+        }
+
+        if (state == null || state.isBlank()) {
+            throw new JWTClaimMissingException("The 'state' claim is missing in the VP token.");
+        }
+
+        String cachedNonce = cacheForNonceByState.get(state);
+        if (cachedNonce == null) {
+            throw new JWTClaimMissingException("No nonce found in cache for state=" + state);
+        }
+
+        if (!vpNonce.equals(cachedNonce)) {
+            throw new JWTClaimMissingException("VP nonce does not match the cached nonce for the given state.");
+        }
 
     }
 

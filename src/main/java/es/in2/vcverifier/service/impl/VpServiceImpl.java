@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 
 import static es.in2.vcverifier.util.Constants.*;
-import static org.springframework.security.oauth2.core.oidc.IdTokenClaimNames.NONCE;
 
 /**
  * This class contains basic validation steps for the scope of validating a Verifiable Presentation (VP)
@@ -51,15 +50,14 @@ public class VpServiceImpl implements VpService {
     private final DIDService didService;
     private final CertificateValidationService certificateValidationService;
     private final CacheStore<OAuth2AuthorizationRequest> cacheStoreForOAuth2AuthorizationRequest;
-    private final CacheStore<String> cacheForNonceByState;
 
     @Override
-    public boolean validateVerifiablePresentation(String verifiablePresentation, String state) {
+    public boolean validateVerifiablePresentation(String verifiablePresentation) {
         log.info("Starting validation of Verifiable Presentation");
         try {
             // Step 1: Extract the Verifiable Credential (VC) from the VP (JWT)
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Extracting first Verifiable Credential from Verifiable Presentation");
-            SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation, state);
+            SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
             Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Successfully extracted the Verifiable Credential payload");
 
@@ -122,10 +120,10 @@ public class VpServiceImpl implements VpService {
     }
 
     @Override
-    public Object getCredentialFromTheVerifiablePresentation(String verifiablePresentation, String state) {
+    public Object getCredentialFromTheVerifiablePresentation(String verifiablePresentation) {
         log.debug("VpServiceImpl -- getCredentialFromTheVerifiablePresentation -- Extracting Verifiable Credential object from Verifiable Presentation");
         // Step 1: Extract the Verifiable Credential (VC) from the VP (JWT)
-        SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation, state);
+        SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
         Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
         return jwtService.getVCFromPayload(payload);
     }
@@ -261,8 +259,6 @@ public class VpServiceImpl implements VpService {
         }
     }
 
-
-
     private JsonNode convertObjectToJSONNode(Object vcObject) throws JsonConversionException {
         JsonNode jsonNode;
 
@@ -282,13 +278,10 @@ public class VpServiceImpl implements VpService {
         return jsonNode;
     }
 
-    private SignedJWT extractFirstVerifiableCredential(String verifiablePresentation, String state) {
+    private SignedJWT extractFirstVerifiableCredential(String verifiablePresentation) {
         try {
             // Parse the Verifiable Presentation (VP) JWT
             SignedJWT vpSignedJWT = SignedJWT.parse(verifiablePresentation);
-
-            // Validate the nonce
-            validateVpNonce(vpSignedJWT, state);
             
             // Extract the "vp" claim
             Object vpClaim = vpSignedJWT.getJWTClaimsSet().getClaim("vp");
@@ -306,35 +299,6 @@ public class VpServiceImpl implements VpService {
         }
     }
 
-    private void validateVpNonce(SignedJWT vpSignedJWT,String state) {
-        String vpNonce;
-
-        try {
-            vpNonce = (String) vpSignedJWT.getJWTClaimsSet().getClaim(NONCE);
-        } catch (ParseException e) {
-            throw new JWTParsingException("Unable to parse the 'nonce' or 'state' claim from the VP token.");
-        }
-
-        if (vpNonce == null || vpNonce.isBlank()) {
-            throw new JWTClaimMissingException("The 'nonce' claim is missing in the VP token.");
-        }
-
-        if (state == null || state.isBlank()) {
-            throw new JWTClaimMissingException("The 'state' claim is missing in the VP token.");
-        }
-
-        String cachedNonce = cacheForNonceByState.get(state);
-        if (cachedNonce == null) {
-            throw new JWTClaimMissingException("No nonce found in cache for state=" + state);
-        }
-
-        if (!vpNonce.equals(cachedNonce)) {
-            throw new JWTClaimMissingException("VP nonce does not match the cached nonce for the given state.");
-        }
-
-    }
-
-
     private static Object getVcClaim(Object vpClaim) {
         if (vpClaim == null) {
             throw new JWTClaimMissingException("The 'vp' claim was not found in the Verifiable Presentation");
@@ -350,7 +314,6 @@ public class VpServiceImpl implements VpService {
         }
         return vcClaim;
     }
-
 
     private static Object getFirstCredential(Object vcClaim) {
         if (!(vcClaim instanceof List<?> verifiableCredentials)) {
