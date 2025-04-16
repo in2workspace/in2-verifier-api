@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.*;
 import es.in2.vcverifier.model.credentials.lear.LEARCredential;
 import es.in2.vcverifier.model.credentials.lear.employee.LEARCredentialEmployeeV1;
@@ -16,7 +15,6 @@ import es.in2.vcverifier.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
-import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.stereotype.Service;
 
 import java.security.PublicKey;
@@ -49,7 +47,6 @@ public class VpServiceImpl implements VpService {
     private final TrustFrameworkService trustFrameworkService;
     private final DIDService didService;
     private final CertificateValidationService certificateValidationService;
-    private final CacheStore<OAuth2AuthorizationRequest> cacheStoreForOAuth2AuthorizationRequest;
 
     @Override
     public boolean validateVerifiablePresentation(String verifiablePresentation) {
