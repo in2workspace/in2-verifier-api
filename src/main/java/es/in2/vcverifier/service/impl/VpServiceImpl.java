@@ -54,12 +54,12 @@ public class VpServiceImpl implements VpService {
     private final CacheStore<String> cacheForNonceByState;
 
     @Override
-    public boolean validateVerifiablePresentation(String verifiablePresentation) {
+    public boolean validateVerifiablePresentation(String verifiablePresentation, String state) {
         log.info("Starting validation of Verifiable Presentation");
         try {
             // Step 1: Extract the Verifiable Credential (VC) from the VP (JWT)
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Extracting first Verifiable Credential from Verifiable Presentation");
-            SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
+            SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation, state);
             Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
             log.debug("VpServiceImpl -- validateVerifiablePresentation -- Successfully extracted the Verifiable Credential payload");
 
@@ -122,10 +122,10 @@ public class VpServiceImpl implements VpService {
     }
 
     @Override
-    public Object getCredentialFromTheVerifiablePresentation(String verifiablePresentation) {
+    public Object getCredentialFromTheVerifiablePresentation(String verifiablePresentation, String state) {
         log.debug("VpServiceImpl -- getCredentialFromTheVerifiablePresentation -- Extracting Verifiable Credential object from Verifiable Presentation");
         // Step 1: Extract the Verifiable Credential (VC) from the VP (JWT)
-        SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation);
+        SignedJWT jwtCredential = extractFirstVerifiableCredential(verifiablePresentation, state);
         Payload payload = jwtService.getPayloadFromSignedJWT(jwtCredential);
         return jwtService.getVCFromPayload(payload);
     }
@@ -282,13 +282,13 @@ public class VpServiceImpl implements VpService {
         return jsonNode;
     }
 
-    private SignedJWT extractFirstVerifiableCredential(String verifiablePresentation) {
+    private SignedJWT extractFirstVerifiableCredential(String verifiablePresentation, String state) {
         try {
             // Parse the Verifiable Presentation (VP) JWT
             SignedJWT vpSignedJWT = SignedJWT.parse(verifiablePresentation);
 
             // Validate the nonce
-            validateVpNonce(vpSignedJWT);
+            validateVpNonce(vpSignedJWT, state);
             
             // Extract the "vp" claim
             Object vpClaim = vpSignedJWT.getJWTClaimsSet().getClaim("vp");
@@ -306,13 +306,11 @@ public class VpServiceImpl implements VpService {
         }
     }
 
-    private void validateVpNonce(SignedJWT vpSignedJWT) {
+    private void validateVpNonce(SignedJWT vpSignedJWT,String state) {
         String vpNonce;
-        String state;
 
         try {
             vpNonce = (String) vpSignedJWT.getJWTClaimsSet().getClaim(NONCE);
-            state = (String) vpSignedJWT.getJWTClaimsSet().getClaim("state");
         } catch (ParseException e) {
             throw new JWTParsingException("Unable to parse the 'nonce' or 'state' claim from the VP token.");
         }
