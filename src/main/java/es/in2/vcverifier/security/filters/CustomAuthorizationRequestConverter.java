@@ -353,7 +353,6 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 nonce,
                 AuthorizationRequestJWT.builder()
                         .authRequest(signedAuthRequest)
-                        .nonce(nonce)
                         .build()
         );
 
@@ -387,6 +386,8 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         checkAuthorizationRequestScope(scope, registeredClient, originalRequestURL);
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
+        String nonce = generateNonce();
+
         JWTClaimsSet payload = new JWTClaimsSet.Builder()
                 .issuer(cryptoComponent.getECKey().getKeyID())
                 .audience(cryptoComponent.getECKey().getKeyID())
@@ -394,7 +395,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .expirationTime(Date.from(expirationTime))
                 .claim(OAuth2ParameterNames.CLIENT_ID, cryptoComponent.getECKey().getKeyID())
                 .claim("client_id_scheme", "did:key")
-                .claim(NONCE, generateNonce())
+                .claim(NONCE, nonce)
                 .claim("response_uri", backendConfig.getUrl() + AUTHORIZATION_RESPONSE_ENDPOINT)
                 .claim(OAuth2ParameterNames.SCOPE, "dome.credentials.presentation.LEARCredentialEmployee")
                 .claim(OAuth2ParameterNames.STATE, state)
@@ -404,7 +405,22 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .jwtID(UUID.randomUUID().toString())
                 .build();
 
+        cacheNonceInAuthorizationRequest(nonce, registeredClient, state, originalRequestURL);
+
         return payload.toString();
+    }
+
+    private void cacheNonceInAuthorizationRequest(String nonce, RegisteredClient registeredClient, String state, String originalRequestURL) {
+        OAuth2AuthorizationRequest dummyAuthRequest = OAuth2AuthorizationRequest
+                .authorizationCode()
+                .authorizationUri(backendConfig.getUrl())
+                .clientId(registeredClient.getClientId())
+                .redirectUri(originalRequestURL)
+                .state(state)
+                .additionalParameters(Map.of(NONCE, nonce))
+                .build();
+
+        cacheStoreForOAuth2AuthorizationRequest.add(nonce, dummyAuthRequest);
     }
 
     private Map<String, Object> buildDcqlQuery() {
