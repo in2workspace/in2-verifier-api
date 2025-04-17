@@ -144,24 +144,20 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
 
 
     private void validateVpNonce(String vpNonce,String state) {
-
         if (vpNonce == null || vpNonce.isBlank()) {
             throw new JWTClaimMissingException("The 'nonce' claim is missing in the VP token.");
         }
-
         if (state == null || state.isBlank()) {
             throw new JWTClaimMissingException("The 'state' claim is missing in the VP token.");
         }
-
         String cachedNonce = cacheForNonceByState.get(state);
         if (cachedNonce == null) {
             throw new JWTClaimMissingException("No nonce found in cache for state=" + state);
         }
-
         if (!vpNonce.equals(cachedNonce)) {
             throw new JWTClaimMissingException("VP nonce does not match the cached nonce for the given state.");
         }
-
+        log.debug("Validating VP nonce: received={}, cached={}", vpNonce, cachedNonce);
     }
 
     private void validateVpAudience(String decodedVpToken) {

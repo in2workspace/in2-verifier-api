@@ -70,8 +70,6 @@ class CustomAuthorizationRequestConverterTest {
 
     private boolean isNonceRequiredOnFapiProfile = true;
 
-
-
     private CustomAuthorizationRequestConverter converter;
 
     @BeforeEach
@@ -329,7 +327,6 @@ class CustomAuthorizationRequestConverterTest {
             ECKey ecKey = mock(ECKey.class);
             when(ecKey.getKeyID()).thenReturn("key-id");
             when(cryptoComponent.getECKey()).thenReturn(ecKey);
-            when(jwtService.generateJWT(anyString())).thenReturn("signed-auth-request");
 
             when(backendConfig.getUrl()).thenReturn("https://auth.server.com");
 
@@ -482,7 +479,6 @@ class CustomAuthorizationRequestConverterTest {
         ECKey ecKey = mock(ECKey.class);
         when(ecKey.getKeyID()).thenReturn("key-id");
         when(cryptoComponent.getECKey()).thenReturn(ecKey);
-        when(jwtService.generateJWT(anyString())).thenReturn("signed-auth-request");
 
         when(backendConfig.getUrl()).thenReturn("https://auth.server.com");
 

@@ -32,7 +32,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
-import java.text.ParseException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Collections;
@@ -278,10 +277,6 @@ class VpServiceImplTest {
             JWTClaimsSet vpClaimsSet = mock(JWTClaimsSet.class);
             when(vpSignedJWT.getJWTClaimsSet()).thenReturn(vpClaimsSet);
 
-            JWSHeader vpHeader = mock(JWSHeader.class);
-            when(vpSignedJWT.getHeader()).thenReturn(vpHeader);
-            when(vpHeader.toJSONObject()).thenReturn(new HashMap<>()); // dummy header map
-
             // Mock the "vp" claim in the VP
             Map<String, Object> vcClaimMap = new HashMap<>();
             String vcJwt = "valid.vc.jwt";
@@ -371,10 +366,6 @@ class VpServiceImplTest {
             JWTClaimsSet vpClaimsSet = mock(JWTClaimsSet.class);
             when(vpSignedJWT.getJWTClaimsSet()).thenReturn(vpClaimsSet);
 
-            JWSHeader vpHeader = mock(JWSHeader.class);
-            when(vpSignedJWT.getHeader()).thenReturn(vpHeader);
-            when(vpHeader.toJSONObject()).thenReturn(new HashMap<>()); // dummy header map
-
             Map<String, Object> vcClaimMap = new HashMap<>();
             String vcJwt = "invalid-time-window.vc.jwt";
             vcClaimMap.put("verifiableCredential", List.of(vcJwt));
@@ -418,10 +409,6 @@ class VpServiceImplTest {
             // Configurar claims del VP
             JWTClaimsSet vpClaimsSet = mock(JWTClaimsSet.class);
             when(vpSignedJWT.getJWTClaimsSet()).thenReturn(vpClaimsSet);
-
-            JWSHeader vpHeader = mock(JWSHeader.class);
-            when(vpSignedJWT.getHeader()).thenReturn(vpHeader);
-            when(vpHeader.toJSONObject()).thenReturn(new HashMap<>()); // dummy header map
 
             Map<String, Object> vcClaimMap = new HashMap<>();
             String vcJwt = "invalid-time-window.vc.jwt";
@@ -483,43 +470,4 @@ class VpServiceImplTest {
                 .validFrom(ZonedDateTime.now().toString())
                 .build();
     }
-    @Test
-    void validateVpNonce_shouldThrowJWTParsingException_whenClaimCannotBeParsed() throws Exception {
-        // Given
-        SignedJWT signedJWT = mock(SignedJWT.class);
-        when(signedJWT.getJWTClaimsSet()).thenThrow(new ParseException("Invalid claim", 0));
-
-        try {
-            // When
-            var method = VpServiceImpl.class.getDeclaredMethod("validateVpNonce", SignedJWT.class);
-            method.setAccessible(true);
-            method.invoke(vpServiceImpl, signedJWT);
-        } catch (Exception e) {
-            // Then
-            Throwable cause = e.getCause();
-            assertTrue(cause.getMessage().contains("Unable to parse the 'nonce' claim from the VP token's JWT payload."));
-        }
-    }
-
-    @Test
-    void validateVpNonce_shouldThrowJWTClaimMissingException_whenNonceIsNullOrBlank() throws Exception {
-        // Given
-        SignedJWT signedJWT = mock(SignedJWT.class);
-        JWTClaimsSet claimsSet = mock(JWTClaimsSet.class);
-        when(signedJWT.getJWTClaimsSet()).thenReturn(claimsSet);
-        when(claimsSet.getClaim("nonce")).thenReturn("  "); // valor en blanco
-
-        try {
-            // When
-            var method = VpServiceImpl.class.getDeclaredMethod("validateVpNonce", SignedJWT.class);
-            method.setAccessible(true);
-            method.invoke(vpServiceImpl, signedJWT);
-        } catch (Exception e) {
-            // Then
-            Throwable cause = e.getCause();
-            assertTrue(cause.getMessage().contains("The 'nonce' claim is missing in the VP token."));
-        }
-    }
-
-
 }

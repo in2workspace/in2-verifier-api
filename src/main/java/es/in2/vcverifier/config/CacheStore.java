@@ -12,6 +12,13 @@ public class CacheStore<T> {
 
     private final Cache<String, T> cache;
 
+    public CacheStore() {
+        this.cache = CacheBuilder.newBuilder()
+                .expireAfterWrite(10, TimeUnit.MINUTES)
+                .build();
+    }
+
+
     public CacheStore(long expiryDuration, TimeUnit timeUnit) {
         this.cache = CacheBuilder.newBuilder().expireAfterWrite(expiryDuration, timeUnit).concurrencyLevel(Runtime.getRuntime().availableProcessors()).build();
     }
