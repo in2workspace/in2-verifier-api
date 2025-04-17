@@ -37,6 +37,7 @@ public class JWTServiceImpl implements JWTService {
 
     @Override
     public String generateJWT(String payload) {
+        log.info("Starting standard JWT generation. Payload: {}", payload);
         return generateJWTInternal(payload,JOSEObjectType.JWT);
     }
 
@@ -127,6 +128,7 @@ public class JWTServiceImpl implements JWTService {
 
     @Override
     public String generateJWTwithOI4VPType(String payload) {
+        log.info("Starting OID4VP JWT generation with typ={}. Payload: {}", OID4VP_TYPE, payload);
         return generateJWTInternal(payload,new JOSEObjectType(OID4VP_TYPE));
     }
 
