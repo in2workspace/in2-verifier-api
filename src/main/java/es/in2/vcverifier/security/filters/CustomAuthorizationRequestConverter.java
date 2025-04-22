@@ -169,7 +169,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         String nonce = generateNonce();
 
         // Build the JWT for the Authorization Request
-        String signedAuthRequest = jwtService.generateJWT(
+        String signedAuthRequest = jwtService.generateJWTwithOI4VPType(
                 buildAuthorizationRequestJwtPayload(
                         registeredClient,
                         authorizationContext.scope(),
