@@ -125,7 +125,6 @@ class CustomAuthorizationRequestConverterTest {
         ECKey ecKey = mock(ECKey.class);
         when(cryptoComponent.getECKey()).thenReturn(ecKey);
         when(ecKey.getKeyID()).thenReturn("key-id");
-        when(jwtService.generateJWT(anyString())).thenReturn("signed-auth-request");
 
         // Act & Assert
         OAuth2AuthorizationCodeRequestAuthenticationException exception = assertThrows(

@@ -402,7 +402,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .claim(OAuth2ParameterNames.STATE, state)
                 .claim(OAuth2ParameterNames.RESPONSE_TYPE, "vp_token")
                 .claim("response_mode", "direct_post")
-                .claim("dcql_query",buildDcqlQuery())
+                //.claim("dcql_query",buildDcqlQuery())
                 .jwtID(UUID.randomUUID().toString())
                 .build();
 
@@ -411,12 +411,12 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         return payload.toString();
     }
 
-    private Map<String, Object> buildDcqlQuery() {
+    /*private Map<String, Object> buildDcqlQuery() {
         return Collections.singletonMap(
                 "credentials",
                 List.of(Map.of("id", "LEARCredentialEmployee", "format", "jwt_vc_json"))
         );
-    }
+    }*/
 
     /**
      * Checks that the scope contains the required 'learcredential' string.
