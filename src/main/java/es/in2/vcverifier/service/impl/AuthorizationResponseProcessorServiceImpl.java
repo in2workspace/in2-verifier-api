@@ -167,11 +167,12 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
             if (audiences == null || audiences.isEmpty()) {
                 throw new JWTClaimMissingException("The 'aud' claim is missing in the VP token.");
             }
-            String expectedAudience = backendConfig.getUrl();
-            log.info("The aud expected is : {} and the aud recibed is: {}",audiences,expectedAudience );
-            if (!audiences.contains(expectedAudience)) {
-                throw new JWTClaimMissingException("The 'aud' claim in the VP token does not match the expected verifier URL.");
-            }
+//            TODO This will be fixed with this wallet change
+//            String expectedAudience = backendConfig.getUrl();
+//            log.info("The aud expected is : {} and the aud recibed is: {}",audiences,expectedAudience);
+//            if (!audiences.contains(expectedAudience)) {
+//                throw new JWTClaimMissingException("The 'aud' claim in the VP token does not match the expected verifier URL.");
+//            }
         } catch (ParseException e) {
             throw new JWTParsingException("Failed to parse the VP JWT while validating the 'aud' claim.");
         }
