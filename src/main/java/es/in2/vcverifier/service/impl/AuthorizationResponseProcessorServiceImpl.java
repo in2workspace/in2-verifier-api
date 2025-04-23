@@ -1,7 +1,6 @@
 package es.in2.vcverifier.service.impl;
 
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.vcverifier.config.BackendConfig;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
 import es.in2.vcverifier.exception.JWTClaimMissingException;
@@ -47,7 +46,6 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
     private final RegisteredClientRepository registeredClientRepository;
     private final OAuth2AuthorizationService oAuth2AuthorizationService;
     private final SimpMessagingTemplate messagingTemplate;
-    private final BackendConfig backendConfig;
     private final CacheStore<String> cacheForNonceByState;
 
     @Override
@@ -74,10 +72,10 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
         // Decode vpToken from Base64
         String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
-        log.info("Decoded VP Token: {}", decodedVpToken);
+        log.info("Decoded VP Token");
 
-        // Conditionally add the nonce if it's not null or blank
-        validateVpNonceAndAudience(decodedVpToken, state);
+        // Validates the 'nonce' and 'aud' claims from the VP token against the cached state
+        validateVpTokenNonceAndAudience(decodedVpToken, state);
 
         // Send the decoded token to a service for validation
         boolean isValid = vpService.validateVerifiablePresentation(decodedVpToken);
@@ -144,13 +142,24 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
     }
 
 
-    private void validateVpNonceAndAudience(String decodedVpToken,String state) {
-        String vpNonce  ="";
+    private void validateVpTokenNonceAndAudience(String decodedVpToken, String state) {
+        if (state == null || state.isBlank()) {
+            throw new JWTClaimMissingException("The 'state' claim is missing in the VP token.");
+        }
         try {
             SignedJWT vpSignedJWT = SignedJWT.parse(decodedVpToken);
+            String vpNonce = vpSignedJWT.getJWTClaimsSet().getClaim(NONCE).toString();
+            if (vpNonce == null || vpNonce.isBlank()) {
+                throw new JWTClaimMissingException("The 'nonce' claim is missing in the VP token.");
+            }
+            String cachedNonce = cacheForNonceByState.get(state);
+            if (cachedNonce == null) {
+                throw new JWTClaimMissingException("No nonce found in cache for state=" + state);
+            }
+            if (!vpNonce.equals(cachedNonce)) {
+                throw new JWTClaimMissingException("VP nonce does not match the cached nonce for the given state.");
+            }
             List<String> audiences = vpSignedJWT.getJWTClaimsSet().getAudience();
-            log.info("vp JWT CLAIMS Sets: "+vpSignedJWT.getJWTClaimsSet());
-            vpNonce  = vpSignedJWT.getJWTClaimsSet().getClaim("nonce").toString();
             if (audiences == null || audiences.isEmpty()) {
                 throw new JWTClaimMissingException("The 'aud' claim is missing in the VP token.");
             }
@@ -160,23 +169,10 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
 //            if (!audiences.contains(expectedAudience)) {
 //                throw new JWTClaimMissingException("The 'aud' claim in the VP token does not match the expected verifier URL.");
 //            }
+            log.debug("Validated VP nonce: received={}, cached={}, audience={}", vpNonce, cachedNonce, audiences);
         } catch (ParseException e) {
-            throw new JWTParsingException("Failed to parse the VP JWT while validating the 'aud' claim.");
+            throw new JWTParsingException("Failed to parse the VP JWT or extract claims.");
         }
-        if (vpNonce == null || vpNonce.isBlank()) {
-            throw new JWTClaimMissingException("The 'nonce' claim is missing in the VP token.");
-        }
-        if (state == null || state.isBlank()) {
-            throw new JWTClaimMissingException("The 'state' claim is missing in the VP token.");
-        }
-        String cachedNonce = cacheForNonceByState.get(state);
-        if (cachedNonce == null) {
-            throw new JWTClaimMissingException("No nonce found in cache for state=" + state);
-        }
-        if (!vpNonce.equals(cachedNonce)) {
-            throw new JWTClaimMissingException("VP nonce does not match the cached nonce for the given state.");
-        }
-        log.debug("Validating VP nonce: received={}, cached={}", vpNonce, cachedNonce);
     }
 
 }

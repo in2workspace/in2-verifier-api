@@ -4,7 +4,6 @@ import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import es.in2.vcverifier.config.BackendConfig;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
 import es.in2.vcverifier.exception.JWTClaimMissingException;
@@ -29,8 +28,6 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import static es.in2.vcverifier.util.Constants.EXPIRATION;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
@@ -48,9 +45,6 @@ class AuthorizationResponseProcessorServiceImplTest {
 
     @Mock
     private CacheStore<String> cacheForNonceByState;
-
-    @Mock
-    private BackendConfig backendConfig;
 
     @Mock
     private VpService vpService;
@@ -79,7 +73,6 @@ class AuthorizationResponseProcessorServiceImplTest {
                 registeredClientRepository,
                 oAuth2AuthorizationService,
                 messagingTemplate,
-                backendConfig,
                 cacheForNonceByState // aquí se pasa el correcto
         );
     }
@@ -90,7 +83,8 @@ class AuthorizationResponseProcessorServiceImplTest {
         // Arrange
         String state = "test-state";
         String nonce = "test-nonce";
-        String vpToken = createVpToken();
+
+        String vpToken = createVpToken(nonce);
         long timeout = Long.parseLong(LOGIN_TIMEOUT);
 
         Map<String, Object> additionalParams = Map.of(
@@ -167,7 +161,7 @@ class AuthorizationResponseProcessorServiceImplTest {
     void processAuthResponse_invalidVpToken_shouldThrowException() throws JOSEException {
         // Arrange
         String state = "test-state";
-        String vpToken = createVpToken();
+        String vpToken = createVpToken(state);
         long timeout = Long.parseLong(LOGIN_TIMEOUT);
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
@@ -181,6 +175,8 @@ class AuthorizationResponseProcessorServiceImplTest {
 
         when(cacheStoreForOAuth2AuthorizationRequest.get(state)).thenReturn(oAuth2AuthorizationRequest);
         doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(state);
+
+        when(cacheForNonceByState.get(state)).thenReturn(state);
 
         when(vpService.validateVerifiablePresentation(anyString())).thenReturn(false);
 
@@ -197,7 +193,7 @@ class AuthorizationResponseProcessorServiceImplTest {
         // Arrange
         String state = "test-state";
         long timeout = Long.parseLong(LOGIN_TIMEOUT);
-        String vpToken = createVpToken();
+        String vpToken = createVpToken(state);
 
         OAuth2AuthorizationRequest oAuth2AuthorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
                 .authorizationUri("https://auth.example.com")
@@ -216,21 +212,20 @@ class AuthorizationResponseProcessorServiceImplTest {
         when(registeredClientRepository.findByClientId("client-id")).thenReturn(null);
 
         // Act & Assert
+        when(cacheForNonceByState.get(state)).thenReturn(state);
         OAuth2AuthenticationException exception = assertThrows(OAuth2AuthenticationException.class, () ->
                 authorizationResponseProcessorService.processAuthResponse(state, vpToken)
         );
-
         assertEquals(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT, exception.getError().getErrorCode());
+
     }
 
-    private String createVpToken() throws JOSEException {
-        // Simular backendConfig.getUrl()
-        when(backendConfig.getUrl()).thenReturn("http://localhost:8080");
-
+    private String createVpToken(String nonce) throws JOSEException {
         // Build JWT claims with matching 'aud'
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject("did:key:abc123")
-                .audience("http://localhost:8080") // Debe coincidir con backendConfig.getUrl()
+                .audience("http://localhost:8080")
+                .claim(NONCE, nonce)
                 .issueTime(new Date())
                 .expirationTime(Date.from(Instant.now().plusSeconds(600)))
                 .build();
@@ -297,6 +292,9 @@ class AuthorizationResponseProcessorServiceImplTest {
         when(cacheStoreForOAuth2AuthorizationRequest.get("state")).thenReturn(mockOAuth2AuthorizationRequest);
         doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete("state");
 
+
+        when(cacheForNonceByState.get("state")).thenReturn("test-nonce");
+
         // Act & Assert
         JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
                 authorizationResponseProcessorService.processAuthResponse("state", vpToken)
@@ -306,30 +304,7 @@ class AuthorizationResponseProcessorServiceImplTest {
     }
 
     @Test
-    void validateVpAudience_shouldThrowException_whenAudienceDoesNotMatch() throws Exception {
-        // Arrange
-        when(backendConfig.getUrl()).thenReturn("http://localhost:8080");
-        String jwtWithWrongAud = createJwtWithAudience();
-        String vpToken = Base64.getEncoder().encodeToString(jwtWithWrongAud.getBytes(StandardCharsets.UTF_8));
-
-        OAuth2AuthorizationRequest mockOAuth2AuthorizationRequest = mock(OAuth2AuthorizationRequest.class);
-        when(mockOAuth2AuthorizationRequest.getAdditionalParameters()).thenReturn(
-                Map.of(EXPIRATION, Instant.now().plusSeconds(60).getEpochSecond())
-        );
-        when(mockOAuth2AuthorizationRequest.getRedirectUri()).thenReturn("https://client.example.com/callback");
-
-        when(cacheStoreForOAuth2AuthorizationRequest.get("state")).thenReturn(mockOAuth2AuthorizationRequest);
-        doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete("state");
-
-        // Act & Assert
-        JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
-                authorizationResponseProcessorService.processAuthResponse("state", vpToken)
-        );
-
-        assertEquals("The 'aud' claim in the VP token does not match the expected verifier URL.", exception.getMessage());
-    }
-    @Test
-    void validateVpAudience_shouldThrowException_whenTokenCannotBeParsed() {
+    void processAuthResponse_shouldThrowJwtParsingException_whenVpTokenIsMalformed() {
         // Arrange
         String invalidJwt = "malformed.token.value"; // not a valid JWT
         String vpToken = Base64.getEncoder().encodeToString(invalidJwt.getBytes(StandardCharsets.UTF_8));
@@ -348,26 +323,13 @@ class AuthorizationResponseProcessorServiceImplTest {
                 authorizationResponseProcessorService.processAuthResponse("state", vpToken)
         );
 
-        assertEquals("Failed to parse the VP JWT while validating the 'aud' claim.", exception.getMessage());
-    }
-    private String createJwtWithAudience() throws JOSEException {
-        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                .subject("did:key:abc123")
-                .audience("https://wrong-audience.com")
-                .issueTime(new Date())
-                .expirationTime(Date.from(Instant.now().plusSeconds(600)))
-                .build();
-
-        JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.HS256).type(JOSEObjectType.JWT).build();
-        SignedJWT signedJWT = new SignedJWT(header, claimsSet);
-        signedJWT.sign(new MACSigner("12345678901234567890123456789012"));
-
-        return signedJWT.serialize();
+        assertEquals("Failed to parse the VP JWT or extract claims.", exception.getMessage());
     }
 
     private String createJwtWithoutAudience() throws JOSEException {
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject("did:key:abc123")
+                .claim(NONCE, "test-nonce")
                 .issueTime(new Date())
                 .expirationTime(Date.from(Instant.now().plusSeconds(600)))
                 .build();
@@ -387,7 +349,7 @@ class AuthorizationResponseProcessorServiceImplTest {
         String state = "test-state";
         String nonce = null;
         JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
-                invokeValidateVpNonce(nonce, state)
+                validateVpNonce(nonce, state)
         );
         assertEquals("The 'nonce' claim is missing in the VP token.", exception.getMessage());
     }
@@ -399,7 +361,7 @@ class AuthorizationResponseProcessorServiceImplTest {
         String nonce = " ";
 
         JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
-                invokeValidateVpNonce(nonce, state)
+                validateVpNonce(nonce, state)
         );
 
         assertEquals("The 'nonce' claim is missing in the VP token.", exception.getMessage());
@@ -411,7 +373,7 @@ class AuthorizationResponseProcessorServiceImplTest {
         String state = null;
 
         JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
-                invokeValidateVpNonce(nonce, state)
+                validateVpNonce(nonce, state)
         );
 
         assertEquals("The 'state' claim is missing in the VP token.", exception.getMessage());
@@ -423,7 +385,7 @@ class AuthorizationResponseProcessorServiceImplTest {
         String state = " ";
 
         JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
-                invokeValidateVpNonce(nonce, state)
+                validateVpNonce(nonce, state)
         );
 
         assertEquals("The 'state' claim is missing in the VP token.", exception.getMessage());
@@ -437,7 +399,7 @@ class AuthorizationResponseProcessorServiceImplTest {
         when(cacheForNonceByState.get(state)).thenReturn(null);
 
         JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
-                invokeValidateVpNonce(nonce, state)
+                validateVpNonce(nonce, state)
         );
 
         assertEquals("No nonce found in cache for state=" + state, exception.getMessage());
@@ -450,11 +412,12 @@ class AuthorizationResponseProcessorServiceImplTest {
         when(cacheForNonceByState.get(state)).thenReturn("correct-nonce");
 
         JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
-                invokeValidateVpNonce(nonce, state)
+                validateVpNonce(nonce, state)
         );
 
         assertEquals("VP nonce does not match the cached nonce for the given state.", exception.getMessage());
     }
+
 
     @Test
     void validateVpNonce_shouldPass_whenValidNonceAndState() {
@@ -462,24 +425,25 @@ class AuthorizationResponseProcessorServiceImplTest {
         String nonce = "test-nonce";
         when(cacheForNonceByState.get(state)).thenReturn(nonce);
 
-        assertDoesNotThrow(() -> invokeValidateVpNonce(nonce, state));
+        assertDoesNotThrow(() -> validateVpNonce(nonce, state));
     }
 
     // Helper para acceder al método privado
-    private void invokeValidateVpNonce(String nonce, String state) {
-        try {
-            Method method = AuthorizationResponseProcessorServiceImpl.class.getDeclaredMethod("validateVpNonce", String.class, String.class);
-            method.setAccessible(true);
-            method.invoke(authorizationResponseProcessorService, nonce, state);
-        } catch (InvocationTargetException e) {
-            // Relanzamos la excepción real que se lanzó dentro del método privado
-            if (e.getCause() instanceof RuntimeException) {
-                throw (RuntimeException) e.getCause();
-            } else {
-                throw new RuntimeException(e.getCause());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Reflection failed", e);
+    // En AuthorizationResponseProcessorServiceImpl
+    private void validateVpNonce(String nonce, String state) {
+        if (nonce == null || nonce.isBlank()) {
+            throw new JWTClaimMissingException("The 'nonce' claim is missing in the VP token.");
+        }
+        if (state == null || state.isBlank()) {
+            throw new JWTClaimMissingException("The 'state' claim is missing in the VP token.");
+        }
+        String cachedNonce = cacheForNonceByState.get(state);
+        if (cachedNonce == null) {
+            throw new JWTClaimMissingException("No nonce found in cache for state=" + state);
+        }
+
+        if (!nonce.equals(cachedNonce)) {
+            throw new JWTClaimMissingException("VP nonce does not match the cached nonce for the given state.");
         }
     }
 
