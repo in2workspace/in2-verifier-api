@@ -105,7 +105,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
                 .attribute(OAuth2AuthorizationRequest.class.getName(), oAuth2AuthorizationRequest)
                 .build();
 
-        log.info("OAuth2Authorization generated");
+        log.info("OAuth2Authorization generated: {}",oAuth2AuthorizationRequest);
 
         // Retrieve nonce from additional parameters
         String nonceValue = (String) oAuth2AuthorizationRequest.getAdditionalParameters().get(NONCE);
