@@ -22,9 +22,7 @@ public class CacheStoreConfig {
 
     @Bean
     public CacheStore<String> cacheForNonceByState() {
-        return new CacheStore<>(
-                Long.parseLong(LOGIN_TIMEOUT),
-                TimeUnit.of(ChronoUnit.valueOf(LOGIN_TIMEOUT_CHRONO_UNIT)));
+        return new CacheStore<>(10, TimeUnit.MINUTES);
     }
 
     @Bean

@@ -76,6 +76,9 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
         log.info("Decoded VP Token: {}", decodedVpToken);
 
+        // Conditionally add the nonce if it's not null or blank
+        validateVpNonce(decodedVpToken, state);
+
         validateVpAudience(decodedVpToken);
         // Send the decoded token to a service for validation
         boolean isValid = vpService.validateVerifiablePresentation(decodedVpToken);
@@ -83,6 +86,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
             log.error("VP Token is invalid");
             throw new InvalidVPtokenException("VP Token used in H2M flow is invalid");
         }
+
         log.info("VP Token validated successfully");
 
         // Generate a code (code)
@@ -117,8 +121,6 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
                 .oAuth2Authorization(authorization)
                 .requestedScopes(oAuth2AuthorizationRequest.getScopes());
 
-        // Conditionally add the nonce if it's not null or blank
-        validateVpNonce(nonceValue, state);
         authCodeDataBuilder.clientNonce(nonceValue);
 
         // Finally build the object
@@ -143,8 +145,9 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
     }
 
 
-    private void validateVpNonce(String vpNonce,String state) {
-        if (vpNonce == null || vpNonce.isBlank()) {
+    private void validateVpNonce(String vpToken,String state) {
+        log.info("Validating VP vpToken: vpToken={}, state={}", vpToken, state);
+        if (vpToken == null || vpToken.isBlank()) {
             throw new JWTClaimMissingException("The 'nonce' claim is missing in the VP token.");
         }
         if (state == null || state.isBlank()) {
@@ -154,10 +157,10 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         if (cachedNonce == null) {
             throw new JWTClaimMissingException("No nonce found in cache for state=" + state);
         }
-        if (!vpNonce.equals(cachedNonce)) {
+        if (!vpToken.contains(cachedNonce)) {
             throw new JWTClaimMissingException("VP nonce does not match the cached nonce for the given state.");
         }
-        log.debug("Validating VP nonce: received={}, cached={}", vpNonce, cachedNonce);
+        log.debug("Validating VP nonce: received={}, cached={}", vpToken, cachedNonce);
     }
 
     private void validateVpAudience(String decodedVpToken) {
