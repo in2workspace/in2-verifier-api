@@ -35,10 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static es.in2.vcverifier.util.Constants.*;
 import static org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames.NONCE;
@@ -57,6 +54,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
     private final BackendConfig backendConfig;
     private final RegisteredClientRepository registeredClientRepository;
     private final boolean isNonceRequiredOnFapiProfile;
+    private final CacheStore<String> cacheForNonceByState;
 
     /**
      * The Authorization Request MUST be signed by the Client, and MUST use the request_uri parameter which enables
@@ -74,7 +72,6 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         String scope = request.getParameter(OAuth2ParameterNames.SCOPE);
         String redirectUri = request.getParameter(OAuth2ParameterNames.REDIRECT_URI);
         String clientNonce = request.getParameter(NONCE);
-
         AuthorizationContext authorizationContext = AuthorizationContext.builder()
                 .requestUri(requestUri)
                 .state(state)
@@ -172,7 +169,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         String nonce = generateNonce();
 
         // Build the JWT for the Authorization Request
-        String signedAuthRequest = jwtService.generateJWT(
+        String signedAuthRequest = jwtService.generateJWTwithOI4VPType(
                 buildAuthorizationRequestJwtPayload(
                         registeredClient,
                         authorizationContext.scope(),
@@ -327,7 +324,7 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
         PublicKey publicKey = didService.getPublicKeyFromDid(registeredClient.getClientId());
         jwtService.verifyJWTWithECKey(signedJwt.serialize(), publicKey);
 
-        String signedAuthRequest = jwtService.generateJWT(
+        String signedAuthRequest = jwtService.generateJWTwithOI4VPType(
                 buildAuthorizationRequestJwtPayload(
                         registeredClient,
                         authorizationContext.scope(),
@@ -388,9 +385,9 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                                                        String originalRequestURL) {
         // TODO: Map the scope with its presentation definition if needed
         checkAuthorizationRequestScope(scope, registeredClient, originalRequestURL);
-
         Instant issueTime = Instant.now();
         Instant expirationTime = issueTime.plus(10, ChronoUnit.DAYS);
+        String nonce = generateNonce();
 
         JWTClaimsSet payload = new JWTClaimsSet.Builder()
                 .issuer(cryptoComponent.getECKey().getKeyID())
@@ -399,17 +396,27 @@ public class CustomAuthorizationRequestConverter implements AuthenticationConver
                 .expirationTime(Date.from(expirationTime))
                 .claim(OAuth2ParameterNames.CLIENT_ID, cryptoComponent.getECKey().getKeyID())
                 .claim("client_id_scheme", "did:key")
-                .claim(NONCE, generateNonce())
+                .claim(NONCE, nonce)
                 .claim("response_uri", backendConfig.getUrl() + AUTHORIZATION_RESPONSE_ENDPOINT)
                 .claim(OAuth2ParameterNames.SCOPE, "dome.credentials.presentation.LEARCredentialEmployee")
                 .claim(OAuth2ParameterNames.STATE, state)
                 .claim(OAuth2ParameterNames.RESPONSE_TYPE, "vp_token")
                 .claim("response_mode", "direct_post")
+                //.claim("dcql_query",buildDcqlQuery())
                 .jwtID(UUID.randomUUID().toString())
                 .build();
 
+        cacheForNonceByState.add(state, nonce);
+
         return payload.toString();
     }
+
+    /*private Map<String, Object> buildDcqlQuery() {
+        return Collections.singletonMap(
+                "credentials",
+                List.of(Map.of("id", "LEARCredentialEmployee", "format", "jwt_vc_json"))
+        );
+    }*/
 
     /**
      * Checks that the scope contains the required 'learcredential' string.

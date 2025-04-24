@@ -21,6 +21,11 @@ import static es.in2.vcverifier.util.Constants.*;
 public class CacheStoreConfig {
 
     @Bean
+    public CacheStore<String> cacheForNonceByState() {
+        return new CacheStore<>(10, TimeUnit.MINUTES);
+    }
+
+    @Bean
     public CacheStore<AuthorizationRequestJWT> cacheStoreForAuthorizationRequestJWT() {
         return new CacheStore<>(
                 Long.parseLong(LOGIN_TIMEOUT),

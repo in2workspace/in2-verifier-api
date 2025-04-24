@@ -21,5 +21,5 @@ public interface JWTService {
 
     Object getVCFromPayload(Payload payload);
 
-
+    String generateJWTwithOI4VPType(String s);
 }

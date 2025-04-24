@@ -65,6 +65,9 @@ class CustomAuthorizationRequestConverterTest {
     @Mock
     private RegisteredClientRepository registeredClientRepository;
 
+    @Mock
+    private  CacheStore<String> cacheForNonceByState;
+
     private boolean isNonceRequiredOnFapiProfile = true;
 
     private CustomAuthorizationRequestConverter converter;
@@ -79,7 +82,8 @@ class CustomAuthorizationRequestConverterTest {
                 cacheStoreForOAuth2AuthorizationRequest,
                 backendConfig,
                 registeredClientRepository,
-                isNonceRequiredOnFapiProfile
+                isNonceRequiredOnFapiProfile,
+                cacheForNonceByState
         );
     }
 
@@ -121,7 +125,6 @@ class CustomAuthorizationRequestConverterTest {
         ECKey ecKey = mock(ECKey.class);
         when(cryptoComponent.getECKey()).thenReturn(ecKey);
         when(ecKey.getKeyID()).thenReturn("key-id");
-        when(jwtService.generateJWT(anyString())).thenReturn("signed-auth-request");
 
         // Act & Assert
         OAuth2AuthorizationCodeRequestAuthenticationException exception = assertThrows(
@@ -323,7 +326,6 @@ class CustomAuthorizationRequestConverterTest {
             ECKey ecKey = mock(ECKey.class);
             when(ecKey.getKeyID()).thenReturn("key-id");
             when(cryptoComponent.getECKey()).thenReturn(ecKey);
-            when(jwtService.generateJWT(anyString())).thenReturn("signed-auth-request");
 
             when(backendConfig.getUrl()).thenReturn("https://auth.server.com");
 
@@ -476,7 +478,6 @@ class CustomAuthorizationRequestConverterTest {
         ECKey ecKey = mock(ECKey.class);
         when(ecKey.getKeyID()).thenReturn("key-id");
         when(cryptoComponent.getECKey()).thenReturn(ecKey);
-        when(jwtService.generateJWT(anyString())).thenReturn("signed-auth-request");
 
         when(backendConfig.getUrl()).thenReturn("https://auth.server.com");
 

@@ -25,6 +25,8 @@ import java.security.interfaces.ECPublicKey;
 import java.text.ParseException;
 import java.util.Map;
 
+import static es.in2.vcverifier.util.Constants.OID4VP_TYPE;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -35,35 +37,8 @@ public class JWTServiceImpl implements JWTService {
 
     @Override
     public String generateJWT(String payload) {
-        try {
-            log.info("Starting JWT generation process");
-
-            // Get ECKey
-            ECKey ecJWK = cryptoComponent.getECKey();
-            log.debug("JWTServiceImpl -- generateJWT -- ECKey obtained for signing: {}", ecJWK.getKeyID());
-
-            // Set Header
-            JWSHeader jwsHeader = new JWSHeader.Builder(JWSAlgorithm.ES256)
-                    .keyID(cryptoComponent.getECKey().getKeyID())
-                    .type(JOSEObjectType.JWT)
-                    .build();
-            log.debug("JWTServiceImpl -- generateJWT -- JWT header set with algorithm: {}", JWSAlgorithm.ES256);
-
-            // Set Payload
-            JWTClaimsSet claimsSet = convertPayloadToJWTClaimsSet(payload);
-            log.debug("JWTServiceImpl -- generateJWT -- JWT claims set created from payload: {}", claimsSet);
-
-            // Create JWT for ES256R algorithm
-            SignedJWT jwt = new SignedJWT(jwsHeader, claimsSet);
-            // Sign with a private EC key
-            JWSSigner signer = new ECDSASigner(ecJWK);
-            jwt.sign(signer);
-            log.info("JWT generated and signed successfully");
-            return jwt.serialize();
-        } catch (JOSEException e) {
-            log.error("JWTServiceImpl -- generateJWT -- Error during JWT creation", e);
-            throw new JWTCreationException("Error creating JWT");
-        }
+        log.info("Starting standard JWT generation. Payload: {}", payload);
+        return generateJWTInternal(payload,JOSEObjectType.JWT);
     }
 
     private JWTClaimsSet convertPayloadToJWTClaimsSet(String payload) {
@@ -149,5 +124,43 @@ public class JWTServiceImpl implements JWTService {
     public Object getVCFromPayload(Payload payload) {
         log.info("Retrieving verifiable credential ('vc') from JWT payload");
         return payload.toJSONObject().get("vc");
+    }
+
+    @Override
+    public String generateJWTwithOI4VPType(String payload) {
+        log.info("Starting OID4VP JWT generation with typ={}. Payload: {}", OID4VP_TYPE, payload);
+        return generateJWTInternal(payload,new JOSEObjectType(OID4VP_TYPE));
+    }
+
+    private String generateJWTInternal(String payload, JOSEObjectType type) {
+        try {
+            log.info("Starting JWT generation process");
+
+            // Get ECKey
+            ECKey ecJWK = cryptoComponent.getECKey();
+            log.debug("JWTServiceImpl -- generateJWT -- ECKey obtained for signing: {}", ecJWK.getKeyID());
+
+            // Set Header
+            JWSHeader jwsHeader = new JWSHeader.Builder(JWSAlgorithm.ES256)
+                    .keyID(cryptoComponent.getECKey().getKeyID())
+                    .type(type)
+                    .build();
+            log.debug("JWTServiceImpl -- generateJWT -- JWT header set with algorithm: {}", JWSAlgorithm.ES256);
+
+            // Set Payload
+            JWTClaimsSet claimsSet = convertPayloadToJWTClaimsSet(payload);
+            log.debug("JWTServiceImpl -- generateJWT -- JWT claims set created from payload: {}", claimsSet);
+
+            // Create JWT for ES256R algorithm
+            SignedJWT jwt = new SignedJWT(jwsHeader, claimsSet);
+            // Sign with a private EC key
+            JWSSigner signer = new ECDSASigner(ecJWK);
+            jwt.sign(signer);
+            log.info("JWT generated and signed successfully");
+            return jwt.serialize();
+        } catch (JOSEException e) {
+            log.error("JWTServiceImpl -- generateJWT -- Error during JWT creation", e);
+            throw new JWTCreationException("Error creating JWT");
+        }
     }
 }

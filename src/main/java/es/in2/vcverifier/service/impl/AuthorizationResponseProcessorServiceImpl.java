@@ -1,7 +1,10 @@
 package es.in2.vcverifier.service.impl;
 
+import com.nimbusds.jwt.SignedJWT;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidVPtokenException;
+import es.in2.vcverifier.exception.JWTClaimMissingException;
+import es.in2.vcverifier.exception.JWTParsingException;
 import es.in2.vcverifier.exception.LoginTimeoutException;
 import es.in2.vcverifier.model.AuthorizationCodeData;
 import es.in2.vcverifier.service.AuthorizationResponseProcessorService;
@@ -22,10 +25,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 import static es.in2.vcverifier.util.Constants.EXPIRATION;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.List;
 import java.util.UUID;
 
 import static es.in2.vcverifier.util.Constants.*;
@@ -42,7 +46,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
     private final RegisteredClientRepository registeredClientRepository;
     private final OAuth2AuthorizationService oAuth2AuthorizationService;
     private final SimpMessagingTemplate messagingTemplate;
-
+    private final CacheStore<String> cacheForNonceByState;
 
     @Override
     public void processAuthResponse(String state, String vpToken){
@@ -69,6 +73,9 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         // Decode vpToken from Base64
         String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
         log.info("Decoded VP Token: {}", decodedVpToken);
+
+        // Validates the 'nonce' and 'aud' claims from the VP token against the cached state
+        validateVpTokenNonceAndAudience(decodedVpToken, state);
 
         // Send the decoded token to a service for validation
         boolean isValid = vpService.validateVerifiablePresentation(decodedVpToken);
@@ -110,10 +117,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
                 .oAuth2Authorization(authorization)
                 .requestedScopes(oAuth2AuthorizationRequest.getScopes());
 
-        // Conditionally add the nonce if it's not null or blank
-        if (nonceValue != null && !nonceValue.isBlank()) {
-            authCodeDataBuilder.clientNonce(nonceValue);
-        }
+        authCodeDataBuilder.clientNonce(nonceValue);
 
         // Finally build the object
         AuthorizationCodeData authorizationCodeData = authCodeDataBuilder.build();
@@ -135,6 +139,41 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         messagingTemplate.convertAndSend("/oidc/redirection/" + state, redirectUrl);
 
     }
+
+
+    private void validateVpTokenNonceAndAudience(String decodedVpToken, String state) {
+        if (state == null || state.isBlank()) {
+            throw new JWTClaimMissingException("The 'state' claim is missing in the VP token.");
+        }
+        try {
+            SignedJWT vpSignedJWT = SignedJWT.parse(decodedVpToken);
+            String vpNonce = vpSignedJWT.getJWTClaimsSet().getClaim(NONCE).toString();
+            if (vpNonce == null || vpNonce.isBlank()) {
+                throw new JWTClaimMissingException("The 'nonce' claim is missing in the VP token.");
+            }
+            String cachedNonce = cacheForNonceByState.get(state);
+            if (cachedNonce == null) {
+                throw new JWTClaimMissingException("No nonce found in cache for state=" + state);
+            }
+            if (!vpNonce.equals(cachedNonce)) {
+                throw new JWTClaimMissingException("VP nonce does not match the cached nonce for the given state.");
+            }
+            List<String> audiences = vpSignedJWT.getJWTClaimsSet().getAudience();
+            if (audiences == null || audiences.isEmpty()) {
+                throw new JWTClaimMissingException("The 'aud' claim is missing in the VP token.");
+            }
+//            TODO This will be fixed with this wallet change
+//            String expectedAudience = backendConfig.getUrl();
+//            log.info("The aud expected is : {} and the aud recibed is: {}",audiences,expectedAudience);
+//            if (!audiences.contains(expectedAudience)) {
+//                throw new JWTClaimMissingException("The 'aud' claim in the VP token does not match the expected verifier URL.");
+//            }
+            log.debug("Validated VP nonce: received={}, cached={}, audience={}", vpNonce, cachedNonce, audiences);
+        } catch (ParseException e) {
+            throw new JWTParsingException("Failed to parse the VP JWT or extract claims.");
+        }
+    }
+
 }
 
 

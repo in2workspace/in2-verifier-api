@@ -20,6 +20,7 @@ public class Constants {
     public static final String REQUIRED_EXTERNAL_USER_AUTHENTICATION = "required_external_user_authentication";
     public static final String INVALID_CLIENT_AUTHENTICATION = "invalid_client_authentication";
     public static final String LOG_ERROR_FORMAT = "{} - {}";
+    public static final String OID4VP_TYPE = "oauth-authz-req+jwt";
     // ACCESS_TOKEN_EXPIRATION_TIME must be in seconds
     public static final String ACCESS_TOKEN_EXPIRATION_TIME = "3600";
     public static final String ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT = "SECONDS";

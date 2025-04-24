@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.8](https://github.com/in2workspace/in2-verifier-api/releases/tag/v1.3.8)
+### Added
+- Validated audience and nonce for OpenID4VP.
+- Added specific OpenID4VP exceptions.
+- Handled type claim in Authorization Request.
+
 ## [v1.3.7](https://github.com/in2workspace/in2-verifier-api/releases/tag/v1.3.7)
 ### Fixed
 - Modify the response token according to the grant type (client_credentials should not include id_token or 

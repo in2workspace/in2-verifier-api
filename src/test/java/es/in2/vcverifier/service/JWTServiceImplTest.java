@@ -70,7 +70,6 @@ class JWTServiceImplTest {
                 .audience(did)
                 .build();
 
-
         JsonNode mockJsonNode = mock(JsonNode.class);
         when(objectMapper.readTree(anyString())).thenReturn(mockJsonNode);
 
@@ -90,7 +89,6 @@ class JWTServiceImplTest {
 
         assertNotNull(result);
         verify(cryptoComponent, times(2)).getECKey();
-
     }
 
     @Test
@@ -406,7 +404,6 @@ class JWTServiceImplTest {
 
         assertThrows(NullPointerException.class, () -> jwtService.generateJWT(payload));
     }
-
 
     private PrivateKey getPrivateKeyFromJson(String json) throws Exception {
         JSONObject jsonKey = new JSONObject(json);
