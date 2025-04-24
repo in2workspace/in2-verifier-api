@@ -48,6 +48,7 @@ public class VpServiceImpl implements VpService {
     private final DIDService didService;
     private final CertificateValidationService certificateValidationService;
 
+
     @Override
     public boolean validateVerifiablePresentation(String verifiablePresentation) {
         log.info("Starting validation of Verifiable Presentation");
@@ -256,6 +257,8 @@ public class VpServiceImpl implements VpService {
         }
     }
 
+
+
     private JsonNode convertObjectToJSONNode(Object vcObject) throws JsonConversionException {
         JsonNode jsonNode;
 
@@ -279,7 +282,7 @@ public class VpServiceImpl implements VpService {
         try {
             // Parse the Verifiable Presentation (VP) JWT
             SignedJWT vpSignedJWT = SignedJWT.parse(verifiablePresentation);
-            
+
             // Extract the "vp" claim
             Object vpClaim = vpSignedJWT.getJWTClaimsSet().getClaim("vp");
 
@@ -311,6 +314,7 @@ public class VpServiceImpl implements VpService {
         }
         return vcClaim;
     }
+
 
     private static Object getFirstCredential(Object vcClaim) {
         if (!(vcClaim instanceof List<?> verifiableCredentials)) {

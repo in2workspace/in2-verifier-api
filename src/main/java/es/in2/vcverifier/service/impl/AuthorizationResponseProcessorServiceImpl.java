@@ -72,7 +72,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
         String redirectUri = oAuth2AuthorizationRequest.getRedirectUri();
         // Decode vpToken from Base64
         String decodedVpToken = new String(Base64.getDecoder().decode(vpToken), StandardCharsets.UTF_8);
-        log.info("Decoded VP Token");
+        log.info("Decoded VP Token: {}", decodedVpToken);
 
         // Validates the 'nonce' and 'aud' claims from the VP token against the cached state
         validateVpTokenNonceAndAudience(decodedVpToken, state);
@@ -83,7 +83,6 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
             log.error("VP Token is invalid");
             throw new InvalidVPtokenException("VP Token used in H2M flow is invalid");
         }
-
         log.info("VP Token validated successfully");
 
         // Generate a code (code)
@@ -106,7 +105,7 @@ public class AuthorizationResponseProcessorServiceImpl implements AuthorizationR
                 .attribute(OAuth2AuthorizationRequest.class.getName(), oAuth2AuthorizationRequest)
                 .build();
 
-        log.info("OAuth2Authorization.getAdditionalParameters generated: {}",oAuth2AuthorizationRequest.getAdditionalParameters());
+        log.info("OAuth2Authorization generated");
 
         // Retrieve nonce from additional parameters
         String nonceValue = (String) oAuth2AuthorizationRequest.getAdditionalParameters().get(NONCE);
