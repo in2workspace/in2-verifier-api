@@ -276,10 +276,12 @@ class AuthorizationResponseProcessorServiceImplTest {
         verify(cacheStoreForOAuth2AuthorizationRequest, times(1)).delete(state);
     }
 
+
     @Test
     void validateVpAudience_shouldThrowException_whenAudClaimIsMissing() throws Exception {
         // Arrange
-        String jwtWithoutAud = createJwtWithoutAudience(); // JWT with no 'aud' claim
+        String nonce = "test-nonce";
+        String jwtWithoutAud = createJwtWithoutAudience(nonce); // JWT with no 'aud' claim
         String vpToken = Base64.getEncoder().encodeToString(jwtWithoutAud.getBytes(StandardCharsets.UTF_8));
 
         // Mock mínimo del flujo necesario para que se ejecute validateVpAudience
@@ -289,19 +291,119 @@ class AuthorizationResponseProcessorServiceImplTest {
         );
         when(mockOAuth2AuthorizationRequest.getRedirectUri()).thenReturn("https://client.example.com/callback");
 
-        when(cacheStoreForOAuth2AuthorizationRequest.get("state")).thenReturn(mockOAuth2AuthorizationRequest);
-        doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete("state");
+        String stateKey = "state";
+        when(cacheStoreForOAuth2AuthorizationRequest.get(stateKey)).thenReturn(mockOAuth2AuthorizationRequest);
+        doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(stateKey);
 
 
-        when(cacheForNonceByState.get("state")).thenReturn("test-nonce");
+        when(cacheForNonceByState.get(stateKey)).thenReturn(nonce);
 
         // Act & Assert
         JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
-                authorizationResponseProcessorService.processAuthResponse("state", vpToken)
+                authorizationResponseProcessorService.processAuthResponse(stateKey, vpToken)
+        );
+        String errorMsg ="The 'aud' claim is missing in the VP token.";
+        assertEquals(errorMsg, exception.getMessage());
+    }
+    @Test
+    void validateVpAudience_shouldThrowException_whenNonceClaimIsBlank() throws Exception {
+            // Arrange
+            String jwtWithoutAud =  createJwtWithoutAudience("") ;
+            String vpToken = Base64.getEncoder().encodeToString(jwtWithoutAud.getBytes(StandardCharsets.UTF_8));
+
+            // Mock mínimo del flujo necesario para que se ejecute validateVpAudience
+            OAuth2AuthorizationRequest mockOAuth2AuthorizationRequest = mock(OAuth2AuthorizationRequest.class);
+            when(mockOAuth2AuthorizationRequest.getAdditionalParameters()).thenReturn(
+                    Map.of(EXPIRATION, Instant.now().plusSeconds(60).getEpochSecond())
+            );
+            when(mockOAuth2AuthorizationRequest.getRedirectUri()).thenReturn("https://client.example.com/callback");
+
+            String stateKey = "state";
+            when(cacheStoreForOAuth2AuthorizationRequest.get(stateKey)).thenReturn(mockOAuth2AuthorizationRequest);
+            doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(stateKey);
+
+            // Act & Assert
+            JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
+                    authorizationResponseProcessorService.processAuthResponse(stateKey, vpToken)
+            );
+
+            assertEquals("The 'nonce' claim is missing in the VP token.", exception.getMessage());
+        }
+    @Test
+    void validateVpAudience_shouldThrowException_whenNonceClaimIsNotMatchCached() throws Exception {
+        // Arrange
+        String jwtWithoutAud = createJwtWithoutAudience("test-nonce"); // JWT with no 'aud' claim
+        String vpToken = Base64.getEncoder().encodeToString(jwtWithoutAud.getBytes(StandardCharsets.UTF_8));
+
+        // Mock mínimo del flujo necesario para que se ejecute validateVpAudience
+        OAuth2AuthorizationRequest mockOAuth2AuthorizationRequest = mock(OAuth2AuthorizationRequest.class);
+        when(mockOAuth2AuthorizationRequest.getAdditionalParameters()).thenReturn(
+                Map.of(EXPIRATION, Instant.now().plusSeconds(60).getEpochSecond())
+        );
+        when(mockOAuth2AuthorizationRequest.getRedirectUri()).thenReturn("https://client.example.com/callback");
+
+        String stateKey = "state";
+        when(cacheStoreForOAuth2AuthorizationRequest.get(stateKey)).thenReturn(mockOAuth2AuthorizationRequest);
+        doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(stateKey);
+
+
+        when(cacheForNonceByState.get(stateKey)).thenReturn("test-nonce2");
+
+        // Act & Assert
+        JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
+                authorizationResponseProcessorService.processAuthResponse(stateKey, vpToken)
+        );
+        assertEquals("VP nonce does not match the cached nonce for the given state.", exception.getMessage());
+    }
+
+    @Test
+    void validateVpAudience_shouldThrowException_whenStateClaimIsMissing() throws Exception {
+        // Arrange
+        String jwtWithNonce = createJwtWithoutAudience("test-nonce");
+        String vpToken = Base64.getEncoder().encodeToString(jwtWithNonce.getBytes(StandardCharsets.UTF_8));
+
+        String blankState = " ";
+
+        OAuth2AuthorizationRequest mockAuthRequest = mock(OAuth2AuthorizationRequest.class);
+        when(mockAuthRequest.getAdditionalParameters()).thenReturn(
+                Map.of(EXPIRATION, Instant.now().plusSeconds(60).getEpochSecond())
+        );
+        when(mockAuthRequest.getRedirectUri()).thenReturn("https://client.example.com/callback");
+
+        when(cacheStoreForOAuth2AuthorizationRequest.get(blankState)).thenReturn(mockAuthRequest);
+        doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(blankState);
+
+        // Act & Assert
+        JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
+                authorizationResponseProcessorService.processAuthResponse(blankState, vpToken)
         );
 
-        assertEquals("The 'aud' claim is missing in the VP token.", exception.getMessage());
+        assertEquals("The 'state' claim is missing in the VP token.", exception.getMessage());
     }
+    @Test
+    void validateVpAudience_shouldThrowException_whenCacheStateIsNull() throws Exception {
+        String jwtWithoutAud = createJwtWithoutAudience("test-nonce");
+        String vpToken = Base64.getEncoder().encodeToString(jwtWithoutAud.getBytes(StandardCharsets.UTF_8));
+
+        OAuth2AuthorizationRequest mockOAuth2AuthorizationRequest = mock(OAuth2AuthorizationRequest.class);
+        when(mockOAuth2AuthorizationRequest.getAdditionalParameters()).thenReturn(
+                Map.of(EXPIRATION, Instant.now().plusSeconds(60).getEpochSecond())
+        );
+        when(mockOAuth2AuthorizationRequest.getRedirectUri()).thenReturn("https://client.example.com/callback");
+
+        String stateKey = "state";
+        when(cacheStoreForOAuth2AuthorizationRequest.get(stateKey)).thenReturn(mockOAuth2AuthorizationRequest);
+        doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(stateKey);
+
+        when(cacheForNonceByState.get(stateKey)).thenReturn(null);
+
+        JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
+                authorizationResponseProcessorService.processAuthResponse(stateKey, vpToken)
+        );
+
+        assertEquals("No nonce found in cache for state=state", exception.getMessage());
+    }
+
 
     @Test
     void processAuthResponse_shouldThrowJwtParsingException_whenVpTokenIsMalformed() {
@@ -315,21 +417,22 @@ class AuthorizationResponseProcessorServiceImplTest {
         );
         when(mockOAuth2AuthorizationRequest.getRedirectUri()).thenReturn("https://client.example.com/callback");
 
-        when(cacheStoreForOAuth2AuthorizationRequest.get("state")).thenReturn(mockOAuth2AuthorizationRequest);
-        doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete("state");
+        String stateKey = "state";
+        when(cacheStoreForOAuth2AuthorizationRequest.get(stateKey)).thenReturn(mockOAuth2AuthorizationRequest);
+        doNothing().when(cacheStoreForOAuth2AuthorizationRequest).delete(stateKey);
 
         // Act & Assert
         JWTParsingException exception = assertThrows(JWTParsingException.class, () ->
-                authorizationResponseProcessorService.processAuthResponse("state", vpToken)
+                authorizationResponseProcessorService.processAuthResponse(stateKey, vpToken)
         );
 
         assertEquals("Failed to parse the VP JWT or extract claims.", exception.getMessage());
     }
 
-    private String createJwtWithoutAudience() throws JOSEException {
+    private String createJwtWithoutAudience(String nonce) throws JOSEException {
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject("did:key:abc123")
-                .claim(NONCE, "test-nonce")
+                .claim(NONCE, nonce)
                 .issueTime(new Date())
                 .expirationTime(Date.from(Instant.now().plusSeconds(600)))
                 .build();
@@ -343,108 +446,6 @@ class AuthorizationResponseProcessorServiceImplTest {
         signedJWT.sign(signer);
 
         return signedJWT.serialize();
+
     }
-    @Test
-    void validateVpNonce_shouldThrow_whenNonceIsNull() {
-        String state = "test-state";
-        String nonce = null;
-        JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
-                validateVpNonce(nonce, state)
-        );
-        assertEquals("The 'nonce' claim is missing in the VP token.", exception.getMessage());
-    }
-
-
-    @Test
-    void validateVpNonce_shouldThrow_whenNonceIsBlank() {
-        String state = "test-state";
-        String nonce = " ";
-
-        JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
-                validateVpNonce(nonce, state)
-        );
-
-        assertEquals("The 'nonce' claim is missing in the VP token.", exception.getMessage());
-    }
-
-    @Test
-    void validateVpNonce_shouldThrow_whenStateIsNull() {
-        String nonce = "test-nonce";
-        String state = null;
-
-        JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
-                validateVpNonce(nonce, state)
-        );
-
-        assertEquals("The 'state' claim is missing in the VP token.", exception.getMessage());
-    }
-
-    @Test
-    void validateVpNonce_shouldThrow_whenStateIsBlank() {
-        String nonce = "test-nonce";
-        String state = " ";
-
-        JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
-                validateVpNonce(nonce, state)
-        );
-
-        assertEquals("The 'state' claim is missing in the VP token.", exception.getMessage());
-    }
-
-    @Test
-    void validateVpNonce_shouldThrow_whenCachedNonceIsNull() {
-        String state = "test-state";
-        String nonce = "test-nonce";
-
-        when(cacheForNonceByState.get(state)).thenReturn(null);
-
-        JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
-                validateVpNonce(nonce, state)
-        );
-
-        assertEquals("No nonce found in cache for state=" + state, exception.getMessage());
-    }
-
-    @Test
-    void validateVpNonce_shouldThrow_whenNoncesDoNotMatch() {
-        String state = "test-state";
-        String nonce = "wrong-nonce";
-        when(cacheForNonceByState.get(state)).thenReturn("correct-nonce");
-
-        JWTClaimMissingException exception = assertThrows(JWTClaimMissingException.class, () ->
-                validateVpNonce(nonce, state)
-        );
-
-        assertEquals("VP nonce does not match the cached nonce for the given state.", exception.getMessage());
-    }
-
-
-    @Test
-    void validateVpNonce_shouldPass_whenValidNonceAndState() {
-        String state = "test-state";
-        String nonce = "test-nonce";
-        when(cacheForNonceByState.get(state)).thenReturn(nonce);
-
-        assertDoesNotThrow(() -> validateVpNonce(nonce, state));
-    }
-
-    // Helper para acceder al método privado
-    // En AuthorizationResponseProcessorServiceImpl
-    private void validateVpNonce(String nonce, String state) {
-        if (nonce == null || nonce.isBlank()) {
-            throw new JWTClaimMissingException("The 'nonce' claim is missing in the VP token.");
-        }
-        if (state == null || state.isBlank()) {
-            throw new JWTClaimMissingException("The 'state' claim is missing in the VP token.");
-        }
-        String cachedNonce = cacheForNonceByState.get(state);
-        if (cachedNonce == null) {
-            throw new JWTClaimMissingException("No nonce found in cache for state=" + state);
-        }
-
-        if (!nonce.equals(cachedNonce)) {
-            throw new JWTClaimMissingException("VP nonce does not match the cached nonce for the given state.");
-        }
-    }
-
 }
