@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.JWTParser;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import es.in2.vcverifier.config.BackendConfig;
 import es.in2.vcverifier.config.CacheStore;
 import es.in2.vcverifier.exception.InvalidCredentialTypeException;
@@ -70,82 +72,120 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     }
 
     private Authentication handleGrant(
-            OAuth2AuthorizationGrantAuthenticationToken authentication) {
-        log.info("Processing authorization grant");
+        OAuth2AuthorizationGrantAuthenticationToken authentication) {
+    log.info("Processing authorization grant");
 
-        String clientId = getClientId(authentication);
-        log.debug("CustomAuthenticationProvider -- handleGrant -- Client ID obtained: {}", clientId);
+    String clientId = getClientId(authentication);
+    log.debug("CustomAuthenticationProvider -- handleGrant -- Client ID obtained: {}", clientId);
 
-        RegisteredClient registeredClient = getRegisteredClient(clientId);
-        log.debug("CustomAuthenticationProvider -- handleGrant -- Registered client found: {}", registeredClient);
+    RegisteredClient registeredClient = getRegisteredClient(clientId);
+    log.debug("CustomAuthenticationProvider -- handleGrant -- Registered client found: {}", registeredClient);
 
-        if (authentication instanceof OAuth2AuthorizationCodeAuthenticationToken authCodeToken) {
-            if (isPublicPkceClient(registeredClient)) {
-                validateAuthorizationCodePkce(authCodeToken, clientId);
-            } else {
-                log.debug("Omitting redirect+PKCE validation for confidential client '{}'", clientId);
-            }
-        }
-
-        Instant issueTime = Instant.now();
-        Instant expirationTime = issueTime.plus(
-                Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME),
-                ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT)
-        );
-        log.debug("CustomAuthenticationProvider -- handleGrant -- Issue time: {}, Expiration time: {}", issueTime, expirationTime);
-
-        JsonNode credentialJson = getJsonCredential(authentication);
-
-        LEARCredential credential = getVerifiableCredential(authentication, credentialJson);
-
-        String subject = resolveCredentialSubjectDid(credential, credentialJson);
-        log.debug("CustomAuthenticationProvider -- handleGrant -- Credential subject obtained: {}", subject);
-
-        String audience = getAudience(authentication, credential);
-
-        log.debug("CustomAuthenticationProvider -- handleGrant -- Audience for credential: {}", audience);
-
-        String jwtToken = generateAccessTokenWithVc(credential, issueTime, expirationTime, subject, audience);
-        log.debug("CustomAuthenticationProvider -- handleGrant -- Generated JWT token: {}", jwtToken);
-
-        OAuth2AccessToken oAuth2AccessToken = new OAuth2AccessToken(
-                OAuth2AccessToken.TokenType.BEARER,
-                jwtToken,
-                issueTime,
-                expirationTime
-        );
-
-        OAuth2RefreshToken oAuth2RefreshToken;
-        Map<String, Object> additionalParameters;
-
-        if (authentication instanceof OAuth2ClientCredentialsAuthenticationToken) {
-            oAuth2RefreshToken = null;
-            additionalParameters = Map.of();
+    if (authentication instanceof OAuth2AuthorizationCodeAuthenticationToken authCodeToken) {
+        if (isPublicPkceClient(registeredClient)) {
+            validateAuthorizationCodePkce(authCodeToken, clientId);
         } else {
-            additionalParameters = Map.of(
-                    "id_token",
-                    generateIdToken(credential, subject, audience, authentication.getAdditionalParameters()));
-
-            oAuth2RefreshToken = getOAuth2RefreshToken(
-                    authentication,
-                    issueTime,
-                    clientId,
-                    credentialJson,
-                    registeredClient);
+            log.debug("Omitting redirect+PKCE validation for confidential client '{}'", clientId);
         }
-
-        log.info("Authorization grant successfully processed");
-
-        if (authentication instanceof OAuth2AuthorizationCodeAuthenticationToken authCodeToken) {
-            OAuth2Authorization authToRemove =
-                    oAuth2AuthorizationService.findByToken(authCodeToken.getCode(),
-                            new OAuth2TokenType(OAuth2ParameterNames.CODE));
-            if (authToRemove != null) {
-                oAuth2AuthorizationService.remove(authToRemove);
-            }
-        }
-        return new OAuth2AccessTokenAuthenticationToken(registeredClient, authentication, oAuth2AccessToken, oAuth2RefreshToken, additionalParameters);
     }
+
+    Instant issueTime = Instant.now();
+    Instant expirationTime = issueTime.plus(
+            Long.parseLong(ACCESS_TOKEN_EXPIRATION_TIME),
+            ChronoUnit.valueOf(ACCESS_TOKEN_EXPIRATION_CHRONO_UNIT)
+    );
+    log.debug("CustomAuthenticationProvider -- handleGrant -- Issue time: {}, Expiration time: {}", issueTime, expirationTime);
+
+    JsonNode credentialJson = getJsonCredential(authentication);
+
+    LEARCredential credential = getVerifiableCredential(authentication, credentialJson);
+
+    String subject = resolveCredentialSubjectDid(credential, credentialJson);
+    log.debug("CustomAuthenticationProvider -- handleGrant -- Credential subject obtained: {}", subject);
+
+    String audience = getAudience(authentication, credential);
+    log.debug("CustomAuthenticationProvider -- handleGrant -- Audience for credential: {}", audience);
+
+    String jwtToken = generateAccessTokenWithVc(credential, issueTime, expirationTime, subject, audience);
+    log.debug("CustomAuthenticationProvider -- handleGrant -- Generated JWT token: {}", jwtToken);
+
+    OAuth2AccessToken oAuth2AccessToken = new OAuth2AccessToken(
+            OAuth2AccessToken.TokenType.BEARER,
+            jwtToken,
+            issueTime,
+            expirationTime
+    );
+
+    OAuth2RefreshToken oAuth2RefreshToken = null;
+    Map<String, Object> additionalParameters;
+    String idTokenValue = null;
+
+    if (authentication instanceof OAuth2ClientCredentialsAuthenticationToken) {
+        additionalParameters = Map.of();
+    } else {
+        idTokenValue = generateIdToken(credential, subject, audience, authentication.getAdditionalParameters());
+        additionalParameters = Map.of("id_token", idTokenValue);
+
+        oAuth2RefreshToken = getOAuth2RefreshToken(
+                authentication,
+                issueTime,
+                clientId,
+                credentialJson
+        );
+    }
+
+    if (authentication instanceof OAuth2AuthorizationCodeAuthenticationToken) {
+        try {
+            OAuth2Authorization.Builder authorizationBuilder =
+                    OAuth2Authorization.withRegisteredClient(registeredClient)
+                            .id(UUID.randomUUID().toString())
+                            .principalName(subject)
+                            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                            .attribute(Principal.class.getName(), authentication.getPrincipal())
+                            .token(oAuth2AccessToken);
+
+            if (oAuth2RefreshToken != null) {
+                authorizationBuilder.refreshToken(oAuth2RefreshToken);
+            }
+
+            if (idTokenValue != null) {
+                Instant idTokenExpirationTime = issueTime.plus(
+                        Long.parseLong(ID_TOKEN_EXPIRATION_TIME),
+                        ChronoUnit.valueOf(ID_TOKEN_EXPIRATION_CHRONO_UNIT)
+                );
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> idTokenClaims =
+                        JWTParser.parse(idTokenValue).getJWTClaimsSet().getClaims();
+
+                OidcIdToken oidcIdToken = new OidcIdToken(
+                        idTokenValue,
+                        issueTime,
+                        idTokenExpirationTime,
+                        idTokenClaims
+                );
+
+                authorizationBuilder.token(oidcIdToken);
+            }
+
+            oAuth2AuthorizationService.save(authorizationBuilder.build());
+            log.info("OAuth2Authorization stored with access token, refresh token and id token");
+        } catch (Exception e) {
+            log.error("CustomAuthenticationProvider -- handleGrant -- Error saving OAuth2Authorization", e);
+            throw new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR);
+        }
+    }
+
+    log.info("Authorization grant successfully processed");
+
+    return new OAuth2AccessTokenAuthenticationToken(
+            registeredClient,
+            authentication,
+            oAuth2AccessToken,
+            oAuth2RefreshToken,
+            additionalParameters
+    );
+}
 
     private boolean isPublicPkceClient(RegisteredClient rc) {
         if (rc == null) return false;
@@ -210,30 +250,24 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
 
 
-    private OAuth2RefreshToken getOAuth2RefreshToken(OAuth2AuthorizationGrantAuthenticationToken authentication, Instant issueTime, String clientId, JsonNode credentialJson, RegisteredClient registeredClient) {
-        OAuth2RefreshToken oAuth2RefreshToken;
-        oAuth2RefreshToken = generateRefreshToken(issueTime);
+    private OAuth2RefreshToken getOAuth2RefreshToken(
+        OAuth2AuthorizationGrantAuthenticationToken authentication,
+        Instant issueTime,
+        String clientId,
+        JsonNode credentialJson) {
 
-        // Generate the data necessary to be able to refresh the token
-        RefreshTokenDataCache refreshTokenDataCache = RefreshTokenDataCache.builder()
-                .refreshToken(oAuth2RefreshToken)
-                .clientId(clientId)
-                .verifiableCredential(credentialJson)
-                .build();
+    OAuth2RefreshToken oAuth2RefreshToken = generateRefreshToken(issueTime);
 
-        cacheStoreForRefreshTokenData.add(oAuth2RefreshToken.getTokenValue(),refreshTokenDataCache);
+    RefreshTokenDataCache refreshTokenDataCache = RefreshTokenDataCache.builder()
+            .refreshToken(oAuth2RefreshToken)
+            .clientId(clientId)
+            .verifiableCredential(credentialJson)
+            .build();
 
-        // Save the OAuth2Authorization
-        OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(registeredClient)
-                .id(registeredClient.getId())
-                .principalName(registeredClient.getClientId())
-                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .token(oAuth2RefreshToken)
-                .attribute(Principal.class.getName(), authentication.getPrincipal())
-                .build();
-        oAuth2AuthorizationService.save(authorization);
-        return oAuth2RefreshToken;
-    }
+    cacheStoreForRefreshTokenData.add(oAuth2RefreshToken.getTokenValue(), refreshTokenDataCache);
+
+    return oAuth2RefreshToken;
+}
 
     private String getClientId(OAuth2AuthorizationGrantAuthenticationToken authentication) {
         // Extract the client ID from the additional parameters
