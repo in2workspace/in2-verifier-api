@@ -28,9 +28,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
-import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
-import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -115,21 +113,10 @@ public class AuthorizationServerConfig {
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
         NimbusJwtDecoder jwtDecoder = (NimbusJwtDecoder) OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
-        // Create a custom validator that accepts any audience for ID tokens (per OIDC spec, ID token audience should be client ID)
-        // The signature validation provides the necessary security
-        OAuth2TokenValidator<Jwt> audienceValidator = (jwt) -> {
-            Object aud = jwt.getClaim("aud");
-            // Accept the token if audience is present (don't enforce specific value)
-            // This allows ID tokens with client ID as audience and access tokens with server URL as audience
-            if (aud == null) {
-                return OAuth2TokenValidatorResult.failure(
-                        new OAuth2Error("invalid_token", "Missing audience claim", null)
-                );
-            }
-            return OAuth2TokenValidatorResult.success();
-        };
-        OAuth2TokenValidator<Jwt> withAudience = new DelegatingOAuth2TokenValidator<>(audienceValidator);
-        jwtDecoder.setJwtValidator(withAudience);
+//        OAuth2TokenValidator<Jwt> audienceValidator = new JwtClaimValidator<>(
+//                "aud", backendConfig.getUrl()::equals);
+//        OAuth2TokenValidator<Jwt> withAudience = new DelegatingOAuth2TokenValidator<>(audienceValidator);
+//        jwtDecoder.setJwtValidator(withAudience);
         return jwtDecoder;
     }
 
