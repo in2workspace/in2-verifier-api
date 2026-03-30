@@ -28,7 +28,9 @@ public class RegisteredClientsCorsConfig {
         authConfig.setAllowedHeaders(List.of("*"));
         authConfig.setAllowCredentials(false);
 
-        System.out.print("new authConfig.setAllowedOriginPatterns(List.of(\"*\"));");
+        System.out.println("RegisteredClientsCorsConfig bean loaded");
+        System.out.println("allowedClientsOrigins at startup = " + allowedClientsOrigins);
+        System.out.println("CORS using allowedOriginPatterns(*) for OIDC endpoints");
 
         // Register the configuration for each endpoint
         source.registerCorsConfiguration("/oidc/authorize", authConfig);
