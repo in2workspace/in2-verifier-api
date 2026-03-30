@@ -23,9 +23,9 @@ public class RegisteredClientsCorsConfig {
 
         // Configure endpoints for clients that used the OIDC protocol
         CorsConfiguration authConfig = new CorsConfiguration();
-        authConfig.setAllowedOrigins(new ArrayList<>(allowedClientsOrigins));
-        authConfig.setAllowedMethods(List.of("GET", "POST"));
-        authConfig.setAllowedHeaders(List.of("Content-Type", "Authorization"));
+        authConfig.setAllowedOrigins(new ArrayList<>(List.of("*")));
+        authConfig.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        authConfig.setAllowedHeaders(List.of("*"));
         authConfig.setAllowCredentials(false);
 
         // Register the configuration for each endpoint
