@@ -45,6 +45,9 @@ import org.springframework.security.oauth2.server.authorization.settings.Authori
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+
+import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
@@ -71,22 +74,34 @@ public class AuthorizationServerConfig {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
         http
-                .cors(cors -> cors.configurationSource(registeredClientsCorsConfig.registeredClientsCorsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(request -> {
+                    CorsConfiguration config = new CorsConfiguration();
+                    config.setAllowedOriginPatterns(List.of("*"));
+                    config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+                    config.setAllowedHeaders(List.of("*"));
+                    config.setAllowCredentials(false);
+                    return config;
+                }))
                 .getConfigurer(OAuth2AuthorizationServerConfigurer.class)
                 .authorizationEndpoint(authorizationEndpoint ->
                         authorizationEndpoint
-                                // Adds an AuthenticationConverter (pre-processor) used when attempting to extract
-                                // an OAuth2 authorization request (or consent) from HttpServletRequest to an instance
-                                // of OAuth2AuthorizationCodeRequestAuthenticationToken or OAuth2AuthorizationConsentAuthenticationToken.
-                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(didService,jwtService,cryptoComponent,cacheStoreForAuthorizationRequestJWT,cacheStoreForOAuth2AuthorizationRequest,backendConfig,registeredClientRepository, IS_NONCE_REQUIRED_ON_FAPI_PROFILE,cacheForNonceByState))
+                                .authorizationRequestConverter(new CustomAuthorizationRequestConverter(
+                                        didService, jwtService, cryptoComponent, cacheStoreForAuthorizationRequestJWT,
+                                        cacheStoreForOAuth2AuthorizationRequest, backendConfig, registeredClientRepository,
+                                        IS_NONCE_REQUIRED_ON_FAPI_PROFILE, cacheForNonceByState))
                                 .errorResponseHandler(new CustomErrorResponseHandler())
                 )
                 .tokenEndpoint(tokenEndpoint ->
                         tokenEndpoint
-                                .accessTokenRequestConverter(new CustomTokenRequestConverter(jwtService, clientAssertionValidationService, vpService, cacheStoreForAuthorizationCodeData,objectMapper, refreshTokenDataCacheCacheStore))
-                                .authenticationProvider(new CustomAuthenticationProvider(jwtService,registeredClientRepository,backendConfig,objectMapper, refreshTokenDataCacheCacheStore, oAuth2AuthorizationService()))
+                                .accessTokenRequestConverter(new CustomTokenRequestConverter(
+                                        jwtService, clientAssertionValidationService, vpService,
+                                        cacheStoreForAuthorizationCodeData, objectMapper, refreshTokenDataCacheCacheStore))
+                                .authenticationProvider(new CustomAuthenticationProvider(
+                                        jwtService, registeredClientRepository, backendConfig,
+                                        objectMapper, refreshTokenDataCacheCacheStore, oAuth2AuthorizationService()))
                 )
-                .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
+                .oidc(Customizer.withDefaults());
+
         return http.build();
     }
     @Bean
@@ -98,10 +113,10 @@ public class AuthorizationServerConfig {
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
         NimbusJwtDecoder jwtDecoder = (NimbusJwtDecoder) OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
-        OAuth2TokenValidator<Jwt> audienceValidator = new JwtClaimValidator<>(
-                "aud", backendConfig.getUrl()::equals);
-        OAuth2TokenValidator<Jwt> withAudience = new DelegatingOAuth2TokenValidator<>(audienceValidator);
-        jwtDecoder.setJwtValidator(withAudience);
+//        OAuth2TokenValidator<Jwt> audienceValidator = new JwtClaimValidator<>(
+//                "aud", backendConfig.getUrl()::equals);
+//        OAuth2TokenValidator<Jwt> withAudience = new DelegatingOAuth2TokenValidator<>(audienceValidator);
+//        jwtDecoder.setJwtValidator(withAudience);
         return jwtDecoder;
     }
 
