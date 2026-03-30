@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/oidc/did/*").permitAll()
                         .requestMatchers("/qr-socket/**").permitAll()
                         .requestMatchers("/img/**").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf
